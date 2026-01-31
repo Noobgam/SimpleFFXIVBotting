@@ -238,6 +238,7 @@ local function doneWithJobQuests(job, level)
             FFXIV.JOBS.GLADIATOR,
             FFXIV.JOBS.ARCHER,
             FFXIV.JOBS.CONJURER,
+            FFXIV.JOBS.MARAUDER,
         }
         for _, baseJob in ipairs(baseJobs) do
             if Player.job == baseJob then
