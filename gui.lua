@@ -3,7 +3,7 @@ if GUI_Manager == nil then
     GUI_Manager.open = true
     GUI_Manager.visible = true
     GUI_Manager.Enabled = false
-    GUI_Manager.SelectedMode = "Ravana" -- Default selection
+    GUI_Manager.SelectedMode = "Bootstrap"
 end
 
 local function ColoredText(r, g, b, text)
@@ -16,17 +16,16 @@ local function drawModePicker()
     GUI:Text("Select Mode:")
     GUI:SameLine()
 
-    -- Radio button for Ravana
-    if GUI:RadioButton("Ravana", GUI_Manager.SelectedMode == "Ravana") then
-        GUI_Manager.SelectedMode = "Ravana"
+    if GUI:RadioButton("Bootstrap", GUI_Manager.SelectedMode == "Bootstrap") then
+        GUI_Manager.SelectedMode = "Bootstrap"
     end
 
     GUI:SameLine()
 
-    -- Radio button for Bootstrap
-    if GUI:RadioButton("Bootstrap", GUI_Manager.SelectedMode == "Bootstrap") then
-        GUI_Manager.SelectedMode = "Bootstrap"
+    if GUI:RadioButton("Ravana", GUI_Manager.SelectedMode == "Ravana") then
+        GUI_Manager.SelectedMode = "Ravana"
     end
+
 
     GUI:Separator()
 end

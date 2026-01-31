@@ -61,6 +61,13 @@ function GUI:Combo(label, current_item, items, popup_max_height_in_items) end
 function GUI:CollapsingHeader(label) end
 
 
+--- @param self GUI
+--- @param label string
+--- @param reason boolean
+--- @return boolean wither the header is open
+function GUI:RadioButton(label, reason) end
+
+
 --- Creates a slider for two float values.
 --- @param self GUI
 --- @param label string The label for the slider.

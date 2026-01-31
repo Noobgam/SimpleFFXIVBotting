@@ -89,6 +89,10 @@ local function setQuestingProfile(targetProfile, aether)
         log("Switching to Quest mode")
         gBotMode = "Quest"
         ffxivminion.SwitchMode("Quest")
+        if FFXIV_Common_BotRunning then
+            -- switching bot off prior to doing quests once.
+            ml_global_information.ToggleRun()
+        end
     end
 
     local rule = "MSQ"
