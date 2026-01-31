@@ -82,6 +82,19 @@ local function wait(millis, breakOutCondition, breakOutDelayMillis)
     end
 end
 
+local function setMinionQuestingProfile(profileName)
+    ---@type string[]
+    local allProfiles = Questing.profilesDisplay
+    for idx, name in pairs(allProfiles) do
+        log("Found profile index: " .. idx)
+        gQuestProfileIndex = idx
+        gQuestProfile = profileName
+
+        Questing.UpdateSelection(profileName)
+    end
+    log("[ERROR] Could not find questing profile")
+end
+
 --- @param targetProfile string
 --- @param aether boolean|nil
 local function setQuestingProfile(targetProfile, aether)
@@ -91,6 +104,7 @@ local function setQuestingProfile(targetProfile, aether)
         ffxivminion.SwitchMode("Quest")
         if FFXIV_Common_BotRunning then
             -- switching bot off prior to doing quests once.
+            log("Disabling bot once because switched to quest mode")
             ml_global_information.ToggleRun()
         end
     end
@@ -134,8 +148,7 @@ local function setQuestingProfile(targetProfile, aether)
                 questSubRule = subRule,
             }
         }))
-
-        gQuestProfile = targetProfile
+        setMinionQuestingProfile(targetProfile)
         QuestOpts_100_v1_QuestRule = rule
         QuestOpts_100_v1_QuestSubRule = subRule
         return true
@@ -186,7 +199,7 @@ local function ensureProfileEnabled(profile, job)
         local sebbsPack = {
             [FFXIV.JOBS.GLADIATOR] = "Paladin",
             [FFXIV.JOBS.ARCHER] = "Bard",
-            [FFXIV.JOBS.PALADIN] = "Paladin",
+            [FFXIV.JOBS.WARRIOR] = "Warrior",
             [FFXIV.JOBS.PALADIN] = "Paladin",
             [FFXIV.JOBS.SAGE] = "Sage",
             [FFXIV.JOBS.NINJA] = "Ninja",
@@ -322,8 +335,8 @@ local function doJobStuff(job, jobLevelCap)
     local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
     local canDoPorta = QuestCompleted(4522)
 
-    -- Always do level 15 job quests first
-    if Player.levels[Player.job] >= 15 then
+    -- Always do level 15 job quests first.
+    if Player.levels[Player.job] >= 17 then
         if not doneWithJobQuests(myJob, 15) then
             ensureProfileEnabled("job", myJob)
             return true
