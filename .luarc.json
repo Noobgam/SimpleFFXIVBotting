@@ -1,0 +1,15 @@
+{
+    "Lua.runtime.version": "Lua 5.2",
+    "Lua.workspace.library": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/**/*",
+        "${workspaceFolder}/.vscode/globals.lua"
+    ],
+    "Lua.workspace.userThirdParty": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/**/*",
+        "${workspaceFolder}/.vscode/globals.lua"
+    ],
+    "Lua.workspace.preloadFileSize": 10000,
+    "Lua.telemetry.enable": false
+}

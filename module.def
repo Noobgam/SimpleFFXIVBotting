@@ -1,0 +1,6 @@
+[Module]
+Name=RavanaFarm
+Dependencies=minionlib
+Version=1
+Files=main.lua,gui.lua,ravanafarm.lua,navigationtask.lua,bootstrap.lua
+Enabled=1
