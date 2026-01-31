@@ -181,8 +181,8 @@ local function ensureProfileEnabled(profile, job)
 
         local sebbsPack = {
             [FFXIV.JOBS.GLADIATOR] = "Paladin",
-            [FFXIV.JOBS.ARCHER] = "Archer",
-            [FFXIV.JOBS.ARCHER] = "Archer",
+            [FFXIV.JOBS.ARCHER] = "Bard",
+            [FFXIV.JOBS.PALADIN] = "Paladin",
             [FFXIV.JOBS.PALADIN] = "Paladin",
             [FFXIV.JOBS.SAGE] = "Sage",
             [FFXIV.JOBS.NINJA] = "Ninja",
