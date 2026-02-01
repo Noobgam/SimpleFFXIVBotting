@@ -60,6 +60,70 @@ local CONFIG = {
             [FFXIV.JOBS.BARD] = 2894,
         },
     },
+    roleQuestCompletion = {
+        [70] = {
+            TANK = 3243,
+            PHYSICAL_DPS = 3273,
+            MAGICAL_RANGED_DPS = 3623,
+            HEALER = 3267,
+        },
+        [72] = {
+            TANK = 3244,
+            PHYSICAL_DPS = 3274,
+            MAGICAL_RANGED_DPS = 3624,
+            HEALER = 3268,
+        },
+        [74] = {
+            TANK = 3245,
+            PHYSICAL_DPS = 3275,
+            MAGICAL_RANGED_DPS = 3625,
+            HEALER = 3269,
+        },
+        [76] = {
+            TANK = 3246,
+            PHYSICAL_DPS = 3276,
+            MAGICAL_RANGED_DPS = 3626,
+            HEALER = 3270,
+        },
+        [78] = {
+            TANK = 3247,
+            PHYSICAL_DPS = 3277,
+            MAGICAL_RANGED_DPS = 3627,
+            HEALER = 3271,
+        },
+        [80] = {
+            TANK = 3248,
+            PHYSICAL_DPS = 3278,
+            MAGICAL_RANGED_DPS = 3628,
+            HEALER = 3272,
+        },
+    },
+    -- Job to role mapping for role quests
+    jobToRole = {
+        [FFXIV.JOBS.PALADIN] = "TANK",
+        [FFXIV.JOBS.WARRIOR] = "TANK",
+        [FFXIV.JOBS.DARKKNIGHT] = "TANK",
+        [FFXIV.JOBS.GUNBREAKER] = "TANK",
+        
+        [FFXIV.JOBS.MONK] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.DRAGOON] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.NINJA] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.SAMURAI] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.REAPER] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.BARD] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.MACHINIST] = "PHYSICAL_DPS",
+        [FFXIV.JOBS.DANCER] = "PHYSICAL_DPS",
+        
+        [FFXIV.JOBS.BLACKMAGE] = "MAGICAL_RANGED_DPS",
+        [FFXIV.JOBS.SUMMONER] = "MAGICAL_RANGED_DPS",
+        [FFXIV.JOBS.REDMAGE] = "MAGICAL_RANGED_DPS",
+        [FFXIV.JOBS.PICTOMANCER] = "MAGICAL_RANGED_DPS",
+        
+        [FFXIV.JOBS.WHITEMAGE] = "HEALER",
+        [FFXIV.JOBS.SCHOLAR] = "HEALER",
+        [FFXIV.JOBS.ASTROLOGIAN] = "HEALER",
+        [FFXIV.JOBS.SAGE] = "HEALER",
+    },
     --- @type table<number, table<number, number>>
     questStepIdToDungeonId = {
         -- You have selected Regicide
@@ -288,7 +352,7 @@ local function ensureProfileEnabled(profile, job)
         QuestOpts_Class90_Job1 = sebbsVar
         QuestOpts_ClassDT_Job1 = sebbsVar
         QuestOpts_GlobalClass_Job1 = sebbsVar
-        QuestOpts_RoleQuests = false
+        QuestOpts_RoleQuests = true
 
         QuestOpts_Q_BuyGreens = true
         QuestOpts_Greens_new = true
@@ -314,7 +378,7 @@ local function ensureProfileEnabled(profile, job)
 end
 
 --- @param job integer
---- @param level 15|30|50|60|70
+--- @param level 15|30|50|60|70|80
 --- @return boolean
 local function doneWithJobQuests(job, level)
     local mapping = CONFIG.jobQuestCompletion[level]
@@ -345,6 +409,13 @@ local function doneWithJobQuests(job, level)
     local questId = mapping[job]
     if questId == nil then
         return true
+    end
+    if QuestCompleted(3649) and not QuestCompleted(3650) then
+        -- role quests are unlocked sometime before and we can't do next quest without finishing them
+        local roleQuest = CONFIG.roleQuestCompletion[80][CONFIG.jobToRole[job]]
+        if roleQuest then
+            return QuestCompleted(questId) and QuestCompleted(roleQuest)
+        end
     end
     return QuestCompleted(questId)
 end
