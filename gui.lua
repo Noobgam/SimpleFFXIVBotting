@@ -149,6 +149,9 @@ function GUI_Manager.Draw()
         GUI:Separator()
         if enabledPressed then
             GUI_Manager.Enabled = checked
+            if not checked then
+                MsqBootstrap.EnsureProfileEnabled("none")
+            end
         end
 
         drawModePicker()

@@ -159,7 +159,6 @@ end
 --- @param profile "msq" | "job" | "none"
 --- @param job integer|nil
 local function ensureProfileEnabled(profile, job)
-    MsqBootstrap.ProgressingThisTick = true
     QuestOpts_C_v1_Level = 10
 
     if MsqBootstrap.LastProfile ~= profile then
@@ -192,9 +191,11 @@ local function ensureProfileEnabled(profile, job)
 
         QuestOpts_Q_BuyGreens = true
         QuestOpts_Greens_new = true
+        NoobgamPrivateAPI.SetKDFToMsqIntegration()
         return
     elseif profile == "job" then
         setQuestingProfile(CONFIG.jobProfile)
+        NoobgamPrivateAPI.SetKDFToNone()
 
         local sebbsPack = {
             [FFXIV.JOBS.GLADIATOR] = "Paladin",
@@ -232,6 +233,7 @@ local function ensureProfileEnabled(profile, job)
             wait(5000)
             return
         end
+        NoobgamPrivateAPI.SetKDFToNone()
     end
 end
 
@@ -464,6 +466,10 @@ function MsqBootstrap.Reset()
     MsqBootstrap.BreakOutDelayMillis = nil
     MsqBootstrap.LastProfile = nil
     log("Reset complete")
+end
+
+function MsqBootstrap.EnsureProfileEnabled(profile, job)
+    return ensureProfileEnabled(profile, job)
 end
 
 return MsqBootstrap
