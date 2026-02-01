@@ -181,6 +181,12 @@ local function ensureProfileEnabled(profile, job)
             return
         end
 
+        if KitanoiFuncs and KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
+            log("KDF is still doing something, will let it be. Questing disabled temporarily")
+            wait(5000)
+            return
+        end
+
         if not FFXIV_Common_BotRunning then
             log("Enabling bot")
             ffxivminion.DutyCurrentData = {}
