@@ -92,6 +92,7 @@ local function setMinionQuestingProfile(profileName)
             gQuestProfile = profileName
 
             Questing.UpdateSelection(profileName)
+            return
         end
     end
     log("[ERROR] Could not find questing profile")
