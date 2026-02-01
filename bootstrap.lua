@@ -86,11 +86,13 @@ local function setMinionQuestingProfile(profileName)
     ---@type string[]
     local allProfiles = Questing.profilesDisplay
     for idx, name in pairs(allProfiles) do
-        log("Found profile index: " .. idx)
-        gQuestProfileIndex = idx
-        gQuestProfile = profileName
+        if name == profileName then
+            log("Found profile index: " .. idx)
+            gQuestProfileIndex = idx
+            gQuestProfile = profileName
 
-        Questing.UpdateSelection(profileName)
+            Questing.UpdateSelection(profileName)
+        end
     end
     log("[ERROR] Could not find questing profile")
 end
