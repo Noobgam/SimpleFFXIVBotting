@@ -51,6 +51,7 @@ local function drawBootstrapUI()
 
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
         ColoredText(0.8, 0.1, 0.2, "Not in game")
+        return
     end
 
     -- Status Section
