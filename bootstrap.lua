@@ -256,29 +256,12 @@ local function wait(millis, breakOutCondition, breakOutDelayMillis)
     end
 end
 
-local function setMinionQuestingProfile(profileName)
-    ---@type string[]
-    local allProfiles = Questing.profilesDisplay
-    for idx, name in pairs(allProfiles) do
-        if name == profileName then
-            log("Found profile index: " .. idx)
-            gQuestProfileIndex = idx
-            gQuestProfile = profileName
-
-            Questing.UpdateSelection(profileName)
-            return
-        end
-    end
-    log("[ERROR] Could not find questing profile")
-end
-
 --- @param targetProfile string
 --- @param aether boolean|nil
 local function setQuestingProfile(targetProfile, aether)
     if gBotMode ~= "Quest" then
         log("Switching to Quest mode")
-        gBotMode = "Quest"
-        ffxivminion.SwitchMode("Quest")
+        NoobgamUtils.SwitchMode("Quest")
         if FFXIV_Common_BotRunning then
             -- switching bot off prior to doing quests once.
             log("Disabling bot once because switched to quest mode")
@@ -325,7 +308,7 @@ local function setQuestingProfile(targetProfile, aether)
                 questSubRule = subRule,
             }
         }))
-        setMinionQuestingProfile(targetProfile)
+        NoobgamUtils.SetQuestingProfile(targetProfile)
         QuestOpts_100_v1_QuestRule = rule
         QuestOpts_100_v1_QuestSubRule = subRule
         return true
