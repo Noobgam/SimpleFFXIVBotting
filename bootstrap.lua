@@ -308,12 +308,11 @@ local function setQuestingProfile(targetProfile, aether)
                 questSubRule = subRule,
             }
         }))
-        NoobgamUtils.SetQuestingProfile(targetProfile)
         QuestOpts_100_v1_QuestRule = rule
         QuestOpts_100_v1_QuestSubRule = subRule
-        return true
+        return NoobgamUtils.SetQuestingProfile(targetProfile)
     end
-    return false
+    return true
 end
 
 --- @param profile "msq" | "job" | "none"
@@ -375,7 +374,18 @@ local function ensureProfileEnabled(profile, job)
         NoobgamPrivateAPI.SetKDFToMsqIntegration()
         return
     elseif profile == "job" then
-        setQuestingProfile(CONFIG.jobProfile)
+        if not setQuestingProfile(CONFIG.jobProfile) then
+            log("job profile could not be set. Assuming it's missing, will try to pick some other")
+            local allProfiles = Questing.profilesDisplay
+            for _, prof in pairs(allProfiles) do
+                if prof:find(" Class Quests", 1, true) ~= nil then
+                    CONFIG.jobProfile = prof
+                    log("Will use [" .. CONFIG.jobProfile .. "] for sebbs jobs")
+                    return
+                end
+            end
+            return
+        end
         NoobgamPrivateAPI.SetKDFToNone()
 
         local sebbsPack = {

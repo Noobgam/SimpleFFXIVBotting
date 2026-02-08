@@ -43,8 +43,10 @@ function NoobgamUtils.SetQuestingProfile(profileName)
         gQuestProfile = profileName
 
         Questing.UpdateSelection(profileName)
+        return true
     else
         log("[ERROR] Could not find questing profile")
+        return false
     end
 end
 
