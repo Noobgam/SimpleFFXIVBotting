@@ -670,4 +670,6 @@ function MsqBootstrap.EnsureProfileEnabled(profile, job)
     return ensureProfileEnabled(profile, job)
 end
 
+MsqBootstrap.CONFIG = CONFIG
+
 return MsqBootstrap
