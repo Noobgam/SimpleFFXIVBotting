@@ -132,7 +132,7 @@ local function drawDebugPanel()
     local haveChocobo = QuestCompleted(1162)
     local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
     local canDoPorta = QuestCompleted(4522)
-    local timeToJob = not deadlockedByAirship and haveGc and haveChocobo and QuestCompleted(715)
+    local timeToJob = not deadlockedByAirship and (haveGc or haveChocobo) and QuestCompleted(715)
     
     GUI:Text("Have GC: " .. (haveGc and "Yes" or "No"))
     GUI:Text("Have Chocobo: " .. (haveChocobo and "Yes" or "No"))

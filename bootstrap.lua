@@ -555,7 +555,7 @@ local function doJobStuff(job, jobLevelCap)
     end
 
     -- Quest 715 is "First Contact" - sanity check for job quests
-    local timeToJob = not deadlockedByAirship and haveGc and haveChocobo and QuestCompleted(715)
+    local timeToJob = not deadlockedByAirship and (haveGc or haveChocobo) and QuestCompleted(715)
 
     if timeToJob then
         if doingSomeJobQuests(job, 50) then
