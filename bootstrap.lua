@@ -531,7 +531,6 @@ end
 local function doJobStuff(job, jobLevelCap)
     local myJob = CONFIG.jobMapping[Player.job] or Player.job
 
-    local haveGc = QuestCompleted(702) or QuestCompleted(701) or QuestCompleted(703)
     local haveChocobo = QuestCompleted(1162)
     local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
     local canDoPorta = QuestCompleted(4522)
@@ -555,7 +554,7 @@ local function doJobStuff(job, jobLevelCap)
     end
 
     -- Quest 715 is "First Contact" - sanity check for job quests
-    local timeToJob = not deadlockedByAirship and (haveGc or haveChocobo) and QuestCompleted(715)
+    local timeToJob = not deadlockedByAirship and haveChocobo and QuestCompleted(715)
 
     if timeToJob then
         if doingSomeJobQuests(job, 50) then

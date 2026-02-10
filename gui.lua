@@ -98,9 +98,6 @@ local function drawDebugPanel()
     GUI:Separator()
     
     local prereqs = {
-        {id = 702, name = "GC (Maelstrom)"},
-        {id = 701, name = "GC (Twin Adder)"},
-        {id = 703, name = "GC (Immortal Flames)"},
         {id = 1162, name = "Chocobo"},
         {id = 952, name = "Airship Quest (Has)"},
         {id = 953, name = "Airship Quest (Complete)"},
@@ -128,13 +125,11 @@ local function drawDebugPanel()
     ColoredText(0.8, 0.8, 0.2, "Decision Logic")
     GUI:Separator()
     
-    local haveGc = QuestCompleted(702) or QuestCompleted(701) or QuestCompleted(703)
     local haveChocobo = QuestCompleted(1162)
     local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
     local canDoPorta = QuestCompleted(4522)
-    local timeToJob = not deadlockedByAirship and (haveGc or haveChocobo) and QuestCompleted(715)
+    local timeToJob = not deadlockedByAirship and haveChocobo and QuestCompleted(715)
     
-    GUI:Text("Have GC: " .. (haveGc and "Yes" or "No"))
     GUI:Text("Have Chocobo: " .. (haveChocobo and "Yes" or "No"))
     GUI:Text("Deadlocked by Airship: " .. (deadlockedByAirship and "Yes" or "No"))
     GUI:Text("Can Do Porta: " .. (canDoPorta and "Yes" or "No"))
