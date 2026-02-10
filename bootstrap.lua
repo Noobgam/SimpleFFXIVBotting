@@ -308,9 +308,10 @@ local function setQuestingProfile(targetProfile, aether)
                 questSubRule = subRule,
             }
         }))
+        local res = NoobgamUtils.SetQuestingProfile(targetProfile)
         QuestOpts_100_v1_QuestRule = rule
         QuestOpts_100_v1_QuestSubRule = subRule
-        return NoobgamUtils.SetQuestingProfile(targetProfile)
+        return res
     end
     return true
 end
