@@ -336,7 +336,7 @@ local function ensureProfileEnabled(profile, job)
     end
 
     if profile == "msq" then
-        if setQuestingProfile(CONFIG.msqProfile) then
+        if not setQuestingProfile(CONFIG.msqProfile) then
             return
         end
 
