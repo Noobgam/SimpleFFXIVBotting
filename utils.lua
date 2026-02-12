@@ -50,4 +50,18 @@ function NoobgamUtils.SetQuestingProfile(profileName)
     end
 end
 
+--- @param path string
+--- @return string|nil content
+function NoobgamUtils.ReadFile(path)
+    local handle = io.open(path)
+
+    if not handle then
+        return nil
+    end
+
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
 return NoobgamUtils

@@ -66,7 +66,7 @@ local function closeUselessControls()
 end
 
 local function onUpdate()
-    if not GUI_Manager.Enabled then
+    if not NoobgamConfigManager.Config.enabled then
         return
     end
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
@@ -89,5 +89,10 @@ local function onDraw()
     GUI_Manager.Draw()
 end
 
+local function preinit()
+    NoobgamConfigManager.ReadConfig()
+end
+
+RegisterEventHandler([[Module.Initalize]], preinit, [[NoobgamSidekick.Preinit]])
 RegisterEventHandler("Gameloop.Update", onUpdate, "NoobgamSidekick.Update")
 RegisterEventHandler("Gameloop.Draw", onDraw, "NoobgamSidekick.Draw")
