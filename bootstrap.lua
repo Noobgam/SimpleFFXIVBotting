@@ -281,20 +281,6 @@ local function setQuestingProfile(targetProfile, aether)
 
     gQuestGatherAetherCurrents = true
 
-    if Player.localmapid == 614
-        or Player.localmapid == 613
-        or Player.localmapid == 816
-        or Quest:GetQuestCurrentStep(4521) == 3
-        or Quest:GetQuestCurrentStep(4902) == 1
-    then
-        subRule = "All"
-        gQuestGatherAetherCurrents = false
-    end
-
-    if Player.localmapid == 397 then
-        gQuestGatherAetherCurrents = false
-    end
-
     if gQuestProfile ~= targetProfile or QuestOpts_100_v1_QuestRule ~= rule or QuestOpts_100_v1_QuestSubRule ~= subRule then
         log("Setting quest profile. " .. json.encode({
             source = {
@@ -344,21 +330,6 @@ local function ensureProfileEnabled(profile, job)
         if KitanoiFuncs and KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
             log("KDF is still doing something, will let it be. Questing disabled temporarily")
             wait(5000)
-            return
-        end
-
-        local questWithUnskippableDungeon = nil
-        for k, v in pairs(CONFIG.questStepIdToDungeonId) do
-            for stepId, did in pairs(v) do
-                if Quest:GetQuestCurrentStep(k) == stepId then
-                    questWithUnskippableDungeon = did
-                end
-            end
-        end
-
-        if questWithUnskippableDungeon ~= nil then
-            log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
-            wait(15000)
             return
         end
 
@@ -625,6 +596,21 @@ function MsqBootstrap.CommonMsqCycle(params)
     end
 
     if openJobChests() then
+        return true
+    end
+
+    local questWithUnskippableDungeon = nil
+    for k, v in pairs(CONFIG.questStepIdToDungeonId) do
+        for stepId, did in pairs(v) do
+            if Quest:GetQuestCurrentStep(k) == stepId then
+                questWithUnskippableDungeon = did
+            end
+        end
+    end
+
+    if questWithUnskippableDungeon ~= nil then
+        log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
+        wait(15000)
         return true
     end
 
