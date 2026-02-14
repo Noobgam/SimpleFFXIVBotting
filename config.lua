@@ -9,6 +9,7 @@ end
 
 ---@class DynamicAccountConfig
 ---@field enabled boolean
+---@field mode "Bootstrap"|"Ravana"|"Helper"
 ---@field bootstrapConfig? (BootstrapConfigPart[]|nil)
 
 local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\configs\\"
@@ -16,6 +17,7 @@ local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\configs\\"
 --- @type DynamicAccountConfig
 local defaultConfig = {
     enabled = false,
+    mode="Bootstrap"
 }
 
 local function getStaticConfigPath()
@@ -35,6 +37,7 @@ function NoobgamConfigManager.ReadConfig()
     end
     ---@diagnostic disable-next-line: param-type-mismatch
     NoobgamConfigManager.Config = json.decode(NoobgamUtils.ReadFile(path))
+    NoobgamConfigManager.Config.mode = NoobgamConfigManager.Config.mode
 
     return NoobgamConfigManager.Config
 end

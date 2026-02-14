@@ -599,6 +599,17 @@ function MsqBootstrap.CommonMsqCycle(params)
         return true
     end
 
+    local neededDungeon = MsqClearHelper.DetectNeededDungeon()
+    if neededDungeon ~= nil then
+        if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
+            log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
+            wait(15000)
+            return true
+        end
+        MsqClearHelper.Role = "farmer"
+        MsqClearHelper.Update()
+        return true
+    end
     ensureProfileEnabled("msq")
     return true
 end
