@@ -16,16 +16,21 @@ local function drawModePicker()
     GUI:Text("Select Mode:")
     GUI:SameLine()
 
-    if GUI:RadioButton("Bootstrap", GUI_Manager.SelectedMode == "Bootstrap") then
-        GUI_Manager.SelectedMode = "Bootstrap"
+    if GUI:RadioButton("Bootstrap", NoobgamConfigManager.Config.mode == "Bootstrap") then
+        NoobgamConfigManager.Config.mode = "Bootstrap"
     end
 
     GUI:SameLine()
 
-    if GUI:RadioButton("Ravana", GUI_Manager.SelectedMode == "Ravana") then
-        GUI_Manager.SelectedMode = "Ravana"
+    if GUI:RadioButton("Ravana", NoobgamConfigManager.Config.mode == "Ravana") then
+        NoobgamConfigManager.Config.mode = "Ravana"
     end
 
+    GUI:SameLine()
+
+    if GUI:RadioButton("Helper", NoobgamConfigManager.Config.mode == "Helper") then
+        NoobgamConfigManager.Config.mode = "Helper"
+    end
     GUI:Separator()
 end
 
@@ -42,6 +47,11 @@ local function drawRavanaFarmGUI()
 
     GUI:Separator()
     GUI:Text("Gil: " .. tostring(GilCount()))
+end
+
+local function drawHelperGUI()
+    GUI:Text("MSQ Bootstrap helper")
+    GUI:Separator()
 end
 
 local function drawDebugPanel()
@@ -315,6 +325,8 @@ function GUI_Manager.Draw()
             drawRavanaFarmGUI()
         elseif GUI_Manager.SelectedMode == "Bootstrap" then
             drawBootstrapUI()
+        elseif GUI_Manager.SelectedMode == "Helper" then
+            drawHelperGUI()
         end
     end
 

@@ -77,8 +77,9 @@ local function onUpdate()
     local mapping = {
         ["Ravana"] = RavanaFarm.Update,
         ["Bootstrap"] = MsqBootstrap.Update,
+        ["Helper"] = MsqClearHelper.HostUpdate,
     }
-    local func = mapping[GUI_Manager.SelectedMode]
+    local func = mapping[NoobgamConfigManager.Config.mode]
     if func == nil then
         error("No such mode")
     end

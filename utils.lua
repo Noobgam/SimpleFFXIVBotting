@@ -50,13 +50,32 @@ function NoobgamUtils.SetQuestingProfile(profileName)
     end
 end
 
+--- @return string|nil
+function NoobgamUtils.ExtractInviterName()
+    local tooltip = GetControlStrings("SelectYesno", 2)
+    if tooltip == nil then
+        return nil
+    end
+    if tooltip:sub(1, 5) ~= "Join " then
+        return nil
+    end
+    for i = 6, #tooltip do
+        local char = string.sub(tooltip, i, i)
+        local byte_val = string.byte(char)
+        if byte_val > 126 or byte_val < 32 then
+            return tooltip:sub(6, i - 1)
+        end
+    end
+    return nil
+end
+
 --- @param path string
---- @return string|nil content
+--- @return string content
 function NoobgamUtils.ReadFile(path)
     local handle = io.open(path)
 
     if not handle then
-        return nil
+        error("Could not open the file")
     end
 
     local result = handle:read("*a")
