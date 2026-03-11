@@ -22,6 +22,9 @@ local questStepIdToDungeonId = {
     [3885] = { [5] = 77 },  -- Ramuh
     [84] = { [4] = 79 },    -- shiva
     [369] = { [3] = 84 },   -- chrysalis
+    -- 24 main raids not supported in public addon.
+    -- if you know how to create an alliance without a PushButton - I can implement this and make public
+    -- they are included here, but ignored in the farmer handle flow
     [1202] = { [2] = 92 },  -- lota
     [1474] = { [4] = 102 }, -- cyrcus
     [494] = { [3] = 111 },  -- woda
@@ -118,15 +121,16 @@ function MsqClearHelper.RegisterForClear(dungeonId)
     saveSharedState(state)
 end
 
---- Remove registration (farmer calls this when done)
-function MsqClearHelper.UnregisterClear()
-    log("Unregistering clear for: " .. Player.name)
+--- Remove registration (farmer calls this when done or host calls it for farmer)
+function MsqClearHelper.UnregisterClear(regname)
+    local name = regname or Player.name
+    log("Unregistering clear for: " .. regname)
 
     local state = loadSharedState()
 
     local newRequests = {}
     for _, req in ipairs(state.requests) do
-        if req.farmerName ~= Player.name then
+        if req.farmerName ~= name then
             table.insert(newRequests, req)
         end
     end
@@ -170,6 +174,35 @@ function MsqClearHelper.DetectNeededDungeon()
     end
 
     return nil
+end
+
+local function ensureUnderSizedParty()
+    if MsqClearHelper.SettingsValid then
+        return true
+    end
+
+    if IsControlOpen("ContentsFinderSetting") then
+        local data = GetControlData("ContentsFinderSetting", "UnderSizedParty")
+        if tostring(data) ~= "true" then
+            UseControlAction("ContentsFinderSetting", "UnderSizedParty", 1)
+            wait(500)
+            return false
+        end
+        UseControlAction("ContentsFinderSetting", "Confirm")
+        wait(500)
+        MsqClearHelper.SettingsValid = true
+        return false
+    end
+
+    if not IsControlOpen("ContentsFinder") then
+        ActionList:Get(10, 33):Cast()
+        wait(500)
+        return false
+    end
+
+    UseControlAction("ContentsFinder", "Settings")
+    wait(500)
+    return false
 end
 
 --- Initialize as host
@@ -230,13 +263,30 @@ local function updateHost()
             return true
         end
 
+        if IsControlOpen("SelectYesno") then
+            log("Pressing yes")
+            UseControlAction("SelectYesno", "Yes")
+            wait(2000)
+            return true
+        end
+
         log("Disbanding party")
         SendTextCommand("/pcmd breakup")
         wait(2000)
         return true
     end
 
+    if IsControlOpen("ContentsFinderConfirm") then
+        log("Confirming dungeon entry")
+        UseControlAction("ContentsFinderConfirm", "Confirm")
+        wait(2000)
+        return true
+    end
+
     if MsqClearHelper.CurrentDungeonId and isFarmerInParty() then
+        if not ensureUnderSizedParty() then
+            return true
+        end
         log("Party ready, entering dungeon: " .. MsqClearHelper.CurrentDungeonId)
         Duty:JoinDuty(2, MsqClearHelper.CurrentDungeonId)
         wait(2000)
@@ -283,6 +333,7 @@ local function updateFarmer()
     end
 
     local neededDungeon = MsqClearHelper.DetectNeededDungeon()
+    ensureProfileEnabled("none")
     MsqClearHelper.NeededDungeon = neededDungeon
     if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
         return false
@@ -309,6 +360,7 @@ local function leaveDuty()
     local info = Duty:GetActiveDutyInfo()
     local in_dungeon = table.valid(info)
     MsqClearHelper.NeedToDisband = true
+
     if not in_dungeon then
         log("Needtodisband true because leaving dungeon")
         return true
@@ -322,6 +374,9 @@ local function leaveDuty()
         if not IsControlOpen("SelectYesno") then
             log("Leaving via ContentsFinderMenu")
             UseControlAction("ContentsFinderMenu", "Leave")
+            if MsqClearHelper.Role == "farmer" then
+                MsqClearHelper.UnregisterClear()
+            end
             wait(2000)
             return
         else
@@ -403,7 +458,11 @@ function MsqClearHelper.Update()
     local inDungeon = table.valid(Duty:GetActiveDutyInfo())
     if inDungeon then
         -- use KDF profiles here?
-        NoobgamUtils.SwitchMode("Assist")
+        if gBotMode ~= "Assist" then
+            NoobgamUtils.SwitchMode("Assist")
+            wait(1000)
+            return
+        end
         if not FFXIV_Common_BotRunning then
             log("Enabling bot")
             ffxivminion.DutyCurrentData = {}

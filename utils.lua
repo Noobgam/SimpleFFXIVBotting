@@ -83,4 +83,29 @@ function NoobgamUtils.ReadFile(path)
     return result
 end
 
+---@param entity Entity
+---@param buff_id number
+---@return boolean whether buff exists
+function NoobgamUtils.hasBuff(entity, buff_id)
+    for _, buff in pairs(entity.buffs) do
+        if buff.id == buff_id then
+            return true
+        end
+    end
+    return false
+end
+
+function NoobgamUtils.PickClosestExit()
+    return NoobgamUtils.PickFirstEntity("contentid=2006235;2000139;2000370;2000370;2000275;2001610;2001871;2000683;2000605;2000788;2000596;2001161;2000493,maxdistance=75,targetable")
+end
+
+--- @return Entity|nil
+function NoobgamUtils.PickFirstEntity(query)
+    local entities = EntityList(query)
+    for _, enemy in pairs(entities) do
+        return enemy
+    end
+    return nil
+end
+
 return NoobgamUtils

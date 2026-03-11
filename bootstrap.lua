@@ -580,20 +580,6 @@ function MsqBootstrap.CommonMsqCycle(params)
         return true
     end
 
-    local questWithUnskippableDungeon = nil
-    for k, v in pairs(CONFIG.questStepIdToDungeonId) do
-        for stepId, did in pairs(v) do
-            if Quest:GetQuestCurrentStep(k) == stepId then
-                questWithUnskippableDungeon = did
-            end
-        end
-    end
-
-    if questWithUnskippableDungeon ~= nil then
-        log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
-        wait(15000)
-        return true
-    end
 
     if doJobStuff(params.job, params.jobLevelCap) then
         return true
@@ -607,6 +593,7 @@ function MsqBootstrap.CommonMsqCycle(params)
             return true
         end
         MsqClearHelper.Role = "farmer"
+        ensureProfileEnabled("none")
         MsqClearHelper.Update()
         return true
     end
