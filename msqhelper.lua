@@ -205,22 +205,13 @@ local function ensureUnderSizedParty()
     return false
 end
 
---- Initialize as host
-function MsqClearHelper.InitAsHost()
-    log("Initializing as host")
-    MsqClearHelper.Role = "host"
+function MsqClearHelper.Reset()
+    log("Resetting msq")
     MsqClearHelper.CurrentDungeonId = nil
     MsqClearHelper.CurrentFarmer = nil
     MsqClearHelper.NeedToDisband = false
-    FileDelete(sharedStatePath)
-end
-
---- Initialize as farmer
-function MsqClearHelper.InitAsFarmer()
-    log("Initializing as farmer")
-    MsqClearHelper.Role = "farmer"
-    MsqClearHelper.CurrentDungeonId = nil
     MsqClearHelper.LastBroadcast = 0
+    FileDelete(sharedStatePath)
 end
 
 --- Check if farmer is in party
@@ -372,9 +363,7 @@ local function leaveDuty()
         if not IsControlOpen("SelectYesno") then
             log("Leaving via ContentsFinderMenu")
             UseControlAction("ContentsFinderMenu", "Leave")
-            if MsqClearHelper.Role == "farmer" then
-                MsqClearHelper.UnregisterClear()
-            end
+            MsqClearHelper.Reset()
             wait(2000)
             return
         else

@@ -593,7 +593,7 @@ function MsqBootstrap.CommonMsqCycle(params)
             return true
         end
         MsqClearHelper.Role = "farmer"
-        ensureProfileEnabled("none")
+        NoobgamPrivateAPI.SetKDFToNone()
         MsqClearHelper.Update()
         return true
     end
