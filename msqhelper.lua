@@ -212,6 +212,7 @@ function MsqClearHelper.InitAsHost()
     MsqClearHelper.CurrentDungeonId = nil
     MsqClearHelper.CurrentFarmer = nil
     MsqClearHelper.NeedToDisband = false
+    FileDelete(sharedStatePath)
 end
 
 --- Initialize as farmer
@@ -257,9 +258,7 @@ local function updateHost()
     if MsqClearHelper.NeedToDisband then
         if not table.valid(EntityList.myparty) then
             log("Party disbanded, resetting")
-            MsqClearHelper.NeedToDisband = false
-            MsqClearHelper.CurrentDungeonId = nil
-            MsqClearHelper.CurrentFarmer = nil
+            MsqClearHelper.InitAsHost()
             return true
         end
 
@@ -389,11 +388,6 @@ local function leaveDuty()
 end
 
 local function fight()
-    local exit = NoobgamUtils.PickClosestExit()
-    if exit ~= nil and exit.targetable then
-        log("Exit is visible")
-        return leaveDuty()
-    end
     local playerTarget = Player:GetTarget()
     if playerTarget ~= nil and NoobgamUtils.hasBuff(playerTarget, 775) then
         Player:ClearTarget()
@@ -452,6 +446,12 @@ function MsqClearHelper.Update()
             MsqClearHelper.WaitCondition = nil
         end
         return true
+    end
+
+    local exit = NoobgamUtils.PickClosestExit()
+    if exit ~= nil and exit.targetable then
+        log("Exit is visible")
+        return leaveDuty()
     end
 
     local inDungeon = table.valid(Duty:GetActiveDutyInfo())
