@@ -246,10 +246,16 @@ local function handleInvites()
 end
 
 local function updateHost()
+    if not MsqClearHelper.CurrentFarmer then
+        if table.valid(EntityList.myparty) then
+            MsqClearHelper.NeedToDisband = true
+        end
+    end
+
     if MsqClearHelper.NeedToDisband then
         if not table.valid(EntityList.myparty) then
             log("Party disbanded, resetting")
-            MsqClearHelper.InitAsHost()
+            MsqClearHelper.Reset()
             return true
         end
 
