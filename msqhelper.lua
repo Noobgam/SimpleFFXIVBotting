@@ -333,7 +333,6 @@ local function updateFarmer()
     end
 
     local neededDungeon = MsqClearHelper.DetectNeededDungeon()
-    ensureProfileEnabled("none")
     MsqClearHelper.NeededDungeon = neededDungeon
     if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
         return false
