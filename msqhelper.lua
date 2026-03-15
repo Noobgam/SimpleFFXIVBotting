@@ -452,6 +452,7 @@ function MsqClearHelper.Update()
     local inDungeon = table.valid(Duty:GetActiveDutyInfo())
     if inDungeon then
         -- use KDF profiles here?
+        MsqClearHelper.InDungeon = true
         if gBotMode ~= "Assist" then
             NoobgamUtils.SwitchMode("Assist")
             wait(1000)
