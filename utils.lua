@@ -99,6 +99,14 @@ function NoobgamUtils.PickClosestExit()
     return NoobgamUtils.PickFirstEntity("contentid=2006235;2000139;2000370;2000370;2000275;2001610;2001871;2000683;2000605;2000788;2000596;2001161;2000493,maxdistance=75,targetable")
 end
 
+--- Calculates the 2D distance between two positions.
+--- @param start Position The starting position
+--- @param finish Position The ending position
+--- @return number The 2D distance between the start and finish positions
+function NoobgamUtils.calculateDist(start, finish)
+    return math.distance2d(start.x, start.z, finish.x, finish.z)
+end
+
 --- @return Entity|nil
 function NoobgamUtils.PickFirstEntity(query)
     local entities = EntityList(query)

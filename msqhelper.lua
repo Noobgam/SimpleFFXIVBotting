@@ -427,6 +427,46 @@ local function fight()
     return false
 end
 
+local function fightBlue()
+    local dd = nil
+    for _, v in pairs(EntityList("name=Dragonkiller,targetable")) do
+        if v.targetable or (dd ~= nil and dd.id > v.id) then
+            dd = v
+        end
+    end
+    if dd ~= nil then
+        if NoobgamUtils.calculateDist(dd.pos, Player.pos) > 3 then
+            Player:MoveTo(dd.pos.x, dd.pos.y, dd.pos.z)
+            local sprint = ActionList:Get(1, 3)
+            if sprint and sprint:IsReady() and sprint:Cast() then
+                log("Used sprint")
+            end
+        else
+            Player:Stop()
+            Player:Interact(dd.id)
+        end
+        return false
+    end
+
+    local shield = nil
+    for _, v in pairs(EntityList("contentId=2005541,targetable")) do
+        if v.targetable or (shield ~= nil and shield.id > v.id) then
+            shield = v
+        end
+    end
+    if shield ~= nil then
+        if NoobgamUtils.calculateDist(shield.pos, Player.pos) > 2 then
+            Player:MoveTo(shield.pos.x, shield.pos.y, shield.pos.z)
+        else
+            Player:Stop()
+            Player:Interact(shield.id)
+        end
+        return false
+    end
+
+    return fight()
+end
+
 function MsqClearHelper.HostUpdate()
     MsqClearHelper.Role = "host"
     MsqClearHelper.Update()
@@ -465,7 +505,11 @@ function MsqClearHelper.Update()
             wait(5000)
             return
         end
-        fight()
+        if Player.localmapid == 436 then
+            fightBlue()
+        else
+            fight()
+        end
         return false
     else
         if MsqClearHelper.InDungeon then
