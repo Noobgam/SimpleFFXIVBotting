@@ -428,6 +428,26 @@ local function fight()
 end
 
 local function fightBlue()
+    if not MsqClearHelper.BlueEngaged then
+        local engagePos = { x = -5, y = 0, z = 0 }
+        if NoobgamUtils.calculateDist(Player.pos, engagePos) > 2 then
+            log("Walking to blue engage position")
+            Player:MoveTo(engagePos.x, engagePos.y, engagePos.z, 0)
+            wait(500)
+            return
+        end
+        MsqClearHelper.BlueEngaged = true
+        MsqClearHelper.BlueWaitUntil = Now() + 20000
+        log("Reached engage position, waiting 20s")
+        return
+    end
+
+    if MsqClearHelper.BlueWaitUntil ~= nil and Now() < MsqClearHelper.BlueWaitUntil then
+        log("Waiting before blue fight")
+        wait(1000)
+        return
+    end
+    MsqClearHelper.BlueWaitUntil = nil
     local dd = nil
     for _, v in pairs(EntityList("name=Dragonkiller,targetable")) do
         if v.targetable or (dd ~= nil and dd.id > v.id) then
@@ -518,6 +538,8 @@ function MsqClearHelper.Update()
             MsqClearHelper.NeedToDisband = true
             MsqClearHelper.UnregisterClear()
             MsqClearHelper.CurrentDungeonId = nil
+            MsqClearHelper.BlueEngaged = nil
+            MsqClearHelper.BlueWaitUntil = nil
         end
     end
 
