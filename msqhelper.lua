@@ -427,6 +427,84 @@ local function fight()
     return false
 end
 
+local function susano()
+    local exit = NoobgamUtils.PickClosestExit()
+    if exit ~= nil and exit.targetable then
+        log("Exit really visible without argus. leaving duty")
+        leaveDuty()
+        return
+    end
+    if not Player.alive then
+        if MsqClearHelper.Died == nil then
+            MsqClearHelper.Died = GetTickCount()
+        end
+        -- if dead and raised
+        if NoobgamUtils.hasBuff(Player, 148) and IsControlOpen("SelectYesno") then
+            PressYesNo(true)
+            return
+        end
+        if MsqClearHelper.Died < GetTickCount() - 30000 then
+            if IsControlOpen("_NotificationRevive") then
+                log("Raising myself, 30 seconds are done")
+                UseControlAction("_NotificationRevive", "OpenRevive")
+            end
+            if IsControlOpen("SelectYesno") then
+                PressYesNo(true)
+                return
+            end
+        end
+        return
+    end
+    MsqClearHelper.Died = nil
+
+    local sprint = ActionList:Get(1, 3)
+    if sprint and sprint:IsReady() and sprint:Cast() then
+        log("Used sprint")
+    end
+
+    if MsqClearHelper.Role == "farmer" then
+        local sword = NoobgamUtils.PickFirstEntity("contentid=2008185")
+        if sword ~= nil and sword.targetable then
+            if NoobgamUtils.calculateDist(Player.pos, sword.pos) > 2 then
+                Player:MoveTo(sword.pos.x, sword.pos.y, sword.pos.z)
+            else
+                Player:Stop()
+                Player:Interact(sword.id)
+            end
+            return
+        end
+    end
+
+    -- host fights all, farmer fights when no sword is available
+    local fightPos = { x = 10, y = 0, z = 0 }
+    if NoobgamUtils.calculateDist(Player.pos, fightPos) > 3 then
+        Player:MoveTo(fightPos.x, fightPos.y, fightPos.z)
+        wait(500)
+        return
+    end
+
+    local tar = Player:GetTarget()
+    if tar == nil or not tar.alive or NoobgamUtils.calculateDist(Player.pos, tar.pos) > 15 then
+        local targets = EntityList("alive,attackable")
+        local closestTarget = nil
+        local dc = nil
+        for k, v in pairs(targets) do
+            local vdc = NoobgamUtils.calculateDist(Player.pos, v.pos)
+            if v.alive and (dc == nil or dc > vdc or v.name == "Ama-no-iwato") then
+                closestTarget = v
+                dc = vdc
+            end
+        end
+        if closestTarget == nil then
+            Player:ClearTarget()
+        else
+            Player:SetTarget(closestTarget.id)
+        end
+        wait(100)
+        return
+    end
+end
+
 local function fightBlue()
     if not MsqClearHelper.BlueEngaged then
         local engagePos = { x = -5, y = 0, z = 0 }
@@ -527,6 +605,8 @@ function MsqClearHelper.Update()
         end
         if Player.localmapid == 436 then
             fightBlue()
+        elseif Player.localmapid == 674 then
+            susano()
         else
             fight()
         end
