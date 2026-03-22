@@ -396,10 +396,11 @@ local function castrumFluminis()
 
     -- flip offset every 10 seconds: either -5 or +5
     local offsetSign = math.floor(GetTickCount() / 10000) % 2 == 0 and 1 or -1
-    local offset = offsetSign * 5
+    local offset = offsetSign * 3
 
     if playerTarget == nil then
         log("Finding new target to attack")
+        --- @type Entity|nil
         local target = nil
         local entities = EntityList("alive,aggressive,attackable")
         for _, enemy in pairs(entities) do
@@ -431,6 +432,9 @@ local function castrumFluminis()
         )
         wait(500)
     else
+        if playerTarget.contentId ~= 7225 then
+            offset = 0
+        end
         Player:MoveTo(
             playerTarget.pos.x + offset,
             playerTarget.pos.y,
