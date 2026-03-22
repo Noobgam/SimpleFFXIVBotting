@@ -35,7 +35,8 @@ local questStepIdToDungeonId = {
     [2345] = { [8] = 60 },
     [2489] = { [2] = 243 },
     [2532] = { [5] = 263 }, -- emanation
-    [2553] = { [3] = 239 }  -- the royal menagerie
+    [2553] = { [3] = 239 },  -- the royal menagerie
+    [3074] = { [3] = 537 },  -- castrum fluminis
 }
 
 local primalDungeons = { 59, 60, 61 }
@@ -382,6 +383,65 @@ local function leaveDuty()
     return
 end
 
+local function castrumFluminis()
+    local playerTarget = Player:GetTarget()
+    if playerTarget ~= nil and NoobgamUtils.hasBuff(playerTarget, 775) then
+        Player:ClearTarget()
+        playerTarget = nil
+    end
+    if ActionList:IsCasting() then
+        wait(200)
+        return
+    end
+
+    -- flip offset every 10 seconds: either -5 or +5
+    local offsetSign = math.floor(GetTickCount() / 10000) % 2 == 0 and 1 or -1
+    local offset = offsetSign * 5
+
+    if playerTarget == nil then
+        log("Finding new target to attack")
+        local target = nil
+        local entities = EntityList("alive,aggressive,attackable")
+        for _, enemy in pairs(entities) do
+            if not NoobgamUtils.hasBuff(enemy, 775) then
+                target = enemy
+                break
+            end
+        end
+        if target == nil then
+            log("Didn't find aggressive targets. Will lookup non-aggressive")
+            local entities = EntityList("alive,attackable")
+            for _, enemy in pairs(entities) do
+                if not NoobgamUtils.hasBuff(enemy, 775) then
+                    target = enemy
+                    break
+                end
+            end
+        end
+
+        if target == nil then
+            return false
+        end
+        Player:SetTarget(target.id)
+        Player:MoveTo(
+            target.pos.x + offset,
+            target.pos.y,
+            target.pos.z,
+            1
+        )
+        wait(500)
+    else
+        Player:MoveTo(
+            playerTarget.pos.x + offset,
+            playerTarget.pos.y,
+            playerTarget.pos.z,
+            1
+        )
+        wait(500)
+    end
+    return false
+end
+
 local function fight()
     local playerTarget = Player:GetTarget()
     if playerTarget ~= nil and NoobgamUtils.hasBuff(playerTarget, 775) then
@@ -591,6 +651,9 @@ function MsqClearHelper.Update()
     if inDungeon then
         -- use KDF profiles here?
         MsqClearHelper.InDungeon = true
+        if MsqClearHelper.FightStarted == nil then
+            MsqClearHelper.FightStarted = GetTickCount()
+        end
         if gBotMode ~= "Assist" then
             NoobgamUtils.SwitchMode("Assist")
             wait(1000)
@@ -607,6 +670,8 @@ function MsqClearHelper.Update()
             fightBlue()
         elseif Player.localmapid == 674 then
             susano()
+        elseif Player.localmapid == 778 then
+            castrumFluminis()
         else
             fight()
         end
@@ -615,6 +680,7 @@ function MsqClearHelper.Update()
         if MsqClearHelper.InDungeon then
             log("Left dungeon, marking for disband")
             MsqClearHelper.InDungeon = false
+            MsqClearHelper.FightStarted = nil
             MsqClearHelper.NeedToDisband = true
             MsqClearHelper.UnregisterClear()
             MsqClearHelper.CurrentDungeonId = nil
