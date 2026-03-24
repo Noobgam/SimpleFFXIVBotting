@@ -384,69 +384,6 @@ local function leaveDuty()
     return
 end
 
-local function castrumFluminis()
-    local playerTarget = Player:GetTarget()
-    if playerTarget ~= nil and NoobgamUtils.hasBuff(playerTarget, 775) then
-        Player:ClearTarget()
-        playerTarget = nil
-    end
-    if ActionList:IsCasting() then
-        wait(200)
-        return
-    end
-
-    -- flip offset every 10 seconds: either -5 or +5
-    local offsetSign = math.floor(GetTickCount() / 10000) % 2 == 0 and 1 or -1
-    local offset = offsetSign * 3
-
-    if playerTarget == nil then
-        log("Finding new target to attack")
-        --- @type Entity|nil
-        local target = nil
-        local entities = EntityList("alive,aggressive,attackable")
-        for _, enemy in pairs(entities) do
-            if not NoobgamUtils.hasBuff(enemy, 775) then
-                target = enemy
-                break
-            end
-        end
-        if target == nil then
-            log("Didn't find aggressive targets. Will lookup non-aggressive")
-            local entities = EntityList("alive,attackable")
-            for _, enemy in pairs(entities) do
-                if not NoobgamUtils.hasBuff(enemy, 775) then
-                    target = enemy
-                    break
-                end
-            end
-        end
-
-        if target == nil then
-            return false
-        end
-        Player:SetTarget(target.id)
-        Player:MoveTo(
-            target.pos.x + offset,
-            target.pos.y,
-            target.pos.z,
-            1
-        )
-        wait(500)
-    else
-        if playerTarget.contentId ~= 7225 then
-            offset = 0
-        end
-        Player:MoveTo(
-            playerTarget.pos.x + offset,
-            playerTarget.pos.y,
-            playerTarget.pos.z,
-            1
-        )
-        wait(500)
-    end
-    return false
-end
-
 local function fight()
     local playerTarget = Player:GetTarget()
     if playerTarget ~= nil and NoobgamUtils.hasBuff(playerTarget, 775) then
@@ -685,14 +622,16 @@ function MsqClearHelper.Update()
             fightBlue()
         elseif Player.localmapid == 674 then
             susano()
-        elseif Player.localmapid == 778 then
-            castrumFluminis()
         else
             fight()
         end
         return false
     else
         NoobgamPrivateAPI.SetKDFToNone()
+        if KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
+            log("Disabling KDF, not in dungeon")
+            KitanoiFuncs.EnableAddon("kdf", false)
+        end
         if MsqClearHelper.InDungeon then
             log("Left dungeon, marking for disband")
             MsqClearHelper.InDungeon = false
