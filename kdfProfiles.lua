@@ -247,7 +247,44 @@ if NoobgamKdfProfiles == nil then
             },
             overheadmarkers = {},
             excludeavoid = {16060,16062,16063},
-        }
+        },
+        [847] = {
+            name = "The Dying Gasp",
+            mesh = "",
+            dutyid = 847,
+            level = 80,
+            expansion = 5,
+            creator = "Noobgam",
+            notes = "Requires 8 characters.\n\n2 tanks, 2 healers, 4 dps.",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
+            },
+            interacts = {
+                [1] = {contentid = 2000139, priority = 1, req = {type = "noenemy"}, type = "Exit"},
+            },
+            tankat = {
+                [1] = {contentid = 8352, frompercent = 100, topercent = 0, pos = {x = 100, y = 0, z = 100}},
+            },
+            bossids = {
+                8352, -- Hades
+            },
+            enemytargetdistance = 40,
+            prioritytargetdistance = 40,
+            prioritytarget = {
+                [1] = {contentid = 8352, priority = 1, type = "Hades"},
+                [2] = {contentid = 8826, priority = 2, type = "Shadow of the Ancients"},
+            },
+            advancedavoid = {
+            },
+            overheadmarkers = {},
+            excludeavoid = {
+
+            },
+        },
     }
 end
 

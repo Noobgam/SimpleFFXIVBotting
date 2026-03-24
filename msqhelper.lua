@@ -126,7 +126,7 @@ end
 --- Remove registration (farmer calls this when done or host calls it for farmer)
 function MsqClearHelper.UnregisterClear(regname)
     local name = regname or Player.name
-    log("Unregistering clear for: " .. regname)
+    log("Unregistering clear for: " .. name)
 
     local state = loadSharedState()
 
