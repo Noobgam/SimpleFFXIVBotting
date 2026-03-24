@@ -358,6 +358,11 @@ local function leaveDuty()
     local in_dungeon = table.valid(info)
     MsqClearHelper.NeedToDisband = true
 
+    if KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
+        log("Disabling kit cause leaving duty")
+        KitanoiFuncs.EnableAddon("kdf", false)
+    end
+
     if not in_dungeon then
         log("Needtodisband true because leaving dungeon")
         return true
