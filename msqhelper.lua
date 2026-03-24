@@ -35,8 +35,9 @@ local questStepIdToDungeonId = {
     [2345] = { [8] = 60 },
     [2489] = { [2] = 243 },
     [2532] = { [5] = 263 }, -- emanation
-    [2553] = { [3] = 239 },  -- the royal menagerie
-    [3074] = { [3] = 537 },  -- castrum fluminis
+    [2553] = { [3] = 239 }, -- the royal menagerie
+    [3074] = { [3] = 537 }, -- castrum fluminis
+    [3320] = { [2] = 657 }, -- titania (the dancing plague)
 }
 
 local primalDungeons = { 59, 60, 61 }
@@ -658,6 +659,16 @@ function MsqClearHelper.Update()
         if MsqClearHelper.FightStarted == nil then
             MsqClearHelper.FightStarted = GetTickCount()
         end
+        local kdfProfile = NoobgamKdfProfiles[Player.localmapid]
+        if kdfProfile ~= nil then
+            KitanoiFuncs.LoadDungeonTbl(kdfProfile)
+            if not KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
+                log("Enabling KDF")
+                KitanoiFuncs.EnableAddon("kdf", true)
+                wait(1000)
+            end
+            return
+        end
         if gBotMode ~= "Assist" then
             NoobgamUtils.SwitchMode("Assist")
             wait(1000)
@@ -681,6 +692,7 @@ function MsqClearHelper.Update()
         end
         return false
     else
+        NoobgamPrivateAPI.SetKDFToNone()
         if MsqClearHelper.InDungeon then
             log("Left dungeon, marking for disband")
             MsqClearHelper.InDungeon = false

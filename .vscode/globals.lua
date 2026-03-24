@@ -1185,7 +1185,7 @@ end
 
 KitanoiFuncs = {}
 
---- @param addon "dungeon framework"
+--- @param addon "kdf"
 --- @param status boolean
 function KitanoiFuncs.EnableAddon(addon, status)
 end
