@@ -38,6 +38,7 @@ local questStepIdToDungeonId = {
     [2553] = { [3] = 239 }, -- the royal menagerie
     [3074] = { [3] = 537 }, -- castrum fluminis
     [3320] = { [2] = 657 }, -- titania (the dancing plague)
+    [3643] = { [5] = 666 }, -- innocence (the crown of the immaculate)
 }
 
 local primalDungeons = { 59, 60, 61 }
