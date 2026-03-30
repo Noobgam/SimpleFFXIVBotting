@@ -338,6 +338,14 @@ local function updateFarmer()
         return false
     end
     if neededDungeon then
+        if FFXIV_Common_BotRunning then
+            log("Disabling bot, need to clear dungeon")
+            ffxivminion.DutyCurrentData = {}
+            ml_global_information.ToggleRun()
+            wait(5000)
+            return
+        end
+        NoobgamPrivateAPI.SetKDFToNone()
         if MsqClearHelper.CurrentDungeonId ~= neededDungeon then
             MsqClearHelper.CurrentDungeonId = neededDungeon
             MsqClearHelper.RegisterForClear(neededDungeon)

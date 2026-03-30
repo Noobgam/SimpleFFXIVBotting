@@ -586,14 +586,12 @@ function MsqBootstrap.CommonMsqCycle(params)
 
     local neededDungeon = MsqClearHelper.CurrentDungeonId or MsqClearHelper.DetectNeededDungeon()
     if neededDungeon ~= nil then
-        ensureProfileEnabled("none")
         if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
             log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
             wait(15000)
             return true
         end
         MsqClearHelper.Role = "farmer"
-        NoobgamPrivateAPI.SetKDFToNone()
         MsqClearHelper.Update()
         return true
     end
