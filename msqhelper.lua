@@ -316,6 +316,7 @@ local function updateHost()
 end
 
 local function updateFarmer()
+    gStuckRemesh = false
     handleInvites()
 
     if IsControlOpen("ContentsFinderConfirm") then
