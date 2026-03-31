@@ -104,7 +104,7 @@ local function preinit()
     if not FolderExists(folder) then
         FolderCreate(folder)
     end
-    local path_to_log = folder .. "\\" .. GetMinionAppUUID() .. ".log"
+    local path_to_log = folder .. "\\" .. NoobgamUtils.GetMinionAppUUIDHex() .. ".log"
     NoobgamUtils.shim_d(path_to_log)
 end
 

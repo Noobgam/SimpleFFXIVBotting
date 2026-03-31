@@ -50,6 +50,38 @@ function NoobgamUtils.SetQuestingProfile(profileName)
     end
 end
 
+local function decStringToHex32(dec)
+  dec = tostring(dec):gsub("^0+", "")
+  if dec == "" then return ("0"):rep(32) end
+
+  local hex = {}
+  while dec ~= "0" do
+    local rem, out, started = 0, {}, false
+    for i = 1, #dec do
+      local n = rem * 10 + (dec:byte(i) - 48)
+      local q = math.floor(n / 16)
+      rem = n % 16
+      if q ~= 0 or started then
+        out[#out+1] = string.char(48 + q)
+        started = true
+      end
+    end
+    hex[#hex+1] = string.format("%x", rem)
+    dec = started and table.concat(out) or "0"
+  end
+
+  local s = table.concat(hex):reverse()
+  return string.rep("0", 32 - #s) .. s
+end
+
+function NoobgamUtils.GetMinionAppUUIDHex()
+    local decStr = GetMinionAppUUID()
+    if decStr == nil then
+        error("GetMinionAppUUID() returned nil")
+    end
+    return decStringToHex32(decStr)
+end
+
 function NoobgamUtils.shim_d(log_path)
     local original = original_d or d
     if original_d == nil then
