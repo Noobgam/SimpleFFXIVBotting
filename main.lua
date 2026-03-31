@@ -66,10 +66,18 @@ local function closeUselessControls()
 end
 
 local function onUpdate()
-    if not NoobgamConfigManager.Config.enabled then
+    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+        if NoobgamConfigManager.Status == FFXIV.GAMESTATE.INGAME then
+            d("[NoobgamSideKick]: No longer logged in. Resetting everything")
+            MsqBootstrap.Reset()
+            RavanaFarm.Reset()
+            MsqClearHelper.Reset()
+        end
+        NoobgamConfigManager.Status = MGetGameState()
         return
     end
-    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+    NoobgamConfigManager.Status = FFXIV.GAMESTATE.INGAME
+    if not NoobgamConfigManager.Config.enabled then
         return
     end
 
@@ -92,6 +100,12 @@ end
 
 local function preinit()
     NoobgamConfigManager.ReadConfig()
+    local folder = GetLuaModsPath() .. "\\SimpleFFXIVBotting\\logs"
+    if not FolderExists(folder) then
+        FolderCreate(folder)
+    end
+    local path_to_log = folder .. "\\" .. GetMinionAppUUID() .. ".log"
+    NoobgamUtils.shim_d(path_to_log)
 end
 
 RegisterEventHandler([[Module.Initalize]], preinit, [[NoobgamSidekick.Preinit]])

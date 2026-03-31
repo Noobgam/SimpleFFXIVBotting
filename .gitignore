@@ -3,3 +3,4 @@ obfuscation_config.lua
 Prometheus
 configs
 shared
+logs

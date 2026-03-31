@@ -50,6 +50,47 @@ function NoobgamUtils.SetQuestingProfile(profileName)
     end
 end
 
+function NoobgamUtils.shim_d(log_path)
+    local original = original_d or d
+    if original_d == nil then
+        log("Shimming _G.d to write to " .. log_path)
+    else
+        log("Moving the shim d to " .. log_path)
+    end
+    original_d = original
+
+    local function new_d(message)
+        if message == nil then
+            return
+        end
+        local status, err = pcall(function()
+            local messageContent
+            if type(message) == "table" then
+                messageContent = json.encode(message)
+            else
+                messageContent = tostring(message or "<nil>")
+            end
+
+            local t = os.date("*t")
+            local timestamp = string.format(
+                "%04d-%02d-%02d %02d:%02d:%02d",
+                t.year, t.month, t.day,
+                t.hour, t.min, t.sec
+            )
+
+            local line = string.format("[%s] %s\n", timestamp, messageContent)
+            FileWrite(log_path, line, true)
+        end)
+        if not status then
+            original_d('[ERROR] Something weird was attempted to be written. Shim ignored. ' .. err)
+        end
+
+        original_d(message)
+    end
+
+    d = new_d
+end
+
 --- @return string|nil
 function NoobgamUtils.ExtractInviterName()
     local tooltip = GetControlStrings("SelectYesno", 2)
