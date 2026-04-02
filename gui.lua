@@ -208,6 +208,15 @@ local function drawBootstrapUI()
     GUI:Text("MSQ Bootstrap")
     GUI:Separator()
 
+    if NoobgamConfigManager.Config.mode == "Bootstrap" then
+        local checked, enabledPressed = GUI:Checkbox("Use duty finder for unskippable", NoobgamConfigManager.Config.useDutyFinder or false)
+        GUI:Separator()
+        if enabledPressed then
+            NoobgamConfigManager.Config.useDutyFinder = checked
+            NoobgamConfigManager.SaveConfig()
+        end
+    end
+
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
         ColoredText(0.8, 0.1, 0.2, "Not in game")
         return

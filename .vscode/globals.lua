@@ -718,7 +718,7 @@ function Duty:GetActiveDutyObjectives()
 end
 
 --- Get the active queue status
---- @return number queue status id. 4 - in dungeon, 3 - commence, 0 - nothing
+--- @return number queue status id. 4 - in dungeon, 3 - commence, 2 - in queue, 0 - nothing
 function Duty:GetQueueStatus()
     -- This is just a placeholder for the editor
     return 3

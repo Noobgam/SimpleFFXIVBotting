@@ -43,6 +43,10 @@ local questStepIdToDungeonId = {
     [3778] = { [2] = 738 }, --- WoL (the seat of sacrifice)
 }
 
+local dungeonsToClearInDutyFinder = {
+    [738] = true,
+}
+
 local primalDungeons = { 59, 60, 61 }
 
 --- @param millis integer
@@ -348,6 +352,17 @@ local function updateFarmer()
             return
         end
         NoobgamPrivateAPI.SetKDFToNone()
+        if NoobgamConfigManager.Config.useDutyFinder and dungeonsToClearInDutyFinder[neededDungeon] then
+            if Duty:GetQueueStatus() == 0 then
+                log("Registering for duty " .. tostring(neededDungeon))
+                Duty:JoinDuty(2, neededDungeon)
+                wait(5000)
+                return
+            end
+            wait(5000)
+            log("Waiting for queue to pop")
+            return true
+        end
         if MsqClearHelper.CurrentDungeonId ~= neededDungeon then
             MsqClearHelper.CurrentDungeonId = neededDungeon
             MsqClearHelper.RegisterForClear(neededDungeon)

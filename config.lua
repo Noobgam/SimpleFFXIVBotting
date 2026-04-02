@@ -10,6 +10,7 @@ end
 ---@class DynamicAccountConfig
 ---@field enabled boolean
 ---@field mode "Bootstrap"|"Ravana"|"Helper"
+---@field useDutyFinder? boolean - whether to use duty finder for duties where helpers can't help you (for now only seat of sacrifice)
 ---@field bootstrapConfig? (BootstrapConfigPart[]|nil)
 
 local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\configs\\"
