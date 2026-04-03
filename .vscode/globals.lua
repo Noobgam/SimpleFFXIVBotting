@@ -1853,3 +1853,7 @@ SkillMgr = {}
 -- will cust current selected ACR thing without acr itself being enabled.
 function SkillMgr.Cast()
 end
+
+--- @param arg number|nil
+function TimeSince(arg)
+end

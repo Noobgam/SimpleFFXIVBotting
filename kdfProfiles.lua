@@ -444,8 +444,332 @@ if NoobgamKdfProfiles == nil then
             excludeavoid = {20250,20251},
             puddledata = {},
             dontcastwhenmoving = true,
+        },
+        [992] = {
+            name = "The Dark Inside (Story) US",
+            mesh = "[Trial] The Dark Inside",
+            dutyid = 992,
+            level = 83,
+            expansion = 6,
+            creator = "Kitanoi",
+            notes = "Requires 8 accounts, requires Exe.\nExtremely healer intensive during styx, if your healer ACR cannot handle it, manually heal on 1 character. Or take 3 healers and 1 tank.",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = 98, y = 0, z = 115}},
+            },
+            interacts = {},
+            bossids = {
+                10456, -- Zodiark
+            },
+            forcemeleerange = {10456},
+            enemytargetdistance = 80,
+            prioritytarget = {},
+            tankat = {
+                [1] = {contentid = 10456, desc = "Tank Zodiark at this pos from 100-1%", frompercent = 100, pos = {x = 115.25, y = 0, z = 85.41}, topercent = 0},
+            },
+            advancedavoid = {
+                [1] = {
+                    type = "custom",
+                    customdetails = "function",
+                    functionname = "customfunction",
+                    functioncode = [[
+                        function customfunction()
+                            NoobgamKdfProfiles.FarmEcho(5, 70, 0, 120)
+                        end
+                    ]]
+                },
+                [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "316", "false") == true) then
+                                if (ActionList:Get(131):IsReady()) then
+                                    ActionList:Get(131):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [3] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "316", "false") == true) then
+                                if (ActionList:Get(25873):IsReady()) then
+                                    ActionList:Get(25873):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [4] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "316", "false") == true) then
+                                if (ActionList:Get(3600):IsReady()) then
+                                    ActionList:Get(3600):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [5] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "316", "false") == true) then
+                                if (ActionList:Get(124):IsReady()) then
+                                    ActionList:Get(124):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [6] = {type = "custom", customdetails = "libraryfunction",functioncode = "KitanoiFuncs.ZodiarkStory()"},
+            },
+            hasbuff = {},
+            overheadmarkers = {
+                [1] = {
+                    contentid = "10456",
+                    desc = "Ania",
+                    detectwho = "me",
+                    id = 218,
+                    pos = {[1] = {x = 83.2, y = 0, z = 85.8}},
+                    returnpos = {[1] = {x = 115.8, y = 0, z = 85.8}},
+                    timetoreturn = 10,
+                    type = "move",
+                },
+                [2] = {
+                    contentid = "10456",
+                    desc = "Styx",
+                    detectwho = "any",
+                    id = 316,
+                    pos = {
+                        [1] = {x = 100, y = 0, z = 100},
+                        [2] = {x = 100, y = 0, z = 100},
+                        [3] = {x = 100, y = 0, z = 100},
+                        [4] = {x = 100, y = 0, z = 100},
+                        [5] = {x = 100, y = 0, z = 100},
+                        [6] = {x = 100, y = 0, z = 100},
+                        [7] = {x = 100, y = 0, z = 100},
+                        [8] = {x = 100, y = 0, z = 100},
+                    },
+                    returnpos = {},
+                    timetoreturn = 10,
+                    type = "move",
+                },
+            },
+            excludeavoid = {},
+            dontexcludeaoe = {26579},
+            limitbreak = {
+                [1] = {contentid = 10456, level = 1, percent = 15, type = "ranged"},
+                [2] = {contentid = 10456, level = 2, percent = 15, type = "ranged"},
+                [3] = {contentid = 10456, level = 3, percent = 15, type = "ranged"},
+            },
+            meleeavoid = false,
+        },
+        [997] = {
+            name = "The Final Day",
+            mesh = "[Trial] The Final Day",
+            dutyid = 997,
+            level = 90,
+            expansion = 6,
+            creator = "Hikari/Kitanoi",
+            notes = "",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
+            },
+            interacts = {},
+            bossids = {
+                10448, -- The Endsinger -- Meteion Card
+            },
+            enemytargetdistance = 50,
+            prioritytarget = {},
+            avoidentity = {
+                [1] = {contentid = 10443, radius = 7},
+            },
+            tankat = {},
+            advancedavoid = {
+                [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "27753", "27754", "false") == true) then
+                                if (ActionList:Get(1, 7548):IsReady()) then
+                                    ActionList:Get(1, 7548):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "27753", "27754", "false") == true) then
+                                if (ActionList:Get(1, 7559):IsReady()) then
+                                    ActionList:Get(1, 7559):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [3] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "27753", "27754", "false") == true) then
+                                if (ActionList:Get(1, 3):IsReady()) then
+                                    ActionList:Get(1, 3):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [4] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (ScanForCaster("", "100", "27753", "27754", "false") == true) then
+                                if (ActionList:Get(1, 7388):IsReady()) then
+                                    ActionList:Get(1, 7388):Cast(Player.id)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [5] = {
+                    castingid = 26185,
+                    pos = {
+                        [1] = {x = 84.99, y = 0, z = 95.73},
+                        [2] = {x = 88.92, y = 0, z = 99.48},
+                        [3] = {x = 93.13, y = 0, z = 101.62},
+                        [4] = {x = 98.5, y = 0, z = 102.73},
+                        [5] = {x = 103.77, y = 0, z = 102.24},
+                        [6] = {x = 107.33, y = 0, z = 101.26},
+                        [7] = {x = 110.61, y = 0, z = 100.04},
+                        [8] = {x = 114.24, y = 0, z = 98.15},
+                    },
+                    type = "multifixed",
+                },
+                [6] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            local ents = MEntityList("contentid=10448,maxdistance=50")
+                            if (ents ~= nil and TableSize(ents) > 0) then
+                                for i, e in pairs(ents) do
+                                    if (e ~= nil) then
+                                        if (not e.targetable and math.distance2d({x = 100, y = 0, z = 88}, e.pos) < 2) then
+                                            KitanoiNavigation.NavAPI.MoveTo(112, 0, 85)
+                                            KitanoiSettings.avoidingtime = Now()
+                                        elseif (not e.targetable and math.distance2d({x = 91.5, y = 0, z = 91.5}, e.pos) < 2) then
+                                            KitanoiNavigation.NavAPI.MoveTo(100, 0, 81)
+                                            KitanoiSettings.avoidingtime = Now()
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [8] = {
+                    castingid = 27754,
+                    pos = {
+                        [1] = {x = 100, y = 0, z = 100},
+                        [2] = {x = 100, y = 0, z = 100},
+                        [3] = {x = 100, y = 0, z = 100},
+                        [4] = {x = 100, y = 0, z = 100},
+                        [5] = {x = 100, y = 0, z = 100},
+                        [6] = {x = 100, y = 0, z = 100},
+                        [7] = {x = 100, y = 0, z = 100},
+                        [8] = {x = 100, y = 0, z = 100},
+                    },
+                    type = "multifixed",
+                },
+                [9] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            local target = Player:GetTarget()
+                            if (Player.incombat and not target and KitanoiFuncs.HowManyAOES() == 0) then
+                                if
+                                    (KitanoiFuncs.ReturnSortedParty()[1] == Player.id or KitanoiFuncs.ReturnSortedParty()[2] == Player.id or
+                                        KitanoiFuncs.ReturnSortedParty()[3] == Player.id or
+                                        KitanoiFuncs.ReturnSortedParty()[4] == Player.id)
+                                then
+                                    KitanoiNavigation.NavAPI.MoveTo(91, 0, 100)
+                                    KitanoiSettings.avoidingtime = Now()
+                                elseif
+                                    (KitanoiFuncs.ReturnSortedParty()[5] == Player.id or KitanoiFuncs.ReturnSortedParty()[6] == Player.id or
+                                        KitanoiFuncs.ReturnSortedParty()[7] == Player.id or
+                                        KitanoiFuncs.ReturnSortedParty()[8] == Player.id)
+                                then
+                                    KitanoiNavigation.NavAPI.MoveTo(107, 0, 104)
+                                    KitanoiSettings.avoidingtime = Now()
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [10] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            if (Player.role == 1 and not MIsCasting() and KitanoiFuncs.ScanForCaster2(27481)) then
+                                local action = ActionList:Get(5, 3)
+                                if (action) then
+                                    action:Cast(Player)
+                                end
+                            end
+                        end
+                    ]]
+                },
+                [11] = {
+                    type = "custom",
+                    customdetails = "function",
+                    functionname = "customfunction",
+                    functioncode = [[
+                        function customfunction()
+                            NoobgamKdfProfiles.FarmEcho(5, 70, 0, 120)
+                        end
+                    ]]
+                },
+            },
+            hasbuff = {},
+            overheadmarkers = {},
+            excludeavoid = {27754,26203},
+            dontexcludeaoe = {26158,26171},
+            tankbuster = {26195,26190},
         }
     }
+
+    ---@param echoStacks integer number of echo stacks to get
+    ---@param x number x to walk off the cliff
+    ---@param y number yto walk off the cliff
+    ---@param z number z to walk off the cliff
+    function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z)
+        if not Player.alive then
+            ---@diagnostic disable-next-line: undefined-global
+            KitanoiNavigation.NavAPI.Stop()
+        end
+
+        -- echo sometimes has delay for messaging
+        if TimeSince(KitanoiSettings.InCombatTimer) < 15000 then
+            KitanoiSettings.StoreVar = {}
+        elseif TimeSince(KitanoiSettings.InCombatTimer) < 30000 and KitanoiSettings.StoreVar.EchoStacks == nil then
+            local echoStacksWeHave = 0
+            if HasBuff(Player, 42) then
+                local chatlines = GetChatLines()
+                for k, v in pairs(chatlines) do
+                    if v.code == 57 and v.subcode == 8 then
+                        local percent = tonumber(v.line:match("increased by (%d+)%%"))
+                        if percent then
+                            echoStacksWeHave = percent / 10
+                            break
+                        end
+                    end
+                end
+            end
+            KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
+        else
+            local echoStacksWeHave = KitanoiSettings.StoreVar.EchoStacks or 0
+            if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > 60 * 1000 * 3 then
+                ---@diagnostic disable-next-line: undefined-global
+                KitanoiNavigation.NavAPI.MoveTo(x, y, z)
+                KitanoiSettings.avoidingtime = Now() + 2000
+                KitanoiSettings.DisableKDFAvoidance = true
+            else
+                KitanoiSettings.DisableKDFAvoidance = false
+            end
+        end
+    end
 end
 
 return NoobgamKdfProfiles
