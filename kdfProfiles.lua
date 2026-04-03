@@ -711,16 +711,17 @@ if NoobgamKdfProfiles == nil then
                         end
                     ]]
                 },
-                [11] = {
-                    type = "custom",
-                    customdetails = "function",
-                    functionname = "customfunction",
-                    functioncode = [[
-                        function customfunction()
-                            NoobgamKdfProfiles.FarmEcho(5, 70, 0, 120)
-                        end
-                    ]]
-                },
+                -- you can't solo it.
+                -- [11] = {
+                --     type = "custom",
+                --     customdetails = "function",
+                --     functionname = "customfunction",
+                --     functioncode = [[
+                --         function customfunction()
+                --             NoobgamKdfProfiles.FarmEcho(5, 70, 0, 120)
+                --         end
+                --     ]]
+                -- },
             },
             hasbuff = {},
             overheadmarkers = {},
