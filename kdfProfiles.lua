@@ -762,7 +762,7 @@ if NoobgamKdfProfiles == nil then
             for _, v in pairs(chatlines) do
                 if v.code == 57 and v.subcode == 8 then
                     local percent = tonumber(v.line:match("increased by (%d+)%%"))
-                    if false and percent and echoStacksWeHave < percent / 10 then
+                    if percent and echoStacksWeHave < percent / 10 then
                         echoStacksWeHave = percent / 10
                         d("[EchoStacker] detected " .. echoStacksWeHave .. " from chat")
                     end
