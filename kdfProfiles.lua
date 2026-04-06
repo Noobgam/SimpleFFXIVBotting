@@ -728,6 +728,47 @@ if NoobgamKdfProfiles == nil then
             excludeavoid = {27754,26203},
             dontexcludeaoe = {26158,26171},
             tankbuster = {26195,26190},
+        },
+        [1071] = {
+            name = "Storm's Crown",
+            mesh = "Storm's Crown",
+            dutyid = 1071,
+            level = 90,
+            expansion = 6,
+            creator = "Noobgam",
+            notes = "This is dogshit quality, doesn't do anything",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
+            },
+            interacts = {},
+            bossids = {
+                10298, -- Barbariccia
+            },
+            enemytargetdistance = 50,
+            prioritytarget = {},
+            avoidentity = {
+            },
+            meshchange={
+                [1] = {type = "castid", castid = 30130, newmesh = "Storm's Crown v2"},
+            },
+            tankat = {},
+            dontexcludeaoe = {
+                30146,
+                30138,
+                30144,
+                30145,
+                30147,
+                30176,
+                30140,
+                30167,
+                30158,
+            },
+            overheadmarkers={},
+            tankbuster = {30135},
         }
     }
 
