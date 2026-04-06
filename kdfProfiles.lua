@@ -741,34 +741,43 @@ if NoobgamKdfProfiles == nil then
             KitanoiNavigation.NavAPI.Stop()
         end
 
-        -- echo sometimes has delay for messaging
-        if TimeSince(KitanoiSettings.InCombatTimer) < 15000 then
-            KitanoiSettings.StoreVar = {}
-        elseif TimeSince(KitanoiSettings.InCombatTimer) < 30000 and KitanoiSettings.StoreVar.EchoStacks == nil then
-            local echoStacksWeHave = 0
-            if HasBuff(Player, 42) then
-                local chatlines = GetChatLines()
-                for k, v in pairs(chatlines) do
-                    if v.code == 57 and v.subcode == 8 then
-                        local percent = tonumber(v.line:match("increased by (%d+)%%"))
-                        if percent then
+        local echoStacksWeHave = KitanoiSettings.StoreVar.EchoStacks or 0
+
+        if HasBuff(Player, 42) then
+            local ctrls = GetControls()
+            for _, ctrl in pairs(ctrls) do
+                if ctrl.name == "_WideText" and ctrl:IsOpen() then                
+                    local wideLine = ctrl:GetStrings()[3]
+                    if wideLine ~= nil then
+                        local percent = tonumber(wideLine:match("increased by (%d+)%%"))
+                        if percent and echoStacksWeHave < percent / 10 then
                             echoStacksWeHave = percent / 10
-                            break
+                            d("[EchoStacker] detected " .. echoStacksWeHave .. " from wode text")
                         end
                     end
                 end
             end
-            KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
-        else
-            local echoStacksWeHave = KitanoiSettings.StoreVar.EchoStacks or 0
-            if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > 60 * 1000 * 3 then
-                ---@diagnostic disable-next-line: undefined-global
-                KitanoiNavigation.NavAPI.MoveTo(x, y, z)
-                KitanoiSettings.avoidingtime = Now() + 2000
-                KitanoiSettings.DisableKDFAvoidance = true
-            else
-                KitanoiSettings.DisableKDFAvoidance = false
+            local chatlines = GetChatLines()
+            -- DGAF. Just rely on chat going fast.
+            for _, v in pairs(chatlines) do
+                if v.code == 57 and v.subcode == 8 then
+                    local percent = tonumber(v.line:match("increased by (%d+)%%"))
+                    if false and percent and echoStacksWeHave < percent / 10 then
+                        echoStacksWeHave = percent / 10
+                        d("[EchoStacker] detected " .. echoStacksWeHave .. " from chat")
+                    end
+                end
             end
+        end
+
+        KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
+        if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > 60 * 1000 * 3 then
+            ---@diagnostic disable-next-line: undefined-global
+            KitanoiNavigation.NavAPI.MoveTo(x, y, z)
+            KitanoiSettings.avoidingtime = Now() + 2000
+            KitanoiSettings.DisableKDFAvoidance = true
+        else
+            KitanoiSettings.DisableKDFAvoidance = false
         end
     end
 end
