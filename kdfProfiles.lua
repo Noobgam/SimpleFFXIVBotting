@@ -752,7 +752,7 @@ if NoobgamKdfProfiles == nil then
                         local percent = tonumber(wideLine:match("increased by (%d+)%%"))
                         if percent and echoStacksWeHave < percent / 10 then
                             echoStacksWeHave = percent / 10
-                            d("[EchoStacker] detected " .. echoStacksWeHave .. " from wode text")
+                            d("[EchoStacker] detected " .. echoStacksWeHave .. " from wide text")
                         end
                     end
                 end
@@ -768,6 +768,8 @@ if NoobgamKdfProfiles == nil then
                     end
                 end
             end
+        else
+            echoStacksWeHave = 0
         end
 
         KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
