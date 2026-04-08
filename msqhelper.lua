@@ -42,7 +42,7 @@ local questStepIdToDungeonId = {
     [3654] = { [9] = 687 }, -- hades (the dying gasp)
     [3778] = { [2] = 738 }, --- WoL (the seat of sacrifice)
     [4398] = { [2] = 802 }, --- zodiark (the dark inside)
-    [3364] = { [3] = 796 }, --- endsinger (the Final day)
+    [4464] = { [3] = 796 }, --- endsinger (the Final day)
 }
 
 local dungeonsToClearInDutyFinder = {
