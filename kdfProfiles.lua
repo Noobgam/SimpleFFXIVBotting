@@ -55,7 +55,7 @@ if NoobgamKdfProfiles == nil then
             bossids = {
                 5640, -- Shinryu -- Shinryu Card
             },
-            enemytargetdistance = 70,
+            enemytargetdistance = 100,
             prioritytarget = {
                 [1] = {contentid = 5789, priority = 1, type = "Tail"},
             },
