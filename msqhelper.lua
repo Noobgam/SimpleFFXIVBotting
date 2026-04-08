@@ -583,13 +583,17 @@ local function fightBlue()
         return false
     end
 
+    local bismarck = nil
+    for _, v in pairs(EntityList("alive,name=Bismarck,aggro")) do
+        bismarck = v
+    end
     local shield = nil
     for _, v in pairs(EntityList("contentId=2005541,targetable")) do
         if v.targetable or (shield ~= nil and shield.id > v.id) then
             shield = v
         end
     end
-    if shield ~= nil then
+    if shield ~= nil and bismarck ~= nil and bismarck.castinginfo.channelingid == 4918 then
         if NoobgamUtils.calculateDist(shield.pos, Player.pos) > 2 then
             Player:MoveTo(shield.pos.x, shield.pos.y, shield.pos.z)
         else
