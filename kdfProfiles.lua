@@ -885,7 +885,7 @@ if NoobgamKdfProfiles == nil then
         },
         [1071] = {
             name = "Storm's Crown",
-            mesh = "Storm's Crown",
+            --mesh = "Storm's Crown",
             dutyid = 1071,
             level = 90,
             expansion = 6,
@@ -905,9 +905,42 @@ if NoobgamKdfProfiles == nil then
             enemytargetdistance = 50,
             prioritytarget = {},
             avoidentity = {
+                [1] = {contentid=10300, radius = 6}
             },
-            meshchange={
-                [1] = {type = "castid", castid = 30130, newmesh = "Storm's Crown v2"},
+            meshchange={},
+            advancedavoid={
+                [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            local big = true
+                            local a = MEntityList("contentid=10298,alive,aggro")
+                            if a ~= nil then
+                                for b, c in pairs(a) do
+                                    if c.action == 30130 or c.hp.percent < 75 then
+                                        big = false
+                                    end
+                                end
+                            end
+                            local meshNeeded = (big and "Storm's Crown") or "Storm's Crown v2"
+                            if FFXIV_Common_NavMesh == meshNeeded then
+                                return
+                            end
+                            FFXIV_Common_NavMesh = meshNeeded
+                            ml_mesh_mgr.LoadNavMesh(meshNeeded)
+                        end
+                    ]]
+                },
+                [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            NoobgamKdfProfiles.BarbaricciaMits()
+                        end
+                    ]]
+                },
+                [3] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100)
+                        end
+                    ]]
+                },
             },
             tankat = {},
             dontexcludeaoe = {
@@ -921,10 +954,42 @@ if NoobgamKdfProfiles == nil then
                 30167,
                 30158,
             },
+            excludeavoid={30159},
             overheadmarkers={},
             tankbuster = {30135},
         }
     }
+
+    function NoobgamKdfProfiles.BarbaricciaMits()
+        -- you get TB right after. It's relatively safe to use all mits here, most will be still up for tb
+        if KitanoiFuncs.DoIHaveMarker(62) and KitanoiFuncs.DoIHaveMarker(352) then
+            NoobgamKdfProfiles.UseAllMits()
+        end
+    end
+
+    function NoobgamKdfProfiles.UseAllMits()
+        local mits = {
+            -- common
+            7535,
+            7531,
+
+            -- war
+            44,
+            40,
+            7388,
+
+            -- pld
+            25746,
+            7382,
+            3540,
+            3542,
+        }
+        for _, v in pairs(mits) do
+            if ActionList:Get(1, v):CanCastResult(Player.id) == 0 then
+                ActionList:Get(1, v):Cast(Player.id)
+            end
+        end
+    end
 
     ---@param echoStacks integer number of echo stacks to get
     ---@param x number x to walk off the cliff

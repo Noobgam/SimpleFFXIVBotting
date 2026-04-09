@@ -43,6 +43,7 @@ local questStepIdToDungeonId = {
     [3778] = { [2] = 738 }, --- WoL (the seat of sacrifice)
     [4398] = { [2] = 802 }, --- zodiark (the dark inside)
     [4464] = { [3] = 796 }, --- endsinger (the Final day)
+    [4597] = { [3] = 870 }, --- barbariccia (Storm's Crown)
 }
 
 local dungeonsToClearInDutyFinder = {
