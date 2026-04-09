@@ -584,6 +584,13 @@ function MsqBootstrap.CommonMsqCycle(params)
         return true
     end
 
+    if gFFXIVMinionTask == "GRIND_COMBAT" and taskName == "LT_GRIND" and FFXIV_Common_BotRunning then
+        log("[WARRIOR] grinding for some reason, will disable main bot")
+        wait(5000)
+        ml_global_information.ToggleRun()
+        return true
+    end
+
     local neededDungeon = MsqClearHelper.CurrentDungeonId or MsqClearHelper.DetectNeededDungeon()
     if neededDungeon ~= nil then
         if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
