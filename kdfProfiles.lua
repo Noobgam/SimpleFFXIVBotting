@@ -920,7 +920,7 @@ if NoobgamKdfProfiles == nil then
                                     end
                                 end
                             end
-                            local meshNeeded = (big and "Storm's Crown fixed") or "Storm's Crown small"
+                            local meshNeeded = (big and "[Trial] Storm's Crown") or "Storm's Crown v2"
                             if FFXIV_Common_NavMesh == meshNeeded then
                                 return
                             end
