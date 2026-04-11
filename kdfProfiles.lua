@@ -476,7 +476,11 @@ if NoobgamKdfProfiles == nil then
                     functionname = "customfunction",
                     functioncode = [[
                         function customfunction()
-                            NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100, 2 * 60 * 1000)
+                            local hades = next(MEntityList("aggro,contentid=8352"))
+                            if hades == nil or not hades.targetable then
+                                -- p1 he becomes untargetable
+                                NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100, 0)
+                            end
                         end
                     ]]
                 },
