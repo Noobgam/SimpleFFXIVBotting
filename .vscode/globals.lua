@@ -718,7 +718,7 @@ function Duty:GetActiveDutyObjectives()
 end
 
 --- Get the active queue status
---- @return number queue status id. 4 - in dungeon, 3 - commence, 2 - in queue, 0 - nothing
+--- @return number queue status id. 4 - in dungeon, 3 - commence, 0 - nothing
 function Duty:GetQueueStatus()
     -- This is just a placeholder for the editor
     return 3
@@ -949,6 +949,7 @@ local CrossWorldPartyMember = {}
 --- @field ismounted boolean Whether the player is mounted.
 --- @field level number The level of the entity or a player
 --- @field id number The unique identifier for the entity
+--- @field onlinestatus number|nil online status of entity if that's a player
 --- @field contentId number The content ID of the entity
 --- @field alive boolean Whether the player is alive.
 --- @field buffs table<number, Buff> A table of buffs currently applied to the player, where the key is the buff ID.
@@ -1616,6 +1617,230 @@ TP_IMMEDIATE = 0
 function ml_task_hub:Add(task, goal, prio)
 end
 
+--- @class ml_pos
+--- @field x number
+--- @field y number
+--- @field z number
+--- @field h number?
+
+--- @class ml_task
+--- @field name string
+--- @field valid boolean
+--- @field completed boolean
+--- @field auxiliary boolean
+--- @field subtask ml_task?
+--- @field process_elements table
+--- @field overwatch_elements table
+--- @field preserveSubtasks boolean?
+--- @field overwatchContinues boolean?
+--- @field breakUpdate boolean?
+--- @field pos ml_pos?
+
+--- @class ml_task_MOVETOMAP : ml_task
+--- @field name "MOVETOMAP"
+--- @field destMapID number
+--- @field tryTP boolean
+--- @field useAethernetTickets boolean
+--- @field setHomepoint boolean
+--- @field delayTimer number
+--- @field delayTime number
+--- @field pos ml_pos
+
+--- @class ml_task_MOVETOPOS : ml_task
+--- @field name "MOVETOPOS"
+--- @field pos ml_pos
+--- @field range number
+--- @field doFacing boolean
+--- @field remainMounted boolean
+--- @field useFollowMovement boolean
+--- @field useTeleport boolean
+--- @field dismountDistance number
+--- @field destMapID number
+--- @field alwaysMount boolean
+--- @field gatePos ml_pos?
+--- @field customSearch string
+--- @field customSearchCompletes boolean
+--- @field startMap number
+--- @field noFly boolean
+
+--- @class ml_task_MOVETOINTERACT : ml_task
+--- @field name "MOVETOINTERACT"
+--- @field contentid number
+--- @field interact number
+--- @field pos ml_pos
+--- @field range number?
+--- @field useTeleport boolean
+--- @field dismountDistance number
+--- @field killParent boolean
+--- @field startMap number
+--- @field conversationstring string
+--- @field conversationstrings string|table
+--- @field conversationindex number
+--- @field interactAttempts number
+--- @field maxAttempts number
+--- @field alwaysMount boolean
+--- @field interactRange3d number?
+--- @field inflight boolean?
+--- @field ignoreAggro boolean?
+
+--- @class ml_task_MOVETOFATE : ml_task
+--- @field name "MOVETOFATE"
+--- @field fateid number
+--- @field pos ml_pos
+--- @field range number
+--- @field actualPos ml_pos
+--- @field requiresPosRandomize boolean
+--- @field alwaysMount boolean
+--- @field dismountDistance number
+
+--- @class ml_task_MOVEAETHERNET : ml_task
+--- @field name "MOVEAETHERNET"
+--- @field contentid number
+--- @field interact number
+--- @field pos ml_pos
+--- @field useAethernet boolean
+--- @field unlockAethernet boolean
+--- @field isResidential boolean?
+--- @field conversationstring string
+--- @field conversationstrings string|table
+--- @field conversationindex number
+--- @field startMap number
+--- @field alwaysMount boolean
+--- @field initiatedPos ml_pos
+
+--- @class ml_task_GRIND_COMBAT : ml_task
+--- @field name "GRIND_COMBAT"
+--- @field targetid number
+--- @field pos ml_pos?
+--- @field betterTargetFunction function?
+--- @field noTeleport boolean
+--- @field noFateSync boolean
+--- @field noFlee boolean
+--- @field attackThrottle boolean
+--- @field attemptPull boolean
+--- @field canEngage boolean?
+--- @field safeDistance number?
+
+--- @class ml_task_LT_TELEPORT : ml_task
+--- @field name "LT_TELEPORT"
+--- @field aetheryte number
+--- @field mapID number
+--- @field setHomepoint boolean
+--- @field setEvac boolean
+--- @field conversationIndex number
+
+--- @class ml_task_LT_REST : ml_task
+--- @field name "LT_REST"
+
+--- @class ml_task_LT_FLEE : ml_task
+--- @field name "LT_FLEE"
+--- @field pos ml_pos
+--- @field range number
+--- @field useTeleport boolean
+--- @field alwaysMount boolean
+
+--- @class ml_task_LT_STEALTH : ml_task
+--- @field name "LT_STEALTH"
+--- @field addingStealth boolean
+--- @field droppingStealth boolean
+
+--- @class ml_task_LT_SUMMON_CHOCOBO : ml_task
+--- @field name "LT_SUMMON_CHOCOBO"
+
+--- @class ml_task_LT_USEITEM : ml_task
+--- @field name "LT_USEITEM"
+--- @field itemid number
+--- @field targetid number
+--- @field pos ml_pos
+--- @field maxTime number
+--- @field useAttempts number
+
+--- @class ml_task_AVOID : ml_task
+--- @field name "AVOID"
+--- @field targetid number
+--- @field pos ml_pos
+--- @field maxTime number
+--- @field attackTarget number
+
+--- @class ml_task_NAV_INTERACT : ml_task
+--- @field name "NAV_INTERACT"
+--- @field contentid number
+--- @field interact number
+--- @field pos ml_pos
+--- @field conversationIndex number
+--- @field conversationstrings string|table
+--- @field destMapID number?
+--- @field alwaysMount boolean
+--- @field abort function?
+
+--- @class ml_task_MESH_INTERACT : ml_task
+--- @field name "MESH_INTERACT"
+--- @field interact number
+
+--- @class ml_task_MISC_SHOPPING : ml_task
+--- @field name "MISC_SHOPPING"
+--- @field itemid number|table
+--- @field buyamount number
+--- @field id number
+--- @field mapid number
+--- @field pos ml_pos
+--- @field category number?
+--- @field subcategory number?
+--- @field itemindex number?
+
+--- @class ml_task_MISC_SWITCHCLASS : ml_task
+--- @field name "MISC_SWITCHCLASS"
+--- @field class number
+--- @field override number
+
+--- @class ml_task_MISC_SCRIPEXCHANGE : ml_task
+--- @field name "MISC_SCRIPEXCHANGE"
+--- @field categories table
+--- @field id number
+--- @field mapid number
+--- @field pos ml_pos
+--- @field aethid number?
+
+--- @alias AnyTask
+--- | ml_task_MOVETOMAP
+--- | ml_task_MOVETOPOS
+--- | ml_task_MOVETOINTERACT
+--- | ml_task_MOVETOFATE
+--- | ml_task_MOVEAETHERNET
+--- | ml_task_GRIND_COMBAT
+--- | ml_task_LT_TELEPORT
+--- | ml_task_LT_REST
+--- | ml_task_LT_FLEE
+--- | ml_task_LT_STEALTH
+--- | ml_task_LT_SUMMON_CHOCOBO
+--- | ml_task_LT_USEITEM
+--- | ml_task_AVOID
+--- | ml_task_NAV_INTERACT
+--- | ml_task_MESH_INTERACT
+--- | ml_task_MISC_SHOPPING
+--- | ml_task_MISC_SWITCHCLASS
+--- | ml_task_MISC_SCRIPEXCHANGE
+--- | ml_task
+
+--- @type number
+REACTIVE_GOAL = 2
+
+--- @type number
+TP_IMMEDIATE = 0
+
+ml_task_hub = {}
+
+--- @param task AnyTask
+--- @param goal number
+--- @param prio number
+function ml_task_hub:Add(task, goal, prio) end
+
+--- @return AnyTask
+function ml_task_hub:CurrentTask() end
+
+--- @return AnyTask
+function ml_task_hub:ThisTask() end
+
 --- KDF funcs thing, stores/loads data in C:\MINIONAPP\Bots\FFXIVMinion64\LuaMods\KitanoiFuncs\Settings\Data
 kIO = {}
 
@@ -1641,6 +1866,10 @@ gSkipUnsafeCutscene = false
 --- Whether to do disable city quests
 --- @type boolean
 QuestOpts_City_Quests = false
+
+--- do chocobo quests
+--- @type boolean
+QuestOpts_Q_Mounts = true
 
 
 --- prio huntlog over quests
@@ -1854,6 +2083,56 @@ SkillMgr = {}
 function SkillMgr.Cast()
 end
 
+-- hacks repair (whether to try to repair items with menders or other ways)
+gRepair = true
+
+--- some global task that questing sets I think
+--- @type string
+taskName = "LT_GRIND"
+
+--- some global task that questing sets I think
+--- @type string
+gFFXIVMinionTask = "GRIND_COMBAT"
+
+--- Fires a UI event to a registered agent via InputHandler (ProcessEvent)
+--- Examples:
+---  UIEvent(130, 3, {{3, 21}, {5, 1}, {0, 0}}) - enables password
+---  UIEvent(130, 3, {{3, 16},  {3, 3}, {0, 0}}) - sets the password in PF to 0003
+---  UIEvent(130, 3, {{3, 32},  {2, 1}, {0, 0}}) - remove role restrictions
+---  UIEvent(130, 3, {{3, 34},  {5,0}, {0, 0}}) - picks Alliance
+---  UIEvent(130, 3, {{3, 34},  {5,1}, {0, 0}}) - picks Alliance
+---  UIEvent(130, 3, {{3, 12},  {5,5}, {0, 0}}) - refresh ui (need after pick alliance/normal)
+--- local laby = 0; for i = 49,70 do if GetControlRawData("LookingForGroupCondition", i).value == "The Labyrinth of the Ancients" then laby = i - 49; break; end end;  UIEvent(130, 3, {{3, 13}, {5, laby}, {0, 0}})
+--- @param agentIndex integer|string The agent index (0-based)
+--- @param eventId integer The event command ID
+--- @param args {[1]: 0|2|3|4|5|6|7, [2]: any}[] Array of {AtkValueType, value} pairs
+--- AtkValueType: None(0), Bool(2), Int(3), Int64(4), UInt(5), UInt64(6), Float(7)
+--- @return nil
+function UIEvent(agentIndex, eventId, args)
+end
+
 --- @param arg number|nil
 function TimeSince(arg)
+end
+
+MEntityList = EntityList
+
+--- @class KnownMarker
+--- @field target integer
+--- @field markertype integer
+--- @field deletetime integer
+--- @field entityID2 integer
+
+--- @type table<string, KnownMarker>
+KitanoiSettings.knownmarkers = KitanoiSettings.knownmarkers
+
+KitanoiNavigation = {}
+
+--- @param x number
+--- @param y number
+--- @param z number
+function KitanoiNavigation.NavAPI.MoveTo(x, y, z)
+end
+
+function KitanoiNavigation.NavAPI.Stop()
 end
