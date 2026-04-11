@@ -464,15 +464,22 @@ if NoobgamKdfProfiles == nil then
                 [1] = {contentid = 8352, frompercent = 100, topercent = 0, pos = {x = 100, y = 0, z = 100}},
             },
             bossids = {
-                8352, -- Hades
             },
             enemytargetdistance = 40,
             prioritytargetdistance = 40,
             prioritytarget = {
-                [1] = {contentid = 8352, priority = 1, type = "Hades"},
-                [2] = {contentid = 8826, priority = 2, type = "Shadow of the Ancients"},
             },
             advancedavoid = {
+                [1] = {
+                    type = "custom",
+                    customdetails = "function",
+                    functionname = "customfunction",
+                    functioncode = [[
+                        function customfunction()
+                            NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100, 2 * 60 * 1000)
+                        end
+                    ]]
+                },
             },
             overheadmarkers = {},
             excludeavoid = {
@@ -1137,91 +1144,8 @@ if NoobgamKdfProfiles == nil then
             type = "duty",
             advancedavoid = {
                 [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
-                        function customfunction()	
-                            if NoobgamKdfProfiles.TryingToWipe then
-                                return
-                            end
-                            
-                            if KitanoiFuncs.ScanForCaster2(33922) or (NoobgamKdfProfiles.eventide or 0) > GetTickCount()) then
-                                if NoobgamKdfProfiles.eventide == nil or NoobgamKdfProfiles.eventide < GetTickCount() - 40000 then
-                                    NoobgamKdfProfiles.eventide = GetTickCount() + 20000
-                                end
-                                if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id) then
-                                    local peopleAlive = 0
-                                    for k, v in pairs(EntityList.myparty) do
-                                        if v.alive then
-                                            peopleAlive = peopleAlive + 1
-                                        end
-                                    end
-                                    if peopleAlive == 1 and (ActionList:Get(1,30).usable and not ActionList:Get(1,30).isoncd) or (ActionList:Get(1,43).usable and not ActionList:Get(1,43).isoncd) then
-                                        if (ActionList:Get(1,30)) then ActionList:Get(1,30):Cast(Player.id) end if (ActionList:Get(1,43)) then ActionList:Get(1,43):Cast(Player.id) end
-                                    end
-                                    KitanoiNavigation.NavAPI.MoveTo(105, 0, 100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                else
-                                    KitanoiNavigation.NavAPI.MoveTo(95, 0, 100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                end
-                                return
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(344)) then
-                                if (Player.role ~= 1) then
-                                    KitanoiNavigation.NavAPI.MoveTo(100,0,105)
-                                    KitanoiSettings.avoidingtime = Now()
-                                end
-                                if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id) then
-                                    KitanoiFuncs.ForceTankCoolDowns()
-                                    KitanoiNavigation.NavAPI.MoveTo(105,0,100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                end
-                                if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() ~= Player.id) then
-                                    KitanoiFuncs.ForceTankCoolDowns()
-                                    KitanoiNavigation.NavAPI.MoveTo(95,0,100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                end						
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(318) and KitanoiFuncs.HowManyAOES(true)==0) then
-                                KitanoiFuncs.ForceTankCoolDowns()
-                                KitanoiNavigation.NavAPI.MoveTo(100,0,100)
-                                KitanoiSettings.avoidingtime = Now()								
-                            end
-                            local KBSoaks = KitanoiFuncs.ScanForCaster2(33946)
-                            local KBSoaks2 = KitanoiFuncs.ScanForCaster2(33947)
-                            if ((KBSoaks or KBSoaks2) and not NoobgamKdfProfiles.DoIHaveMarker(478)) then
-                                local pt = KitanoiFuncs.ReturnSortedParty()
-                                if (pt[1] == Player.id or pt[2] == Player.id or pt[3] == Player.id or pt[4] == Player.id) then
-                                    KitanoiNavigation.NavAPI.MoveTo(88,0,100)
-                                    KitanoiSettings.avoidingtime = Now()								
-                                end
-                                if (pt[5] == Player.id or pt[6] == Player.id or pt[7] == Player.id or pt[8] == Player.id) then
-                                    KitanoiNavigation.NavAPI.MoveTo(112,0,100)
-                                    KitanoiSettings.avoidingtime = Now()							
-                                end						
-                                
-                            end
-                            local eventidesplit = KitanoiFuncs.ScanForCaster2(33922)
-                            if (eventidesplit and KitanoiFuncs.HowManyAOES(true) == 0) then
-                                if (
-                                    Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id
-                                    or Player.role == 4 and KitanoiFuncs.DetermineMainHealer() == Player.id
-                                    or KitanoiFuncs.ReturnSortedDPS()[1] == Player.id
-                                    or KitanoiFuncs.ReturnSortedDPS()[2] == Player.id
-                                ) then
-                                    KitanoiFuncs.ForceTankCoolDowns()
-                                    KitanoiNavigation.NavAPI.MoveTo(105,0,100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                end			
-                                if (
-                                    Player.role == 1 and KitanoiFuncs.DetermineMainTank() ~= Player.id
-                                    or Player.role == 4 and KitanoiFuncs.DetermineMainHealer() ~= Player.id
-                                    or KitanoiFuncs.ReturnSortedDPS()[3] == Player.id
-                                    or KitanoiFuncs.ReturnSortedDPS()[4] == Player.id
-                                ) then
-                                    KitanoiFuncs.ForceTankCoolDowns()
-                                    KitanoiNavigation.NavAPI.MoveTo(95,0,100)
-                                    KitanoiSettings.avoidingtime = Now()						
-                                end							
-                            end                            
+                        function customfunction()
+                            NoobgamKdfProfiles.Golbez()       
                         end]],
                 },
                 [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
@@ -1252,6 +1176,9 @@ if NoobgamKdfProfiles == nil then
                 35631, --nails cone
                 35628, --nails cone
                 35629, --nails cone
+                -- voidstar
+                33957,
+                33959,
             },
             dontexcludeaoe = {
 
@@ -1327,6 +1254,7 @@ if NoobgamKdfProfiles == nil then
             prioritytargetdistance = 10,
             pullenemyoutofpuddle = false,
             puddledata= {
+                
             },	
             queuetype = 1,
             requeuetimer = 10,
@@ -1639,6 +1567,98 @@ if NoobgamKdfProfiles == nil then
         end
     end
 
+    --- @param id integer
+    --- @param targetId integer|nil
+    local function useIfCan(id, targetId)
+        local ac = ActionList:Get(1, id)
+        if ac ~= nil and ac.usable and not ac.isoncd then
+            ac:Cast(targetId)
+        end
+    end
+
+    function NoobgamKdfProfiles.Golbez()
+        if NoobgamKdfProfiles.TryingToWipe then
+            return
+        end
+
+        if (KitanoiFuncs.ScanForCaster2(33957) or (NoobgamKdfProfiles.voidStar or 0) > GetTickCount()) then
+            if NoobgamKdfProfiles.eventide == nil or NoobgamKdfProfiles.eventide < GetTickCount() - 40000 then
+                NoobgamKdfProfiles.eventide = GetTickCount() + 20000
+                log("Void dust started")
+            end
+            -- we need to resolve it
+            return
+        end
+
+        if (KitanoiFuncs.ScanForCaster2(33922) or (NoobgamKdfProfiles.eventide or 0) > GetTickCount()) then
+            if NoobgamKdfProfiles.eventide == nil or NoobgamKdfProfiles.eventide < GetTickCount() - 40000 then
+                NoobgamKdfProfiles.eventide = GetTickCount() + 20000
+                log("Eventide started")
+            end
+            -- use all mits available
+            useIfCan(3626, Player.id)
+            useIfCan(24298, Player.id)
+            useIfCan(3540, Player.id)
+            useIfCan(24311, Player.id)
+
+            if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id) then
+                local peopleAlive = 0
+                for _, v in pairs(EntityList.myparty) do
+                    local ent = EntityList:Get(v.id)
+                    if ent and ent.alive then
+                        peopleAlive = peopleAlive + 1
+                    end
+                end
+                -- invuln if got caught with 2 markers
+                if HasBuff(Player, 2091) then
+                    log("Need to invuln eventide")
+                    useIfCan(30)
+                    useIfCan(43)
+                end
+                KitanoiNavigation.NavAPI.MoveTo(105, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            else
+                KitanoiNavigation.NavAPI.MoveTo(95, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            end
+            return
+        end
+        if (KitanoiFuncs.IsMarkerUp(344)) then
+            if (Player.role ~= 1) then
+                KitanoiNavigation.NavAPI.MoveTo(100, 0, 105)
+                KitanoiSettings.avoidingtime = Now()
+            end
+            if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id) then
+                KitanoiFuncs.ForceTankCoolDowns()
+                KitanoiNavigation.NavAPI.MoveTo(105, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            end
+            if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() ~= Player.id) then
+                KitanoiFuncs.ForceTankCoolDowns()
+                KitanoiNavigation.NavAPI.MoveTo(95, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            end
+        end
+        if (KitanoiFuncs.IsMarkerUp(318) and KitanoiFuncs.HowManyAOES(true) == 0) then
+            KitanoiFuncs.ForceTankCoolDowns()
+            KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+            KitanoiSettings.avoidingtime = Now()
+        end
+        local KBSoaks = KitanoiFuncs.ScanForCaster2(33946)
+        local KBSoaks2 = KitanoiFuncs.ScanForCaster2(33947)
+        if ((KBSoaks or KBSoaks2) and not NoobgamKdfProfiles.DoIHaveMarker(478)) then
+            local pt = KitanoiFuncs.ReturnSortedParty()
+            if (pt[1] == Player.id or pt[2] == Player.id or pt[3] == Player.id or pt[4] == Player.id) then
+                KitanoiNavigation.NavAPI.MoveTo(88, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            end
+            if (pt[5] == Player.id or pt[6] == Player.id or pt[7] == Player.id or pt[8] == Player.id) then
+                KitanoiNavigation.NavAPI.MoveTo(112, 0, 100)
+                KitanoiSettings.avoidingtime = Now()
+            end
+        end
+    end
+
     function NoobgamKdfProfiles.ClockPositions(x, y, z, radius)
         local cnt = NoobgamUtils.tableSize(EntityList.myparty)
         local angle = 2 * 3.14159265 / cnt
@@ -1661,7 +1681,7 @@ if NoobgamKdfProfiles == nil then
 
     --- @param markerType integer
     function NoobgamKdfProfiles.DoIHaveMarker(markerType)
-        for _, v in pairs(KitanoiSettings.knownmarkers) do 
+        for k, v in pairs(KitanoiSettings.knownmarkers) do 
             if v.markertype == markerType and v.target == Player.id then
                 return true
             end
@@ -1673,7 +1693,9 @@ if NoobgamKdfProfiles == nil then
     ---@param x number x to walk off the cliff
     ---@param y number yto walk off the cliff
     ---@param z number z to walk off the cliff
-    function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z)
+    ---@param timeOverride integer|nil
+    function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z, timeOverride)
+        local timeToEcho = timeOverride or (3 * 60 * 1000)
         if not Player.alive then
             ---@diagnostic disable-next-line: undefined-global
             KitanoiNavigation.NavAPI.Stop()
@@ -1712,12 +1734,13 @@ if NoobgamKdfProfiles == nil then
         end
 
         KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
-        if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > 60 * 1000 * 3 then
+        if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > timeToEcho then
             Player:SetAutoFollowPos(x, y, z)
             Player:SetAutoFollowOn(true)
             NoobgamKdfProfiles.TryingToWipe = true
             KitanoiSettings.avoidingtime = Now() + 2000
             KitanoiSettings.DisableKDFAvoidance = true
+            Player:SetTarget(Player.id)
         else
             KitanoiSettings.DisableKDFAvoidance = false
             NoobgamKdfProfiles.TryingToWipe = false
