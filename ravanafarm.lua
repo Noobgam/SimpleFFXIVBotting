@@ -270,7 +270,7 @@ function RavanaFarm.Update()
 
         if needRepair() then
             log("Need repair")
-            local menders = EntityList("contentid=" .. CONFIG.menderContentId)
+            local menders = EntityList("targetable,contentid=" .. CONFIG.menderContentId)
             --- @type Entity
             local mender = nil
             for _, v in pairs(menders) do
@@ -278,14 +278,23 @@ function RavanaFarm.Update()
                 break
             end
             if mender then
+                if IsControlOpen("SelectYesno") then
+                    log("Agreeing to repair")
+                    UseControlAction("SelectYesno", "Yes")
+                    return
+                end
                 if not IsControlOpen("Repair") then
+                    log("Interacting with mender to open")
                     Player:Interact(mender.id)
                     wait(500)
                 else
+                    log("Using repair")
                     local repair = GetControlByName("Repair")
                     repair:DoAction(0)
                     wait(500)
                 end
+            else
+                log("Mender doesn't exist")
             end
             return
         end

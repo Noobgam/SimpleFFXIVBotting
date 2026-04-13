@@ -163,58 +163,6 @@ local CONFIG = {
         [FFXIV.JOBS.ASTROLOGIAN] = "HEALER",
         [FFXIV.JOBS.SAGE] = "HEALER",
     },
-    --- @type table<number, table<number, number>>
-    questStepIdToDungeonId = {
-        -- You have selected Regicide
-        [1190] = {
-            [7] = 66, -- thornmarch (hard)
-        },
-        [1361] = {
-            [1] = 72, -- whorleater (hard)
-        },
-        [3885] = {
-            [5] = 77, -- Ramuh
-        },
-        [84] = {
-            [4] = 79, -- shiva
-        },
-        [369] = {
-            [3] = 84, -- chrysalis
-        },
-        [1202] = {
-            [2] = 92 -- lota
-        },
-        [1474] = {
-            [4] = 102 -- cyrcus,
-        },
-        [494] = {
-            [3] = 111, -- woda
-        },
-        [1616] = {
-            [3] = 86,
-        },
-        [1647] = {
-            [4] = 88,
-        },
-        [1669] = {
-            [5] = 90
-        },
-        [2245] = {
-            [2] = 169
-        },
-        [2345] = {
-            [8] = 60,
-        },
-        [2489] = {
-            [2] = 243
-        },
-        [2532] = {
-            [5] = 263 -- emanation
-        },
-        [2553] = {
-            [3] = 239 -- the royal menagerie
-        }
-    }
 }
 
 --- @param millis integer
