@@ -281,17 +281,18 @@ function RavanaFarm.Update()
                 if IsControlOpen("SelectYesno") then
                     log("Agreeing to repair")
                     UseControlAction("SelectYesno", "Yes")
+                    wait(1000)
                     return
                 end
                 if not IsControlOpen("Repair") then
                     log("Interacting with mender to open")
                     Player:Interact(mender.id)
-                    wait(500)
+                    wait(1000)
                 else
                     log("Using repair")
                     local repair = GetControlByName("Repair")
                     repair:DoAction(0)
-                    wait(500)
+                    wait(1000)
                 end
             else
                 log("Mender doesn't exist")
