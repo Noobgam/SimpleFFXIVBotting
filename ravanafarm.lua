@@ -359,7 +359,8 @@ function RavanaFarm.Update()
 
         -- Move to chest position and enable bot
         local p = CONFIG.chestPos
-        Player:MoveTo(p.x, p.y, p.z, 1)
+        Player:SetAutoFollowPos(p.x, p.y, p.z)
+        Player:SetAutoFollowOn(true)
         SkillMgr.Cast()
         wait(100)
     end
@@ -373,14 +374,14 @@ function RavanaFarm.Update()
         end
 
         local p = CONFIG.chestPos
-        Player:MoveTo(p.x, p.y, p.z, 1)
+        Player:SetAutoFollowPos(p.x, p.y, p.z)
 
-        if calculateDist(Player.pos, p) > 1 then
+        if calculateDist(Player.pos, p) > 0.5 then
             wait(200)
             return
         end
 
-        Player:Stop()
+        Player:SetAutoFollowOn(false)
 
         local collected = dd.collectedChests or 0
         local itemsLastFrame = dd.itemsLastFrame
@@ -422,7 +423,7 @@ function RavanaFarm.Update()
 
     -- State: ExitingDungeon
     if RavanaFarm.State == "ExitingDungeon" then
-        Player:Stop()
+        Player:SetAutoFollowOn(false)
 
         if not in_dungeon then
             log("Transitioned to selling")
