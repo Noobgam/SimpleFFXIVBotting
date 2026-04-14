@@ -31,7 +31,6 @@ if NoobgamKdfProfiles == nil then
                 [1] = {contentid = 6221, frompercent = 100, topercent = 0, pos = {x = -0.25, y = -0.12, z = -5.10}},
             },
             incombatinteract = {
-                [1] = {interactid = 2008185, type = "interact", who = "closest"},
             },
             advancedavoid = {
                 [1] = {castingid = 9506, type = "multifixed", pos = {
@@ -1229,7 +1228,7 @@ if NoobgamKdfProfiles == nil then
             queuetype = 2,
             FFA = false,
             hacks = false,
-            forcemeleerange=false,
+            meleeavoid = false,
             requeuetimer = 10,
             objectivedestinations = {
                 [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
@@ -1446,7 +1445,7 @@ if NoobgamKdfProfiles == nil then
             hasbuff = {},
             interactdistance = 20,
             interacts = {},
-            name = "Test New Dungeon ABYSSAL",
+            name = "The Abyssal Fracture",
             objectivedestinations = 
             {
                 [1] = {	objective = 1,pos = {x=100,y=0,z=100},},
@@ -1496,231 +1495,8 @@ if NoobgamKdfProfiles == nil then
             type = "duty",
             advancedavoid = {
                 [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
-                        function customfunction()	
-                            if NoobgamKdfProfiles.TryingToWipe then
-                                return
-                            end
-                            local zeromus = KitanoiFuncs.entityList("alive,attackable,targetable")
-                            local targ = Player:GetTarget()
-                            local midpoint = {x=100,y=0,z=100}
-                            local HMAOES = KitanoiFuncs.HowManyAOES(true)
-                            if (not targ and zeromus~=nil) then
-                                local i,e = next(zeromus)
-                                if (i and e) then
-                                    Player:SetTarget(i)
-                                end
-                            end
-                            local soaks = KitanoiFuncs.ScanForCaster2({35602,35603,35604,35605},nil,nil,true)  
-                            local lazer = KitanoiFuncs.ScanForCaster2(35566)
-                            local meteors = KitanoiFuncs.ScanForCaster2(35601)
-                            if (lazer or meteors) then
-                                Player:MoveTo(100,0,100)
-                                KitanoiSettings.avoidingtime = Now() + 2000					
-                            end
-                            local bubbles = KitanoiFuncs.entityList("contentid=12588")
-                            if (bubbles~=nil) then
-                                for i,e in pairs(bubbles) do
-                                    if (i and e and TensorCore.getEntitySpeed(i)>0) then
-                                        local poly1 = KitanoiFuncs.SquarePolygon(e.pos,4,6,e.pos.h,1)
-                                        KitanoiFuncs.CurrentAOEs[i] = {
-                                            type = "rectangle",
-                                            entity = i,
-                                            target = i,
-                                            pos = point1,
-                                            length = 4,
-                                            width = 4,
-                                            heading = -1.570796,		
-                                            aoeID = 0000, 
-                                            name = "",
-                                            poly = poly1,
-                                            casttime = 2,
-                                            channelingtime = 2,
-                                            deletetime = Now() + 750,
-                                        }	
-                                        KitanoiSettings.AvoidThisArea[i] = {}
-                                        KitanoiSettings.AvoidThisArea[i].poly = poly1
-                                        KitanoiSettings.AvoidThisArea[i].timer = Now() + 750	
-                                        local start, mid, endC, outlineColor, outlineThickness = TensorCore.getMoogleColors()	
-                                        Argus2.addTimedRectFilled  (750, e.pos.x, e.pos.y, e.pos.z, 6, 4, e.pos.h, start, endC, mid, 0, nil, nil, outlineColor, outlineThickness)
-                                    end
-                                end
-                            end
-                            if (soaks~=nil and soaks~=false and HMAOES == 0 and not KitanoiFuncs.IsMarkerUp(197)) then
-                                for ii,ee in pairs(soaks) do
-                                    d("soaks")
-                                    local ent = KitanoiFuncs.MGetEntity(ee.entityID)
-                                    if (ent~=nil and math.distance2d(midpoint,ent.pos)<15) then
-                                        Player:MoveTo(ent.pos.x,0,ent.pos.z)
-                                        KitanoiSettings.avoidingtime = Now() + 2000									
-                                    end
-                                end
-                            end
-                            local meteorimpact = KitanoiFuncs.ScanForCaster2(35595)
-                            
-                            if (meteorimpact) then
-                                d("meteor impact")
-                                local points = {
-                                    {x = 100.000000, y = 0.000000, z = 119.000000},
-                                    {x = 112.799022, y = 0.000000, z = 112.799022},
-                                    {x = 119.000000, y = 0.000000, z = 100.000000},
-                                    {x = 112.799022, y = 0.000000, z = 87.200978},
-                                    {x = 100.000000, y = 0.000000, z = 81},
-                                    {x = 87.200978, y = 0.000000, z = 87.200978},
-                                    {x = 81, y = 0.000000, z = 100.000000},
-                                    {x = 87.200978, y = 0.000000, z = 112.799022}
-                                }
-                                local pt = KitanoiFuncs.ReturnSortedParty()
-                                for i=1,8,1 do
-                                    if (pt[i] == Player.id) then
-                                        local mypoint = points[i]
-                                        if (mypoint) then
-                                            Player:MoveTo(mypoint.x,0,mypoint.z)
-                                            KitanoiSettings.avoidingtime = Now() + 2000								
-                                        end						
-                                    end							
-                                end
-                            end		
-                            
-                            local ahkmorn = KitanoiFuncs.ScanForCaster2(35619)
-                            if (ahkmorn) then
-                                KitanoiSettings.avoidingtime = Now() + 10000
-                            end
-                            
-                            local turning1 = KitanoiFuncs.ScanForCaster2(35910)
-                            local turningEnd11 = KitanoiFuncs.ScanForCast2(35910,6,3)
-                            local turningEnd12 = KitanoiFuncs.ScanForCast2(35910,8,6)
-                            local turningEnd1 = KitanoiFuncs.ScanForCast2(35910,11,8)
-                            if (turning1) then
-                                d("turning1")
-                                Player:MoveTo(90,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end
-                            if (turningEnd11) then
-                                d("turningEnd11")
-                                Player:MoveTo(94,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end		
-                            if (turningEnd12) then
-                                d("turningEnd12")
-                                Player:MoveTo(98,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end						
-                            if (turningEnd1) then
-                                d("turningEnd1")
-                                -- local sprint = ActionList:Get(1,3)
-                                -- if (sprint) then
-                                    -- sprint:Cast(Player.id)
-                                -- end				
-                                Player:MoveTo(118,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end			
-
-                            local turning2 = KitanoiFuncs.ScanForCaster2(35573)
-                            local turningEnd21 = KitanoiFuncs.ScanForCast2(35573,6,3)
-                            local turningEnd22 = KitanoiFuncs.ScanForCast2(35573,8,6)
-                            local turningEnd2 = KitanoiFuncs.ScanForCast2(35573,11,8)
-                            if (turning2) then
-                                d("turning2")
-                                Player:MoveTo(108,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end					
-                            if (turningEnd21) then
-                                d("turningEnd21")
-                                Player:MoveTo(104,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end		
-                            if (turningEnd22) then
-                                d("turningEnd22")
-                                Player:MoveTo(102,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end						
-                            if (turningEnd2) then
-                                d("turningEnd2")
-                                -- local sprint = ActionList:Get(1,3)
-                                -- if (sprint) then
-                                    -- sprint:Cast(Player.id)
-                                -- end
-                                Player:MoveTo(82,0,82)
-                                KitanoiSettings.avoidingtime = Now() + 20000							
-                            end
-                            
-                            if (KitanoiFuncs.IsMarkerUp(376) and not KitanoiFuncs.IsMarkerUp(100)) then
-                                d("spreadies")
-                                local points = {
-                                    {x = 100.000000, y = 0.000000, z = 107.000000},
-                                    {x = 106.464466, y = 0.000000, z = 106.464466},
-                                    {x = 107.000000, y = 0.000000, z = 100.000000},
-                                    {x = 106.464466, y = 0.000000, z = 93.535534},
-                                    {x = 100.000000, y = 0.000000, z = 93.000000},
-                                    {x = 93.535534, y = 0.000000, z = 93.535534},
-                                    {x = 93.000000, y = 0.000000, z = 100.000000},
-                                    {x = 93.535534, y = 0.000000, z = 106.464466}
-                                }
-                                local pt = KitanoiFuncs.ReturnSortedParty()
-                                for i=1,8,1 do
-                                    if (pt[i] == Player.id) then
-                                        local mypoint = points[i]
-                                        if (mypoint) then
-                                            Player:MoveTo(mypoint.x,0,mypoint.z)
-                                            KitanoiSettings.avoidingtime = Now() + 2000								
-                                        end						
-                                    end							
-                                end
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(376) and Player.role ==4 and not Player:IsMoving()) then
-                                KitanoiFuncs.HealDoomMulti()
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(376) and Player.role ==1 ) then
-                                -- local action = ActionList:Get(5,3)
-                                -- if ( action ) then
-                                    -- action:Cast()
-                                -- end
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(197) and not NoobgamKdfProfiles.DoIHaveMarker(197) and HMAOES == 0) then
-                                Player:MoveTo(100,0,100)
-                                KitanoiSettings.avoidingtime = Now() + 2000					
-                            end
-                            if (NoobgamKdfProfiles.DoIHaveMarker(197)) then
-                                local points = {
-                                    [1] = {x=118.26,y=0,z=116.36},
-                                    [2] = {x=115.13,y=0,z=117.87},
-                                    [3] = {x=101.21,y=0,z=118.07},
-                                    [4] = {x=98.07,y=0,z=118.06},
-                                    [5] = {x=84.57,y=0,z=118.12},
-                                    [6] = {x=81.87,y=0,z=115.79},
-
-                                }
-                                local action = ActionList:Get(5,3)
-                                if ( action ) then
-                                    action:Cast()
-                                end						
-                                for _,e in pairs(points) do
-                                    if (not KitanoiFuncs.CheckPointInAOETable(e.x,e.y,e.z)) then
-                                        Player:MoveTo(e.x,e.y,e.z)
-                                        KitanoiSettings.avoidingtime = Now() + 2000								
-                                        break
-                                    end
-                                end
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(100) and HMAOES == 0) then
-                                Player:MoveTo(100,0,100)
-                                KitanoiSettings.avoidingtime = Now() + 2000
-                            end
-                            if (KitanoiFuncs.IsMarkerUp(364)) then
-                                if (Player.role == 1) then
-                                    KitanoiFuncs.ForceTankCoolDowns()
-                                    Player:MoveTo(90,0,90)
-                                    KitanoiSettings.avoidingtime = Now() + 2000
-                                end
-                                if (Player.role ~= 1) then
-                                    Player:MoveTo(100,0,100)
-                                    KitanoiSettings.avoidingtime = Now() + 2000						
-                                end
-                            end
-                            if (HMAOES == 0 and TimeSince(KitanoiSettings.avoidingtime)>2000) then
-                                Player:MoveTo(100,0,100)
-                                KitanoiSettings.avoidingtime = Now() + 2000					
-                            end					
+                        function customfunction()
+                            NoobgamKdfProfiles.Zeromus()
                         end
                     ]],
                 },
@@ -1738,8 +1514,8 @@ if NoobgamKdfProfiles == nil then
         }
     }
 
-    function NoobgamKdfProfiles.UseAllMits()
-        local mits = {
+    function NoobgamKdfProfiles.UseMits(mits)
+        mits = mits or {
             -- common
             7535,
             7531,
@@ -1763,6 +1539,12 @@ if NoobgamKdfProfiles == nil then
     end
 
     function NoobgamKdfProfiles.Rubicante()
+        if NoobgamKdfProfiles.TryingToWipe then
+            return
+        end
+        if NoobgamKdfProfiles.StopMovingIfRaising() then
+            return
+        end
         local infernoId = 123718371
         if KitanoiFuncs.ScanForCaster2(31943) then
             if KitanoiSettings.AvoidThisArea[infernoId] == nil then
@@ -1801,7 +1583,7 @@ if NoobgamKdfProfiles == nil then
             KitanoiSettings.avoidingtime = Now() + 2000
         end
         if KitanoiFuncs.ScanForCaster2(31974) then
-            log("clockpositions " .. NoobgamUtils.tableToString(NoobgamKdfProfiles.ClockPositions(100, 0, 100, 6)))
+            NoobgamKdfProfiles.ClockPositions(100, 0, 100, 6)
             KitanoiSettings.avoidingtime = Now() + 2000
         end
     end
@@ -1817,6 +1599,10 @@ if NoobgamKdfProfiles == nil then
 
     function NoobgamKdfProfiles.Golbez()
         if NoobgamKdfProfiles.TryingToWipe then
+            return
+        end
+
+        if NoobgamKdfProfiles.StopMovingIfRaising() then
             return
         end
 
@@ -1902,6 +1688,255 @@ if NoobgamKdfProfiles == nil then
                 KitanoiNavigation.NavAPI.MoveTo(112, 0, 100)
                 KitanoiSettings.avoidingtime = Now()
             end
+        end
+    end
+
+    function NoobgamKdfProfiles.Zeromus()
+        if NoobgamKdfProfiles.TryingToWipe then
+            return
+        end
+        if NoobgamKdfProfiles.StopMovingIfRaising() then
+            return
+        end
+        local zeromus = KitanoiFuncs.entityList("alive,attackable,targetable")
+        local targ = Player:GetTarget()
+        local midpoint = { x = 100, y = 0, z = 100 }
+        local HMAOES = KitanoiFuncs.HowManyAOES(true)
+        if (not targ and zeromus ~= nil) then
+            local i, e = next(zeromus)
+            if (i and e) then
+                Player:SetTarget(i)
+            end
+        end
+        if (KitanoiFuncs.ScanForCaster2(35603) or (NoobgamKdfProfiles.flare1End or 0) > GetTickCount()) then
+            if NoobgamKdfProfiles.flare1End == nil or NoobgamKdfProfiles.flare1End < GetTickCount() - 40000 then
+                NoobgamKdfProfiles.flare1End = GetTickCount() + 20000
+                log("Flare1 started")
+            end
+
+            if NoobgamKdfProfiles.flare1End > GetTickCount() + 10500 then
+                -- do nothing, 
+            elseif NoobgamKdfProfiles.flare1End > GetTickCount() + 5000 then
+                KitanoiNavigation.NavAPI.MoveTo(90, 0, 90)
+                KitanoiSettings.avoidingtime = Now() + 6000
+                KitanoiSettings.DisableKDFAvoidance = true
+                return
+            else
+                KitanoiNavigation.NavAPI.MoveTo(110, 0, 90)
+                KitanoiSettings.DisableKDFAvoidance = true
+                KitanoiSettings.avoidingtime = Now() + 6000
+                return
+            end
+        end
+        KitanoiSettings.DisableKDFAvoidance = false
+        local soaks = KitanoiFuncs.ScanForCaster2({ 35602, 35603, 35604, 35605 }, nil, nil, true)
+        local lazer = KitanoiFuncs.ScanForCaster2(35566)
+        local meteors = KitanoiFuncs.ScanForCaster2(35601)
+        if (lazer or meteors) then
+            NoobgamKdfProfiles.UseMits({
+                7535,
+                7388,
+                3540,
+            })
+            KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+            KitanoiSettings.avoidingtime = Now() + 2000
+        end
+        local bubbles = KitanoiFuncs.entityList("contentid=12588")
+        if (bubbles ~= nil) then
+            for i, e in pairs(bubbles) do
+                if (i and e and TensorCore.getEntitySpeed(i) > 0) then
+                    local poly1 = KitanoiFuncs.SquarePolygon(e.pos, 4, 6, e.pos.h, 1)
+                    KitanoiFuncs.CurrentAOEs[i] = {
+                        type = "rectangle",
+                        entity = i,
+                        target = i,
+                        pos = point1,
+                        length = 4,
+                        width = 4,
+                        heading = -1.570796,
+                        aoeID = 0000,
+                        name = "",
+                        poly = poly1,
+                        casttime = 2,
+                        channelingtime = 2,
+                        deletetime = Now() + 750,
+                    }
+                    KitanoiSettings.AvoidThisArea[i] = {}
+                    KitanoiSettings.AvoidThisArea[i].poly = poly1
+                    KitanoiSettings.AvoidThisArea[i].timer = Now() + 750
+                    local start, mid, endC, outlineColor, outlineThickness = TensorCore.getMoogleColors()
+                    Argus2.addTimedRectFilled(750, e.pos.x, e.pos.y, e.pos.z, 6, 4, e.pos.h, start, endC, mid, 0, nil,
+                        nil, outlineColor, outlineThickness)
+                end
+            end
+        end
+        if (soaks ~= nil and soaks ~= false and HMAOES == 0 and not KitanoiFuncs.IsMarkerUp(197)) then
+            for ii, ee in pairs(soaks) do
+                d("soaks")
+                local ent = KitanoiFuncs.MGetEntity(ee.entityID)
+                if (ent ~= nil and math.distance2d(midpoint.x, midpoint.z, ent.pos.x, ent.pos.z) < 15) then
+                    KitanoiNavigation.NavAPI.MoveTo(ent.pos.x, 0, ent.pos.z)
+                    KitanoiSettings.avoidingtime = Now() + 2000
+                end
+            end
+        end
+        local meteorimpact = KitanoiFuncs.ScanForCaster2(35595)
+
+        if (meteorimpact) then
+            local mypoint = NoobgamKdfProfiles.ClockPositions(100, 0, 100, 18)
+            d("meteor impact: " .. json.encode(mypoint))
+            KitanoiNavigation.NavAPI.MoveTo(mypoint.x, 0, mypoint.z)
+            KitanoiSettings.avoidingtime = Now() + 2000
+        end
+
+        local ahkmorn = KitanoiFuncs.ScanForCaster2(35619)
+        if (ahkmorn) then
+            KitanoiSettings.avoidingtime = Now() + 10000
+        end
+
+        local turning1 = KitanoiFuncs.ScanForCaster2(35910)
+        local turningEnd11 = KitanoiFuncs.ScanForCast2(35910, 6, 3)
+        local turningEnd12 = KitanoiFuncs.ScanForCast2(35910, 8, 6)
+        local turningEnd1 = KitanoiFuncs.ScanForCast2(35910, 11, 8)
+        if (turning1) then
+            d("turning1")
+            KitanoiNavigation.NavAPI.MoveTo(90, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd11) then
+            d("turningEnd11")
+            KitanoiNavigation.NavAPI.MoveTo(94, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd12) then
+            d("turningEnd12")
+            KitanoiNavigation.NavAPI.MoveTo(98, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd1) then
+            d("turningEnd1")
+            -- local sprint = ActionList:Get(1,3)
+            -- if (sprint) then
+            -- sprint:Cast(Player.id)
+            -- end				
+            KitanoiNavigation.NavAPI.MoveTo(118, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+
+        local turning2 = KitanoiFuncs.ScanForCaster2(35573)
+        local turningEnd21 = KitanoiFuncs.ScanForCast2(35573, 6, 3)
+        local turningEnd22 = KitanoiFuncs.ScanForCast2(35573, 8, 6)
+        local turningEnd2 = KitanoiFuncs.ScanForCast2(35573, 11, 8)
+        if (turning2) then
+            d("turning2")
+            KitanoiNavigation.NavAPI.MoveTo(108, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd21) then
+            d("turningEnd21")
+            KitanoiNavigation.NavAPI.MoveTo(104, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd22) then
+            d("turningEnd22")
+            KitanoiNavigation.NavAPI.MoveTo(102, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+        if (turningEnd2) then
+            d("turningEnd2")
+            -- local sprint = ActionList:Get(1,3)
+            -- if (sprint) then
+            -- sprint:Cast(Player.id)
+            -- end
+            KitanoiNavigation.NavAPI.MoveTo(82, 0, 82)
+            KitanoiSettings.avoidingtime = Now() + 20000
+        end
+
+        if (KitanoiFuncs.IsMarkerUp(376) and not KitanoiFuncs.IsMarkerUp(100)) then
+            d("spreadies")
+            local points = {
+                { x = 100.000000, y = 0.000000, z = 107.000000 },
+                { x = 106.464466, y = 0.000000, z = 106.464466 },
+                { x = 107.000000, y = 0.000000, z = 100.000000 },
+                { x = 106.464466, y = 0.000000, z = 93.535534 },
+                { x = 100.000000, y = 0.000000, z = 93.000000 },
+                { x = 93.535534,  y = 0.000000, z = 93.535534 },
+                { x = 93.000000,  y = 0.000000, z = 100.000000 },
+                { x = 93.535534,  y = 0.000000, z = 106.464466 }
+            }
+            local pt = KitanoiFuncs.ReturnSortedParty()
+            for i = 1, 8, 1 do
+                if (pt[i] == Player.id) then
+                    local mypoint = points[i]
+                    if (mypoint) then
+                        KitanoiNavigation.NavAPI.MoveTo(mypoint.x, 0, mypoint.z)
+                        KitanoiSettings.avoidingtime = Now() + 2000
+                    end
+                end
+            end
+        end
+        if (KitanoiFuncs.IsMarkerUp(376) and Player.role == 4 and not Player:IsMoving()) then
+            KitanoiFuncs.HealDoomMulti()
+        end
+        if (KitanoiFuncs.IsMarkerUp(376) and Player.role == 1) then
+            -- local action = ActionList:Get(5,3)
+            -- if ( action ) then
+            -- action:Cast()
+            -- end
+        end
+        if (KitanoiFuncs.IsMarkerUp(197) and not NoobgamKdfProfiles.DoIHaveMarker(197) and HMAOES == 0) then
+            KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+            KitanoiSettings.avoidingtime = Now() + 2000
+        end
+        if (NoobgamKdfProfiles.DoIHaveMarker(197)) then
+            local points = {
+                [1] = { x = 118.26, y = 0, z = 116.36 },
+                [2] = { x = 115.13, y = 0, z = 117.87 },
+                [3] = { x = 101.21, y = 0, z = 118.07 },
+                [4] = { x = 98.07, y = 0, z = 118.06 },
+                [5] = { x = 84.57, y = 0, z = 118.12 },
+                [6] = { x = 81.87, y = 0, z = 115.79 },
+
+            }
+            local action = ActionList:Get(5, 3)
+            if (action) then
+                action:Cast()
+            end
+            for _, e in pairs(points) do
+                if (not KitanoiFuncs.CheckPointInAOETable(e.x, e.y, e.z)) then
+                    KitanoiNavigation.NavAPI.MoveTo(e.x, e.y, e.z)
+                    KitanoiSettings.avoidingtime = Now() + 2000
+                    break
+                end
+            end
+        end
+        if (KitanoiFuncs.IsMarkerUp(100) and HMAOES == 0) then
+            KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+            KitanoiSettings.avoidingtime = Now() + 2000
+        end
+        if (KitanoiFuncs.IsMarkerUp(364)) then
+            if (NoobgamKdfProfiles.DoIHaveMarker(364)) then
+                KitanoiFuncs.ForceTankCoolDowns()
+                KitanoiNavigation.NavAPI.MoveTo(90, 0, 90)
+                KitanoiSettings.avoidingtime = Now() + 2000
+            else
+                KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+                KitanoiSettings.avoidingtime = Now() + 2000
+            end
+        end
+        if (HMAOES == 0 and TimeSince(KitanoiSettings.avoidingtime) > 2000) then
+            KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+            KitanoiSettings.avoidingtime = Now() + 2000
+        end
+    end
+
+    function NoobgamKdfProfiles.StopMovingIfRaising()
+        if Player.castinginfo.channelingid == 24287
+            and (Player.castinginfo.casttime - Player.castinginfo.channeltime < 3)
+        then
+            KitanoiSettings.DisableKDFAvoidance = true
+        else
+            KitanoiSettings.DisableKDFAvoidance = false
         end
     end
 
