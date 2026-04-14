@@ -16,6 +16,7 @@ local function log(msg)
 end
 
 -- Quest step to dungeon mapping
+--- @type table<number, table<number, number>>
 local questStepIdToDungeonId = {
     [1190] = { [7] = 66 },  -- thornmarch (hard)
     [1361] = { [1] = 72 },  -- whorleater (hard)
@@ -44,6 +45,9 @@ local questStepIdToDungeonId = {
     [4398] = { [2] = 802 }, --- zodiark (the dark inside)
     [4464] = { [3] = 796 }, --- endsinger (the Final day)
     [4597] = { [3] = 870 }, --- barbariccia (Storm's Crown)
+    [4677] = { [4] = 886 }, --- rubicante (Mount ordeals)
+    [4742] = { [2] = 949 }, --- golbez (voidcast dais)
+    [4748] = { [5] = 964 }, --- zeromus (abyssal fracture)
 }
 
 local dungeonsToClearInDutyFinder = {

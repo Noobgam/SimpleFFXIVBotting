@@ -4,6 +4,201 @@ if NoobgamKdfProfiles == nil then
     end
 
     NoobgamKdfProfiles = {
+        [674] = {
+            name = "The Pool of Tribute",
+            mesh = "[Trial] The Pool Of Tribute",
+            dutyid = 674,
+            level = 63,
+            expansion = 4,
+            creator = "Mist",
+            notes = "",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = -0.76, y = -0.12, z = -12.85}},
+            },
+            interacts = {},
+            bossids = {
+                6221, -- Susano -- Susano Card
+            },
+            prioritytarget = {
+                [1] = {contentid = 6225, priority = 1, type = "Blade"},
+                [2] = {contentid = 6224, priority = 2, type = "Boulders"},
+            },
+            tankat = {
+                [1] = {contentid = 6221, frompercent = 100, topercent = 0, pos = {x = -0.25, y = -0.12, z = -5.10}},
+            },
+            incombatinteract = {
+                [1] = {interactid = 2008185, type = "interact", who = "closest"},
+            },
+            advancedavoid = {
+                [1] = {castingid = 9506, type = "multifixed", pos = {
+                        [1] = {x = 19.47, y = -0.12, z = -0.09},
+                        [2] = {x = -19.50, y = -0.12, z = -0.13},
+                        [3] = {x = 19.47, y = -0.12, z = -0.09},
+                        [4] = {x = -19.50, y = -0.12, z = -0.13},
+                        [5] = {x = 19.47, y = -0.12, z = -0.09},
+                        [6] = {x = -19.50, y = -0.12, z = -0.13},
+                        [7] = {x = 19.47, y = -0.12, z = -0.09},
+                        [8] = {x = -19.50, y = -0.12, z = -0.13},
+                    },
+                },
+                [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        local hasHigherLevel = false
+                        for _, v in pairs(EntityList.myparty) do
+                            local ent = EntityList:Get(v.id)
+                            if ent and ent.alive and ent.id ~= Player.id and ent.level >= Player.level then
+                                hasHigherLevel = true
+                                break
+                            end
+                        end
+                        if not hasHigherLevel then
+                            return
+                        end
+                        local sword = nil
+                        for _, v in pairs(EntityList("contentid=2008185,targetable")) do
+                            if sword == nil or sword.id > v.id then
+                                sword = v
+                            end
+                        end
+                        if sword == nil then
+                            return
+                        end
+                        if NoobgamUtils.calculateDist(Player.pos, sword.pos) > 2 then
+                            Player:MoveTo(sword.pos.x, sword.pos.y, sword.pos.z)
+                            KitanoiSettings.avoidingtime = Now()
+                        else
+                            Player:Stop()
+                            Player:Interact(sword.id)
+                            KitanoiSettings.avoidingtime = Now()
+                        end
+                    end
+                ]]},
+            },
+            overheadmarkers = {
+                [1] = {id = 23, contentid = "6221", desc = "spread", type = "move", detectwho = "me", pos = {
+                        [1] = {x = -13.83, y = -0.12, z = -0.01},
+                        [2] = {x = -10.56, y = -0.12, z = -6.11},
+                        [3] = {x = 6.60, y = -0.12, z = -12.36},
+                        [4] = {x = 13.75, y = -0.12, z = -0.10},
+                        [5] = {x = 10.96, y = -0.12, z = 5.41},
+                        [6] = {x = 0.37, y = -0.12, z = 12.24},
+                        [7] = {x = -6.75, y = -0.12, z = 12.36},
+                        [8] = {x = -0.44, y = -0.12, z = -12.37},
+                    },
+                    returnpos = {
+                        [1] = {x = 0.29, y = 0.40, z = 0.35},
+                        [2] = {x = 0.29, y = 0.40, z = 0.35},
+                        [3] = {x = 0.29, y = 0.40, z = 0.35},
+                        [4] = {x = 0.29, y = 0.40, z = 0.35},
+                        [5] = {x = 0.29, y = 0.40, z = 0.35},
+                        [6] = {x = 0.29, y = 0.40, z = 0.35},
+                        [7] = {x = 0.29, y = 0.40, z = 0.35},
+                        [8] = {x = 0.29, y = 0.40, z = 0.35},
+                    },
+                    timetoreturn = 5,
+                },
+                [2] = {id = 62, contentid = "6221", desc = "stack", type = "move", detectwho = "any", pos = {
+                        [1] = {x = 0.29, y = 0.40, z = 0.35},
+                        [2] = {x = 0.29, y = 0.40, z = 0.35},
+                        [3] = {x = 0.29, y = 0.40, z = 0.35},
+                        [4] = {x = 0.29, y = 0.40, z = 0.35},
+                        [5] = {x = 0.29, y = 0.40, z = 0.35},
+                        [6] = {x = 0.29, y = 0.40, z = 0.35},
+                        [7] = {x = 0.29, y = 0.40, z = 0.35},
+                        [8] = {x = 0.29, y = 0.40, z = 0.35},
+                    },
+                    timetoreturn = 5,
+                },
+            },
+        },
+        [436] = {
+            name = "The Limitless Blue (Hard) A",
+            mesh = "[Trial] The Limitless Blue",
+            dutyid = 436,
+            level = 57,
+            expansion = 3,
+            creator = "Rinn",
+            notes = "",
+            queuetype = 2,
+            FFA = false,
+            hacks = false,
+            requeuetimer = 10,
+            objectivedestinations = {
+                [1] = {objective = 1, pos = {x = -9.46, y = 0.0062, z = -0.439}},
+                [2] = {objective = 1, pos = {x = -9.46, y = 0.0062, z = -0.439}},
+            },
+            interactdistance = 50,
+            interacts = {},
+            bossids = {
+                3649, -- Bismarck -- Bismarck Card & (Bismarck's Baleen (Synced Only))
+                3656, -- Chitin Carapace
+                3657, -- Corona
+            },
+            forcemeleerange= {3654},
+            enemytargetdistance = 50,
+            prioritytarget = {
+                [1] = {contentid = 3654, priority = 1, type = "phase 2 adds"},
+            },
+            ignoretarget = {3655},
+            tankat = {
+                [1] = {contentid = 3654, frompercent = 100, topercent = 1, pos = {x = -21.47, y = 0.258, z = 13.108}, desc = "tank boss 12345 at this pos from 100-95%"},
+            },
+            incombatinteract= {
+                [1] = {interactid = 2005541, type = "interact", req = {castingid = 4010, desc = "Cetacean Rage Bismark Island"}, who = "closest", desc = "interact with something"},
+                [2] = {interactid = 2005541, type = "interact", req = {castingid = 4918, desc = "Cetacean Rage Bismark Island"}, who = "closest", desc = "interact with something"},
+                [3] = {interactid = 2005541, type = "interact", req = {castingid = 5075, desc = "Cetacean Rage Bismark Island"}, who = "closest", desc = "interact with something"},
+                [4] = {interactid = "2005544;2005545", type = "interact", who = "closest", desc = "DragonKillers"},
+            },
+            advancedavoid = {
+                [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        if not(next(Duty:GetActiveDutyObjectives())==nil)then
+                            if Duty:GetActiveDutyObjectives()[2].values[1]==100 then
+                                Player:MoveTo(-9.46,0.0062,-0.439)
+                                d('Moving To Start Trial')
+                                isOnCarapace=0;
+                                onceStopAvoidance=0
+                            end;
+                            if HasBuff(Player.id,719)then
+                                if isOnCarapace == 0 then
+                                    d('IsOnCarapace')
+                                end
+                                isOnCarapace=1;
+                                onceStopAvoidance=1
+                            end;
+                            if not HasBuff(Player.id,719)and onceStopAvoidance==1 then
+                                onceStopAvoidance=0;
+                                KitanoiSettings.avoidingtime=Now()
+                                Player:Stop();
+                                d('Stopping Avoidance')
+                            end;
+                            if not HasBuff(Player.id,719)and onceStopAvoidance==0 and isOnCarapace==1 then
+                                KitanoiSettings.avoidingtime=Now();
+                                d('Restarting Avoidance');
+                                isOnCarapace=0
+                            end
+                        end
+                        local DKsUp = KitanoiFuncs.MEntityList("targetable,contentid=2005544;2005545")
+                        if (DKsUp) then
+                            local counts = TableSize(DKsUp)
+                            KitanoiSettings.DisableKDFAvoidance = true
+                            if (counts >= 1) then
+                                local action = ActionList:Get(1,3)
+                                if ( action and action:IsReady() ) then
+                                    action:Cast(Player)
+                                end
+                            end
+                        else
+                            KitanoiSettings.DisableKDFAvoidance = false
+                        end
+                    ]]
+                },
+            },
+            excludeavoid = {4011,4035,4932,5081},
+        },
         -- thornmarch
         [1067] = {
             name = "Thornmarch (Hard)",
@@ -22,7 +217,6 @@ if NoobgamKdfProfiles == nil then
             },
             interactdistance = 50,
             interacts = {
-                [1] = {contentid = 228, priority = 1, type = "Loot"},
                 -- Mog Weapons
             },
             bossids = {
@@ -120,6 +314,21 @@ if NoobgamKdfProfiles == nil then
                         [7] = {x = 7.5, y = -380, z = -0.11},
                         [8] = {x = 7.37, y = -380, z = -7.9},
                     },
+                },--to phase 2
+                [5] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                        function customfunction()
+                            local targ = Player:GetTarget()
+                            if (not targ) then
+                                local shin = KitanoiFuncs.MEntityList("nearest,targetable,alive,name=5640")
+                                if (shin~=nil) then
+                                    local i,e = next(shin)
+                                    if (i and e) then
+                                        Player:SetTarget(i)
+                                    end
+                                end
+                            end
+                        end
+                    ]]
                 },
             },
             hasbuff = {},
@@ -476,6 +685,10 @@ if NoobgamKdfProfiles == nil then
                     functionname = "customfunction",
                     functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 1 then
+                                return
+                            end
                             local _, hades = next(MEntityList("aggro,contentid=8352"))
                             if hades == nil or not hades.targetable then
                                 -- p1 he becomes untargetable
@@ -646,6 +859,10 @@ if NoobgamKdfProfiles == nil then
                     functionname = "customfunction",
                     functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 1 then
+                                return
+                            end
                             NoobgamKdfProfiles.FarmEcho(5, 70, 0, 120)
                         end
                     ]]
@@ -976,6 +1193,10 @@ if NoobgamKdfProfiles == nil then
                 },
                 [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 3 then
+                                return
+                            end
                             NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100)
                         end
                     ]]
@@ -1033,6 +1254,10 @@ if NoobgamKdfProfiles == nil then
                 },
                 [3] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 3 then
+                                return
+                            end
                             NoobgamKdfProfiles.FarmEcho(5, 116, 0, 116)
                         end
                     ]]
@@ -1059,6 +1284,8 @@ if NoobgamKdfProfiles == nil then
                 33946,
                 33945,
                 33941,
+                -- void star. It's not good to ignore it but it's not worse than what default avoidance does
+                33957,
             },
             forcemeleerange = {12365},
             hasbuff = {},
@@ -1154,6 +1381,10 @@ if NoobgamKdfProfiles == nil then
                 },
                 [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 3 then
+                                return
+                            end
                             NoobgamKdfProfiles.FarmEcho(5, 120, 0, 120)
                         end
                     ]]
@@ -1495,6 +1726,10 @@ if NoobgamKdfProfiles == nil then
                 },
                 [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                         function customfunction()
+                            local count = NoobgamKdfProfiles.CountMaxLevel()
+                            if count > 3 then
+                                return
+                            end
                             NoobgamKdfProfiles.FarmEcho(5, 125, 0, 100)
                         end
                     ]]
@@ -1586,11 +1821,12 @@ if NoobgamKdfProfiles == nil then
         end
 
         if (KitanoiFuncs.ScanForCaster2(33957) or (NoobgamKdfProfiles.voidStar or 0) > GetTickCount()) then
-            if NoobgamKdfProfiles.eventide == nil or NoobgamKdfProfiles.eventide < GetTickCount() - 40000 then
-                NoobgamKdfProfiles.eventide = GetTickCount() + 20000
+            if NoobgamKdfProfiles.voidStar == nil or NoobgamKdfProfiles.voidStar < GetTickCount() - 40000 then
+                NoobgamKdfProfiles.voidStar = GetTickCount() + 20000
                 log("Void dust started")
             end
-            -- we need to resolve it
+
+            -- we need to resolve it, but for now we don't care
             return
         end
 
@@ -1600,10 +1836,16 @@ if NoobgamKdfProfiles == nil then
                 log("Eventide started")
             end
             -- use all mits available
+            -- WAR + PLD
             useIfCan(3626, Player.id)
-            useIfCan(24298, Player.id)
             useIfCan(3540, Player.id)
+            -- SGE
+            useIfCan(24298, Player.id)
+            useIfCan(24310, Player.id)
             useIfCan(24311, Player.id)
+            --WHM
+            useIfCan(7433, Player.id)
+            useIfCan(16536, Player.id)
 
             if (Player.role == 1 and KitanoiFuncs.DetermineMainTank() == Player.id) then
                 local peopleAlive = 0
@@ -1661,6 +1903,14 @@ if NoobgamKdfProfiles == nil then
                 KitanoiSettings.avoidingtime = Now()
             end
         end
+    end
+
+    function NoobgamKdfProfiles.CountMaxLevel()
+        local count = 0
+        for _, v in pairs(EntityList.myparty) do
+            if v.level >= 100 then count = count + 1 end
+        end
+        return count
     end
 
     function NoobgamKdfProfiles.ClockPositions(x, y, z, radius)
