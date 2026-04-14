@@ -480,39 +480,85 @@ local function doJobStuff(job, jobLevelCap)
     return false
 end
 
+-- https://github.com/xivapi/ffxiv-datamining/blob/master/csv/en/Item.csv
+local chestRanges = {
+    {17868, 17868},
+    {20275, 20288},
+    {20303, 20303},
+    {20601, 20612},
+    {20620, 20621},
+    {20642, 20667},
+    {21791, 21791},
+    {23980, 23980},
+    {24587, 24588},
+    {26824, 26902},
+    {27266, 27267},
+    {29693, 29703},
+    {30137, 30141},
+    {31691, 31691},
+    {31696, 31696},
+    {31701, 31701},
+    {32144, 32154},
+    {32866, 32866},
+    {35666, 35743},
+    {35872, 35879},
+    {35884, 35889},
+    {35894, 35899},
+    {35904, 35909},
+    {35914, 35919},
+    {35924, 35929},
+    {35935, 35961},
+    {36135, 36159},
+    {36616, 36617},
+    {36813, 36813},
+    {38390, 38399},
+    {38687, 38687},
+    {39584, 39584},
+    {40296, 40296},
+    {40307, 40316},
+    {40355, 40355},
+    {41054, 41054},
+    {43476, 43538},
+    {44274, 44291},
+    {44719, 44719},
+    {45074, 45078},
+    {46709, 46719},
+    {46981, 46981},
+    {47094, 47094},
+    {49737, 49747},
+}
+
+local idIsChest = {}
+for _, v in pairs(chestRanges) do
+    for i = v[1],v[2] do
+        idIsChest[i] = true
+    end
+end
+
 local function openJobChests()
     local in_dungeon = table.valid(Duty:GetActiveDutyInfo()) or Player.localmapid == 0
     if in_dungeon then
-        return false
+        return
     end
 
-    local chestRanges = {
-        {20601, 20612}, -- Fending coffer (IL 240) and similar
-        {20642, 20670}, -- IL90 coffers
-        {20275, 20288}, -- IL 290 job coffers
-    }
+    local inventories = { 0, 1, 2, 3 }
 
-    for invid = 0, 3 do
+    for _, invid in ipairs(inventories) do
         local bag = Inventory:Get(invid)
         if table.valid(bag) then
             for _, item in pairs(bag:GetList()) do
-                if item then
-                    for _, range in ipairs(chestRanges) do
-                        if item.hqid >= range[1] and item.hqid <= range[2] then
-                            ensureProfileEnabled("none")
-                            if Player.mountid ~= 0 then
-                                Dismount()
-                                return true
-                            end
-                            item:Cast()
-                            return true
-                        end
+                if idIsChest[item.hqid] then
+                    ensureProfileEnabled("none")
+                    if Player.mountid ~= 0 then
+                        Dismount()
+                        return true
                     end
+                    item:Cast()
+                    return true
                 end
             end
         end
     end
-    return false
 end
 
 --- @class MsqCycleParams
