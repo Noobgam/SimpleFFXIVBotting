@@ -640,7 +640,7 @@ function MsqClearHelper.Update()
         if MsqClearHelper.FightStarted == nil then
             MsqClearHelper.FightStarted = GetTickCount()
         end
-        local kdfProfile = NoobgamKdfProfiles[Player.localmapid]
+        local kdfProfile = NoobgamKdfProfiles.DungeonProfiles[Player.localmapid]
         if kdfProfile ~= nil then
             KitanoiFuncs.LoadDungeonTbl(kdfProfile)
             if not KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then

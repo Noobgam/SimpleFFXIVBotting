@@ -3,7 +3,9 @@ if NoobgamKdfProfiles == nil then
         d("[NoobgamKdfProfiles] " .. message)
     end
 
-    NoobgamKdfProfiles = {
+    NoobgamKdfProfiles = {}
+
+    NoobgamKdfProfiles.DungeonProfiles = {
         [674] = {
             name = "The Pool of Tribute",
             mesh = "[Trial] The Pool Of Tribute",
@@ -13,9 +15,10 @@ if NoobgamKdfProfiles == nil then
             creator = "Mist",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
+            enemytargetdistance = 50,
             objectivedestinations = {
                 [1] = {objective = 1, pos = {x = -0.76, y = -0.12, z = -12.85}},
             },
@@ -123,7 +126,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Rinn",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -212,7 +215,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Rinn",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -256,7 +259,7 @@ if NoobgamKdfProfiles == nil then
             bossids = {
                 5640, -- Shinryu -- Shinryu Card
             },
-            enemytargetdistance = 100,
+            enemytargetdistance = 50,
             prioritytarget = {
                 [1] = {contentid = 5789, priority = 1, type = "Tail"},
             },
@@ -366,7 +369,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Koyote/Rinn",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -415,7 +418,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Mist",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -559,7 +562,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Kitanoi",
             notes = "Requires 8 characters.\n\n2 tanks, 2 healers, 4 dps.\nExpect occassional deaths, but will win.",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -661,7 +664,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Noobgam",
             notes = "Requires 8 characters.\n\n2 tanks, 2 healers, 4 dps.",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -713,7 +716,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Kitanoi",
             notes = "Requires 8 characters.\n\n2 tanks, 2 healers, 4 dps (ranged ideally)\n\nThere will be wipes.\nFalling meteors and Sword of Light aren't detected so you need to run until favorable locations are used.",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -837,7 +840,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Kitanoi",
             notes = "Requires 8 accounts, requires Exe.\nExtremely healer intensive during styx, if your healer ACR cannot handle it, manually heal on 1 character. Or take 3 healers and 1 tank.",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -960,7 +963,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Hikari/Kitanoi",
             notes = "",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -1125,7 +1128,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Noobgam",
             notes = "This is dogshit quality, doesn't do anything",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
@@ -1228,7 +1231,7 @@ if NoobgamKdfProfiles == nil then
             creator = "Noobgam",
             notes = "This is dogshit quality, doesn't do anything",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             meleeavoid = false,
             requeuetimer = 10,
@@ -1277,9 +1280,8 @@ if NoobgamKdfProfiles == nil then
         [1140] = {
             bossids = {},
             creator = "Kitanoi",
-            private=true,
             dutyid = 1140,
-            enemytargetdistance = 30,
+            enemytargetdistance = 50,
             excludeavoid = {
                 33947,
                 33946,
@@ -1290,6 +1292,7 @@ if NoobgamKdfProfiles == nil then
             },
             forcemeleerange = {12365},
             hasbuff = {},
+            FFA = true,
             interactdistance = 20,
             interacts = {
             },
@@ -1390,15 +1393,15 @@ if NoobgamKdfProfiles == nil then
                         end
                     ]]
                 },
-            },		
+            },
         },
         [1168] = {
             bossids = {},
             creator = "Kitanoi",
-            private=true,
+            FFA = true,
             dutyid = 1168,
             mesh = "[Trial] The Abyssal Fracture",
-            enemytargetdistance = 30,
+            enemytargetdistance = 50,
             excludeavoid = {
                 16547, --"[KF][31][1168] - Seraph(8227) cast: Consolation(16547)"
                 35602,
