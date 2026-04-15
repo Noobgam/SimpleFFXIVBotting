@@ -137,12 +137,12 @@ if NoobgamKdfProfiles == nil then
                 3656, -- Chitin Carapace
                 3657, -- Corona
             },
-            forcemeleerange= {3654},
+            forcemeleerange= {3654,3657,3656},
             enemytargetdistance = 50,
             prioritytarget = {
                 [1] = {contentid = 3654, priority = 1, type = "phase 2 adds"},
             },
-            ignoretarget = {3655},
+            ignoretarget = {},
             tankat = {
                 [1] = {contentid = 3654, frompercent = 100, topercent = 1, pos = {x = -21.47, y = 0.258, z = 13.108}, desc = "tank boss 12345 at this pos from 100-95%"},
             },
@@ -191,6 +191,10 @@ if NoobgamKdfProfiles == nil then
                                 end
                             end
                         else
+                            if Player:GetTarget() == nil then
+                                -- moving in to target carrapace
+                                Player:MoveTo(-9.46,0.0062,-0.439)                                
+                            end
                             KitanoiSettings.DisableKDFAvoidance = false
                         end
                     ]]
@@ -588,21 +592,19 @@ if NoobgamKdfProfiles == nil then
             creator = "HeavenL",
             notes = "Requires 8 characters.\n\n2 tanks, 2 healers, 4 dps.",
             queuetype = 2,
-            FFA = false,
+            FFA = true,
             hacks = false,
             requeuetimer = 10,
             objectivedestinations = {
-                [1] = {objective = 1, pos = {x = 100, y = 0, z = 105}},
-                [2] = {objective = 2, pos = {x = 100, y = 0, z = 105}},
+                [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
             },
             interacts = {
-                [1] = {contentid = 2000139, priority = 1, req = {type = "noenemy"}, type = "Exit"},
             },
             bossids = {
                 8353, -- Innocence -- Innocence Card
             },
-            enemytargetdistance = 30,
-            prioritytargetdistance = 20,
+            enemytargetdistance = 66,
+            prioritytargetdistance = 60,
             prioritytarget = {
                 [1] = {contentid = 8268, priority = 1, type = "Desire"},
                 [2] = {contentid = 8394, priority = 2, type = "Shame"},
