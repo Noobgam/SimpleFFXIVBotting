@@ -2,6 +2,6 @@
 Name=RavanaFarm
 Dependencies=minionlib
 Version=1
-Files=main.lua,gui.lua,ravanafarm.lua,navigationtask.lua,bootstrap.lua,private_sus.lua,utils.lua,config.lua,msqhelper.lua,kdfProfiles.lua
+Files=main.lua,gui.lua,ravanafarm.lua,navigationtask.lua,bootstrap.lua,private_sus.lua,utils.lua,config.lua,msqhelper.lua,kdfProfiles.lua,noobgamTaskManager.lua
 Enabled=1
 CreateFolders=logs

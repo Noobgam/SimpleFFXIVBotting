@@ -66,6 +66,9 @@ local function closeUselessControls()
 end
 
 local function onUpdate()
+    if NoobgamTaskManager.Update() then
+        return
+    end
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
         if NoobgamConfigManager.Status == FFXIV.GAMESTATE.INGAME then
             d("[NoobgamSideKick]: No longer logged in. Resetting everything")
