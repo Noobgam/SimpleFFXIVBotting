@@ -14,7 +14,7 @@ end
 -- Configuration
 local CONFIG = {
     msqProfile = "(Latty) 1-100 [Unlocked]",
-    jobProfile = "(1-100) Class Quests",
+    jobProfile = "Class Quests Pack",
     jobMapping = {
         [FFXIV.JOBS.GLADIATOR] = FFXIV.JOBS.PALADIN,
         [FFXIV.JOBS.MARAUDER] = FFXIV.JOBS.WARRIOR,
