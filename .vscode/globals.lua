@@ -21,7 +21,8 @@ end
 --- @field GUI table some nested table with windows
 ffxivminion = {}
 
---- @param botMode "Assist" | "Quest" | "Grind"
+-- --- @param botMode "Assist" | "Quest" | "Grind"
+--- @param botMode string
 function ffxivminion.SwitchMode(botMode)
 end
 
@@ -652,8 +653,10 @@ function RegisterEventHandler(event, handler, identifier)
     -- This is just a placeholder for the editor
 end
 
+--- Second param is specific to my shim. Does nothing normally
 --- @param message string|table
-function d(message)
+--- @param extraThings table|nil
+function d(message, extraThings)
 
 end
 
@@ -724,11 +727,22 @@ function Duty:GetQueueStatus()
     return 3
 end
 
+---@class ActiveDutyInfo
+---@field timer number The remaining time for the duty
+---@field dutytype number The internal ID/type of the duty
+---@field name string The display name of the duty
+---@field dutystep number The current progression step
+
 --- Get the active duty info.
---- @return table info A table containing the active duty info
+--- @return ActiveDutyInfo info A table containing the active duty info
 function Duty:GetActiveDutyInfo()
     -- This is just a placeholder for the editor
-    return {}
+    return {
+        timer = 0,
+        dutytype = 0,
+        name = "",
+        dutystep = 0
+    }
 end
 
 ---@class DutyInfo
@@ -900,10 +914,12 @@ function math.distance2d(x1, y1, x2, y2)
     return 0
 end
 
---- @class Position
+--- @class XZ
 --- @field x number X-coordinate
---- @field y number Y-coordinate
 --- @field z number Z-coordinate
+
+--- @class Position : XZ
+--- @field y number Y-coordinate
 
 --- @class BarData
 --- @field current number
@@ -1189,6 +1205,10 @@ KitanoiFuncs = {}
 --- @param addon "kdf"
 --- @param status boolean
 function KitanoiFuncs.EnableAddon(addon, status)
+end
+
+--- @param dungeonTable table
+function KitanoiFuncs.LoadDungeonTbl(dungeonTable)
 end
 
 --- @class BagItem
@@ -1969,6 +1989,10 @@ Settings = {}
 
 --- @type boolean
 gGrindDoHuntlog = false
+
+--- @type boolean
+gGrindDoFates = false
+
 --- @type number
 gFleeHP = 13
 
@@ -2136,3 +2160,47 @@ end
 
 function KitanoiNavigation.NavAPI.Stop()
 end
+
+--- Represents a single aetheryte entry in the aetheryte list.
+--- @class Aetheryte
+--- @field id number The unique identifier of the aetheryte.
+--- @field name string The display name of the aetheryte.
+--- @field territory number The territory ID where the aetheryte is located.
+--- @field region number The region ID where the aetheryte is located.
+--- @field price number The gil cost to teleport to this aetheryte.
+--- @field isattuned boolean Whether the player is attuned to this aetheryte.
+--- @field isfavpoint boolean Whether this aetheryte is marked as a favourite point.
+--- @field ishomepoint boolean Whether this aetheryte is set as the player's home point.
+--- @field islocalmap boolean Whether this aetheryte is a local map point (hamlet/inn).
+--- @field ptr number Internal pointer reference.
+local Aetheryte = {}
+
+--- Retrieves the full list of aetherytes available to the player.
+--- Note: Index 0 (first element) may be null/nil.
+--- @return table<number, Aetheryte|nil> A list of aetheryte entries, where index 0 is nil.
+function GetAetheryteList() end
+
+
+--- @param id integer
+--- @return Position
+function GetAetheryteLocation(id)
+end
+
+--- @class KBuy
+--- @field mysettings table kitanoi-formatted table to buy
+--- @field enable boolean
+
+--- @type KBuy
+kBuy = nil
+
+--- Whether to only check for map reachability
+--- @type boolean
+KitanoiFuncs.BypassVisibleNPCCheck = true
+
+--- @param mapId integer
+--- @return boolean
+function CanAccessMap(mapId)
+end
+
+--- @type (fun(): boolean)|nil
+IsBetaClient = function () return true end

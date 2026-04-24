@@ -255,6 +255,7 @@ local function ensureProfileEnabled(profile, job)
         if not setQuestingProfile(CONFIG.msqProfile) then
             return
         end
+        
 
         if KitanoiFuncs and KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
             log("KDF is still doing something, will let it be. Questing disabled temporarily")
@@ -269,6 +270,10 @@ local function ensureProfileEnabled(profile, job)
             wait(5000)
             return
         end
+        -- these two are incompatible with kdf msq levelling, it relies on endprofile.
+        gGrindDoFates = false
+        gGrindDoHuntlog = false
+
 
         QuestOpts_Q_BuyGreens = true
         QuestOpts_Greens_new = true
