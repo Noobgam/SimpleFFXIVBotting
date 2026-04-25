@@ -424,7 +424,7 @@ local function doingSomeJobQuests(job, targetLevel)
 
     if Player.levels[Player.job] >= 70
         -- huh?
-        and (QuestCompleted(2447))
+        and (QuestCompleted(2553))
         and not doneWithJobQuests(job, 70)
     then
         ensureProfileEnabled("job", job)
