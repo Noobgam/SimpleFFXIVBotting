@@ -25,6 +25,9 @@ Designed for users running multiple game instances.
 *   **Host:** Monitors a shared JSON file for "Clear Requests." When a request is found, it invites the lower-level character and enters the required dungeon as an Undersized Party.
 
 ### Ravana Mode
+> [!CAUTION]
+> **BAN RISK:** Using the **Ravana Farm** for prolonged or continuous periods (e.g., 24/7) is highly likely to result in account termination. Use at your own risk.
+
 A specialized farming module for Ravana Extreme.
 *   High-speed combat and movement logic specifically tuned for this encounter.
 *   Automatic instance resetting and Gil tracking.
@@ -37,9 +40,3 @@ To function correctly, the following must be installed:
 *   Standard MSQ questing profiles (e.g., "(Latty) 1-100").
 *   Sebb's "Class Quests Pack" for all job transitions.
 
----
-
-## ⚠️ Important Warnings
-
-> [!CAUTION]
-> **BAN RISK:** Using the **Ravana Farm** for prolonged or continuous periods (e.g., 24/7) is highly likely to result in account termination. Use at your own risk.
