@@ -276,7 +276,7 @@ local function ensureProfileEnabled(profile, job)
 
 
         QuestOpts_Q_BuyGreens = true
-        QuestOpts_Greens_new = true
+        QuestOpts_Greens_new = false
         NoobgamPrivateAPI.SetKDFToMsqIntegration()
         return
     elseif profile == "job" then
@@ -312,7 +312,7 @@ local function ensureProfileEnabled(profile, job)
         QuestOpts_RoleQuests = true
 
         QuestOpts_Q_BuyGreens = true
-        QuestOpts_Greens_new = true
+        QuestOpts_Greens_new = false
 
         if not FFXIV_Common_BotRunning then
             log("Enabling bot for job quests")
