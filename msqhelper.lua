@@ -524,13 +524,7 @@ function MsqClearHelper.Update()
             wait(5000)
             return
         end
-        if Player.localmapid == 436 then
-            fightBlue()
-        elseif Player.localmapid == 674 then
-            susano()
-        else
-            fight()
-        end
+        fight()
         return false
     else
         Player:Stop()
