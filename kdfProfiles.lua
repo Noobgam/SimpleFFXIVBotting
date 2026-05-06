@@ -702,8 +702,7 @@ if NoobgamKdfProfiles == nil then
                                 -- p1 he becomes untargetable
                                 NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100, 0)
                             else
-                                KitanoiSettings.DisableKDFAvoidance = false
-                                NoobgamKdfProfiles.TryingToWipe = false
+                                NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100)
                             end
                         end
                     ]]
@@ -2023,7 +2022,7 @@ if NoobgamKdfProfiles == nil then
             -- DGAF. Just rely on chat going fast.
             for _, v in pairs(chatlines) do
                 if v.code == 57 and v.subcode == 8 then
-                    local percent = tonumber(v.line:match("increased by (%d+)%%"))
+                    local percent = tonumber(v.line:match("restoration have been increased by (%d+)%%"))
                     if percent and echoStacksWeHave < percent / 10 then
                         echoStacksWeHave = percent / 10
                         d("[EchoStacker] detected " .. echoStacksWeHave .. " from chat")
