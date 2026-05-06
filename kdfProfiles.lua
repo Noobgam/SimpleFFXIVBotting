@@ -693,10 +693,17 @@ if NoobgamKdfProfiles == nil then
                             if count > 1 then
                                 return
                             end
-                            local _, hades = next(MEntityList("aggro,contentid=8352"))
+                            local enemies = MEntityList("targetable,contentid=8352")
+                            local hades = nil
+                            if table.valid(enemies) then
+                            _, hades = next(enemies) 
+                            end
                             if hades == nil or not hades.targetable then
                                 -- p1 he becomes untargetable
                                 NoobgamKdfProfiles.FarmEcho(5, 100, 0, 100, 0)
+                            else
+                                KitanoiSettings.DisableKDFAvoidance = false
+                                NoobgamKdfProfiles.TryingToWipe = false
                             end
                         end
                     ]]
