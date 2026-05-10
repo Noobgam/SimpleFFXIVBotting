@@ -1578,6 +1578,12 @@ NoobgamKdfProfiles.DungeonProfiles = {
         mesh = "Interphos",
         enemytargetdistance = 120,
         excludeavoid = {
+            36607,
+            36608,
+            36609,
+            39531,
+            -- weak raidwide
+            36603,
         },
         dontexcludeaoe = {
 
@@ -1595,7 +1601,7 @@ NoobgamKdfProfiles.DungeonProfiles = {
         {
             [1] = {	objective = 1,pos = {x=100,y=0,z=100},},
         },
-        overheadmarkers = {		
+        overheadmarkers = {
         },
         prioritytarget = {},
         prioritytargetdistance = 50,
@@ -1609,7 +1615,7 @@ NoobgamKdfProfiles.DungeonProfiles = {
         advancedavoid = {
             [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                     function customfunction()
-                        NoobgamKdfProfiles.Interphos()
+                        --NoobgamKdfProfiles.Interphos()
                     end
                 ]],
             },
@@ -1762,6 +1768,9 @@ function NoobgamKdfProfiles.UseMits(mits)
         -- common
         7535,
         7531,
+        76,
+        7405,
+        24317,
 
         -- war
         44,
@@ -1781,6 +1790,7 @@ function NoobgamKdfProfiles.UseMits(mits)
     }
     for _, v in pairs(mits) do
         if ActionList:Get(1, v):CanCastResult(Player.id) == 0 then
+            log("Using mit: " .. v)
             ActionList:Get(1, v):Cast(Player.id)
         end
     end
@@ -1941,6 +1951,10 @@ end
 
 function NoobgamKdfProfiles.Interphos()
     local Mech = NoobgamKdfProfiles.Mechanics
+
+    if TimeSince(KitanoiSettings.InCombatTimer) < 100 then
+        return
+    end
     Mech.UpdateState()
 
     if NoobgamKdfProfiles.TryingToWipe or NoobgamKdfProfiles.StopMovingIfRaising() then
@@ -1956,6 +1970,7 @@ function NoobgamKdfProfiles.Interphos()
 
     local fz = 92
     local somethingOngoing = false
+    KitanoiSettings.DisableKDFAvoidance = false
 
     local function handleMechanic(name)
         local mechState = NoobgamKdfProfiles.State[name]
@@ -1967,18 +1982,34 @@ function NoobgamKdfProfiles.Interphos()
         if not expiry or not start then return end
         local progress = GetTickCount() - start
 
-        if name == "DivideAndConquer" then
-            if (ActionList:Get(1, 3):IsReady()) then
-                ActionList:Get(1, 3):Cast(Player.id)
+        local function dqcon()
+            local SHORT_SEGMENT_MS = 3000
+            local firstWave = 8500
+            local cycle = (progress - firstWave) % (SHORT_SEGMENT_MS * 2)
+            local radius = 7
+            if progress < firstWave then
+            elseif cycle < SHORT_SEGMENT_MS then
+                radius = 19
+            else
+                
+                if (ActionList:Get(1, 3):IsReady()) then
+                    ActionList:Get(1, 3):Cast(Player.id)
+                end
             end
-            local centerX, centerZ, y, radius = 100, 86, 0, 11
+
+            local centerX, centerZ, y = 100, 86, 0
             local angleStep = -math.pi / 7
             local baseAngle = math.pi
             local idx = NoobgamKdfProfiles.GetSortedIndex()
             if idx then
                 local angle = baseAngle + angleStep * (idx - 1)
                 KitanoiNavigation.NavAPI.MoveTo(centerX + radius * math.cos(angle), y, centerZ + radius * math.sin(angle))
+                KitanoiSettings.avoidingtime = GetTickCount() + 100
             end
+        end
+
+        if name == "DivideAndConquer" then
+            dqcon()
         elseif name == "Aethertithe" then
             local mid = KitanoiSettings.SavedMapEffects["02562048"]
             if mid and TimeSince(mid.timeadded) < 8000 then
@@ -1994,78 +2025,48 @@ function NoobgamKdfProfiles.Interphos()
                 24310,
             })
             KitanoiSettings.avoidingtime = Now()
+            KitanoiSettings.DisableKDFAvoidance = true
         elseif name == "FurryPhase" then
-            local x, z, l, w = 100, 80, 10, 40
-            local pos = { x=x, y=0, z=z, h=0 }
-            local poly1 = KitanoiFuncs.SquarePolygon(pos, w, l, 0, 1)
-            KitanoiFuncs.CurrentAOEs[999999] = {
-                type = "rectangle",
-                entity = 999999,
-                target = 999999,
-                pos = pos,
-                length = l,
-                width = w,
-                heading = 0,
-                aoeID = 0,
-                name = "",
-                poly = poly1,
-                casttime = 2,
-                channelingtime = 2,
-                deletetime = expiry
-            }
-            KitanoiSettings.AvoidThisArea[999999] = { poly = poly1, timer = expiry }
-            local s, m, ec, oc, ot = TensorCore.getMoogleColors()
-            Argus2.addTimedRectFilled(expiry - GetTickCount(), x, 0, z, l, w, 0, s, ec, m, 0, nil, nil, oc, ot)
+            if KitanoiFuncs.HowManyAOES(false) == 0 then
+                -- 88 is end of the arena
+                KitanoiNavigation.NavAPI.MoveTo(95, 0, 100)
+            end
         elseif name == "AbsoluteAuthority" then
             if NoobgamKdfProfiles.IsMarkerUp(327) then
-                if (ActionList:Get(1, 3):IsReady()) then
-                    ActionList:Get(1, 3):Cast(Player.id)
+                if innerState.markerUp == nil then
+                    innerState.markerUp = GetTickCount()
+                    log("Marker detected, will resolve for 5.5s")
                 end
-                NoobgamKdfProfiles.UseMits()
-                local id = 1
-                local pt = { x = 100, z = 100 }
-                local pts = {
-                    { x = 90, z =   90},
-                    { x = 110, z =  90},
-                    { x = 110, z = 110},
-                    { x = 90, z =  110},
-                }
-                log("Marker stuff")
-                for _, v in pairs(KitanoiFuncs.ReturnSortedParty()) do
-                    if NoobgamKdfProfiles.DoIHaveMarker(327, v) or NoobgamKdfProfiles.DoIHaveMarker2(327, v) then
-                        if Player.id == v then
-                            pt = pts[id]
-                        end
-                        id = id + 1
+                if innerState.markerUp > GetTickCount() - 5500 then
+                    if (ActionList:Get(1, 3):IsReady()) then
+                        ActionList:Get(1, 3):Cast(Player.id)
                     end
+                    NoobgamKdfProfiles.UseMits()
+                    local id = 1
+                    local pt = { x = 100, z = 100 }
+                    local pts = {
+                        { x = 90, z =   90},
+                        { x = 110, z =  90},
+                        { x = 110, z = 110},
+                        { x = 90, z =  110},
+                    }
+                    log("Marker stuff")
+                    for _, v in pairs(KitanoiFuncs.ReturnSortedParty()) do
+                        if NoobgamKdfProfiles.DoIHaveMarker(327, v) or NoobgamKdfProfiles.DoIHaveMarker2(327, v) then
+                            if Player.id == v then
+                                pt = pts[id]
+                            end
+                            id = id + 1
+                        end
+                    end
+                    KitanoiNavigation.NavAPI.MoveTo(pt.x, 0, pt.z)
+                    KitanoiSettings.avoidingtime = Now() + 100
+                elseif innerState.markerUp > GetTickCount() - 14000 then
+                    Player:SetTarget(Player.id)
                 end
-                KitanoiNavigation.NavAPI.MoveTo(pt.x, 0, pt.z)
-                KitanoiSettings.avoidingtime = Now() + 100
             end
         elseif name == "Coronation" then
-            local LONG_SEGMENT_MS = 6500
-            local SHORT_SEGMENT_MS = LONG_SEGMENT_MS / 2
-
-            local cycle = progress % (LONG_SEGMENT_MS * 2 + SHORT_SEGMENT_MS * 2)
-
-            if cycle < LONG_SEGMENT_MS then
-                local t = cycle / LONG_SEGMENT_MS
-                local x = 82 + (118 - 82) * t
-                KitanoiNavigation.NavAPI.MoveTo(x, 0, 82)
-            elseif cycle < LONG_SEGMENT_MS + SHORT_SEGMENT_MS then
-                local t = (cycle - LONG_SEGMENT_MS) / SHORT_SEGMENT_MS
-                local z = 82 + (100 - 82) * t
-                KitanoiNavigation.NavAPI.MoveTo(118, 0, z)
-            elseif cycle < LONG_SEGMENT_MS * 2 + SHORT_SEGMENT_MS then
-                local t = (cycle - (LONG_SEGMENT_MS + SHORT_SEGMENT_MS)) / LONG_SEGMENT_MS
-                local x = 118 + (82 - 118) * t
-                KitanoiNavigation.NavAPI.MoveTo(x, 0, 100)
-            else
-                local t = (cycle - (LONG_SEGMENT_MS * 2 + SHORT_SEGMENT_MS)) / SHORT_SEGMENT_MS
-                local z = 100 + (82 - 100) * t
-                KitanoiNavigation.NavAPI.MoveTo(82, 0, z)
-            end
-            KitanoiSettings.avoidingtime = Now() + 2000
+            dqcon()
         elseif name == "CoronationTethers" then
             local cx, cz = 100, 92
             -- stray dude stays behind
@@ -2273,7 +2274,7 @@ function NoobgamKdfProfiles.Interphos()
     end
 
     if (KitanoiFuncs.ScanForCaster2(36609) or KitanoiFuncs.ScanForCaster2(36610)) and not Mech.IsActive("DownBurst") then
-        Mech.Trigger("DownBurst", 8000)
+        Mech.Trigger("DownBurst", 7600)
     end
 
     if KitanoiFuncs.ScanForCaster2(36636) and not Mech.IsActive("DivideAndConquer") then
@@ -2296,9 +2297,10 @@ function NoobgamKdfProfiles.Interphos()
         Mech.Trigger("AbsoluteAuthority", 80000)
     end
 
-    if IsControlOpen("TalkSubtitle") then
-        Mech.Trigger("FurryPhase", 120000)
+    if IsControlOpen("TalkSubtitle") and not Mech.IsActive("FurryPhase") then
+        Mech.Trigger("FurryPhase", 240000)
     end
+    KitanoiSettings.ExcludeLOSs[13029] = true
 
     if KitanoiFuncs.ScanForCaster2(36629)
         and not Mech.IsActive("Coronation")
@@ -2338,19 +2340,31 @@ function NoobgamKdfProfiles.Interphos()
         handleMechanic("FurryPhase")
     end
 
+    if Mech.IsActive("CoronationAetherite")
+        or Mech.IsActive("LegitimateForce")
+        -- soak this one. We suck becaause of no mesh
+        or Mech.IsActive("VirtualShiftDiagonal")
+    then
+        KitanoiSettings.DFIndexedExcludeAvoid[36633] = true
+    else
+        KitanoiSettings.DFIndexedExcludeAvoid[36633] = nil
+    end
+
     if Mech.IsActive("DivideAndConquer") then
         if Mech.IsActive("Coronation") then
+            NoobgamKdfProfiles.UseMits()
             NoobgamKdfProfiles.UseMits({
-                7535,
-                7388,
-                3540,
-                24298,
-                24310,
+                24288,
+                24288,
+                24299,
+                24300,
+
             })
-        else
-            handleMechanic("DivideAndConquer")
+            -- to make sure we can cast mits
+            Player:SetTarget(Player.id)
         end
     end
+
     if Mech.IsActive("Aethertithe") then
         if not Mech.IsActive("Coronation") and not Mech.IsActive("CoronationTethers") then
             handleMechanic("Aethertithe")
@@ -2363,7 +2377,7 @@ function NoobgamKdfProfiles.Interphos()
     end
     if Mech.IsActive("DownBurst") then handleMechanic("DownBurst") end
     if Mech.IsActive("Coronation") then
-        if not Mech.IsActive("VirtualShiftDiagonal") then
+        if not Mech.IsActive("VirtualShiftDiagonal") and not Mech.IsActive("DivideAndConquer") then
             handleMechanic("Coronation")
         end
     end
@@ -2779,5 +2793,14 @@ function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z, timeOverride)
         NoobgamKdfProfiles.TryingToWipe = false
     end
 end
+
+-- kdf doesn't run on every tick. this sucks ass.
+local function update()
+    if Player.localmapid == 1202 then
+        NoobgamKdfProfiles.Interphos()
+    end
+end
+
+RegisterEventHandler([[Gameloop.Update]], update, [[NoobgamKdfProfiles.Update]])
 
 return NoobgamKdfProfiles
