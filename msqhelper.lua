@@ -48,11 +48,13 @@ local questStepIdToDungeonId = {
     [4677] = { [4] = 886 }, --- rubicante (Mount ordeals)
     [4742] = { [2] = 949 }, --- golbez (voidcast dais)
     [4748] = { [5] = 964 }, --- zeromus (abyssal fracture)
+    [4959] = { [4] = 984 }, --- the interphos
 }
 
 local dungeonsToClearInDutyFinder = {
     [738] = true,
     [796] = true,
+    [984] = true,
 }
 
 local primalDungeons = { 59, 60, 61 }
