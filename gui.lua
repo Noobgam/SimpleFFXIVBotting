@@ -153,7 +153,7 @@ local function drawDebugPanel()
     GUI:Separator()
 
     local foundUnskippable = false
-    for questId, steps in pairs(MsqBootstrap.CONFIG.questStepIdToDungeonId) do
+    for questId, steps in pairs(MsqClearHelper.QuestStepIdToDungeonId) do
         for stepId, dungeonId in pairs(steps) do
             local currentStep = Quest:GetQuestCurrentStep(questId)
             if currentStep == stepId then

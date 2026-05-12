@@ -56,6 +56,7 @@ local questStepIdToDungeonId = {
     [4748] = { [5] = 964 }, --- zeromus (abyssal fracture)
     [4959] = { [4] = 984 }, --- the interphos
 }
+MsqClearHelper.QuestStepIdToDungeonId = questStepIdToDungeonId
 
 local dungeonsToClearInDutyFinder = {
     [738] = true,
@@ -260,6 +261,9 @@ end
 --- Check what dungeon is currently needed based on quest progress
 --- @return number|nil dungeonId
 function MsqClearHelper.DetectNeededDungeon()
+    if true then
+        return 86
+    end
     for questId, steps in pairs(questStepIdToDungeonId) do
         local completed = Quest:IsQuestCompleted(questId, false)
         if not completed then
@@ -316,6 +320,55 @@ local function ensureUnderSizedParty()
     return false
 end
 
+local function pressKeys(actions, wait_override)
+    if MsqClearHelper.KeyPressQueue == nil then
+        MsqClearHelper.KeyPressQueue = {}
+    end
+    for i = 1, #actions do
+        local action = actions[i]
+        if type(action) == "function" then
+            table.insert(MsqClearHelper.KeyPressQueue, { callback = action, wait = wait_override or 300 })
+        end
+    end
+end
+
+local function processKeyPress()
+    if MsqClearHelper.KeyPressQueue == nil then return false end
+    if #MsqClearHelper.KeyPressQueue > 0 then
+        local top = MsqClearHelper.KeyPressQueue[1]
+        local wait_millis = top.wait
+        if top.callback then
+            top.callback()
+        end
+        table.remove(MsqClearHelper.KeyPressQueue, 1)
+        wait(wait_millis or 500)
+        return true
+    end
+    return false
+end
+
+local function stopPF()
+    log("Stopping PF before entering duty")
+    pressKeys({
+        function() ActionList:Get(10, 57):Cast() end,
+        function()
+            if IsControlOpen("LookingForGroup") then
+                GetControlByName("LookingForGroup"):PushButton(25, 2)
+            else
+                log("[WARNING] Failed to stop pf - LookingForGroup not open")
+            end
+        end,
+        function()
+            if IsControlOpen("LookingForGroupDetail") then
+                GetControlByName("LookingForGroupDetail"):PushButton(25, 2)
+                log("Stopped pf successfully")
+            else
+                log("[WARNING] Failed to stop pf - LookingForGroupDetail not open")
+            end
+        end,
+    }, 500)
+end
+
 function MsqClearHelper.Reset()
     log("Resetting msq")
     local farmer = MsqClearHelper.CurrentFarmer
@@ -335,7 +388,7 @@ function MsqClearHelper.Reset()
 end
 
 --- Check if farmer is in party (regular or crossworld)
-local function isFarmerInParty()
+local function isPartyReady()
     if not MsqClearHelper.CurrentFarmer then
         return false
     end
@@ -362,21 +415,16 @@ end
 
 local function updateHost()
     if MsqClearHelper.NeedToDisband then
-        if not table.valid(EntityList.myparty) and not table.valid(EntityList.crossworldparty) then
-            log("Party disbanded, resetting")
-            MsqClearHelper.Reset()
-            return true
-        end
-
-        if IsControlOpen("SelectYesno") then
-            log("Pressing yes")
-            UseControlAction("SelectYesno", "Yes")
-            wait(2000)
-            return true
-        end
-
-        log("Disbanding party")
-        SendTextCommand("/pcmd breakup")
+        log("Scheduling disband")
+        NoobgamTaskManager.Schedule({
+            type = "disbandParty",
+            params = {},
+            onEnd = function()
+                log("Party disband task ended, resetting")
+                MsqClearHelper.DisbandScheduled = false
+                MsqClearHelper.Reset()
+            end
+        })
         wait(2000)
         return true
     end
@@ -388,10 +436,21 @@ local function updateHost()
         return true
     end
 
-    if MsqClearHelper.CurrentDungeonId and isFarmerInParty() then
+    if MsqClearHelper.CurrentDungeonId and isPartyReady() then
         if not ensureUnderSizedParty() then
             return true
         end
+
+        -- Stop the PF first before entering dungeon
+        if not MsqClearHelper.PfStopped then
+            log("Party ready, stopping PF before entering dungeon")
+            MsqClearHelper.UnpublishPfReady(MsqClearHelper.CurrentFarmer)
+            stopPF()
+            MsqClearHelper.PfStopped = true
+            wait(2000)
+            return true
+        end
+
         log("Party ready, entering dungeon: " .. MsqClearHelper.CurrentDungeonId)
         Duty:JoinDuty(2, MsqClearHelper.CurrentDungeonId)
         wait(2000)
@@ -632,6 +691,11 @@ function MsqClearHelper.Update()
             MsqClearHelper.BreakOutDelayMillis = nil
             MsqClearHelper.WaitCondition = nil
         end
+        return true
+    end
+    
+    -- Process queued PF stop key presses
+    if processKeyPress() then
         return true
     end
 

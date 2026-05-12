@@ -899,12 +899,12 @@ local function disbandParty()
 
     if not table.valid(EntityList.crossworldparty) then
         pressKeys({
-            function() NoobgamUtils.DisbandParty() end,
+            function() SendTextCommand("/pcmd breakup") end,
             function() PressYesNo(true) end,
         }, 1000)
     else
         pressKeys({
-            function() NoobgamUtils.DisbandParty() end,
+            function() SendTextCommand("/pcmd breakup") end,
             function() UIEvent(61, 0, {{3, 2}, {3, 3}, {0, 0}, {0, 0}}) end,
             function() PressYesNo(true) end,
             function() PressYesNo(true) end,
