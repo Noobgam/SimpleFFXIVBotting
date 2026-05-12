@@ -9,7 +9,13 @@ if MsqClearHelper == nil then
     MsqClearHelper.InDungeon = false
     MsqClearHelper.NeedToDisband = false
     MsqClearHelper.LastBroadcast = 0
+    MsqClearHelper.HostState = nil -- nil | "creating_pf" | "pf_ready"
+    MsqClearHelper.PfReadyAt = nil
+    MsqClearHelper.JoinPfScheduled = false
 end
+
+local PF_PASSWORD = 1731
+local PF_WAIT_TIMEOUT_MS = 90000
 
 local function log(msg)
     d("[MsqClearHelper] " .. msg)
@@ -82,6 +88,7 @@ end
 --- Shared state file for communication between host and farmers
 local sharedStateFolder = GetLuaModsPath() .. "SimpleFFXIVBotting\\shared\\"
 local sharedStatePath = sharedStateFolder .. "msq_clear_requests.json"
+local pfReadyPath = sharedStateFolder .. "msq_pf_ready.json"
 
 ---@class ClearRequest
 ---@field farmerName string
@@ -89,6 +96,15 @@ local sharedStatePath = sharedStateFolder .. "msq_clear_requests.json"
 
 ---@class SharedClearState
 ---@field requests ClearRequest[]
+
+---@class PfReadyEntry
+---@field recruiterName string
+---@field farmerName string
+---@field dungeonId number
+---@field password integer
+
+---@class PfReadyState
+---@field entries PfReadyEntry[]
 
 local function loadSharedState()
     if not FolderExists(sharedStateFolder) then
@@ -113,6 +129,82 @@ local function saveSharedState(state)
         FolderCreate(sharedStateFolder)
     end
     FileWrite(sharedStatePath, json.encode(state, { indent = 2 }))
+end
+
+local function loadPfReadyState()
+    if not FolderExists(sharedStateFolder) then
+        FolderCreate(sharedStateFolder)
+    end
+
+    if not FileExists(pfReadyPath) then
+        return { entries = {} }
+    end
+
+    local content = NoobgamUtils.ReadFile(pfReadyPath)
+    if not content or content == "" then
+        return { entries = {} }
+    end
+
+    local decoded = json.decode(content)
+    if not decoded or not decoded.entries then
+        return { entries = {} }
+    end
+    return decoded
+end
+
+local function savePfReadyState(state)
+    if not FolderExists(sharedStateFolder) then
+        FolderCreate(sharedStateFolder)
+    end
+    FileWrite(pfReadyPath, json.encode(state, { indent = 2 }))
+end
+
+--- Host announces a ready PF for a specific farmer
+--- @param farmerName string
+--- @param dungeonId number
+--- @param password integer
+function MsqClearHelper.PublishPfReady(farmerName, dungeonId, password)
+    log("Publishing PF ready for " .. farmerName .. " dungeon " .. tostring(dungeonId))
+    local state = loadPfReadyState()
+    local entries = {}
+    for _, e in ipairs(state.entries or {}) do
+        if e.farmerName ~= farmerName then
+            table.insert(entries, e)
+        end
+    end
+    table.insert(entries, {
+        recruiterName = Player.name,
+        farmerName = farmerName,
+        dungeonId = dungeonId,
+        password = password,
+    })
+    savePfReadyState({ entries = entries })
+end
+
+--- Remove a published PF ready entry (by farmer name)
+--- @param farmerName string
+function MsqClearHelper.UnpublishPfReady(farmerName)
+    log("Unpublishing PF ready for " .. tostring(farmerName))
+    local state = loadPfReadyState()
+    local entries = {}
+    for _, e in ipairs(state.entries or {}) do
+        if e.farmerName ~= farmerName then
+            table.insert(entries, e)
+        end
+    end
+    savePfReadyState({ entries = entries })
+end
+
+--- Find the PF ready entry for the current farmer (by player name)
+--- @return PfReadyEntry|nil
+function MsqClearHelper.GetPfReadyForMe()
+    local state = loadPfReadyState()
+    for _, e in ipairs(state.entries or {}) do
+        if e.farmerName == Player.name then
+            return e
+        end
+    end
+    return nil
 end
 
 --- Register that a dungeon needs to be cleared (farmer calls this)
@@ -226,14 +318,23 @@ end
 
 function MsqClearHelper.Reset()
     log("Resetting msq")
+    local farmer = MsqClearHelper.CurrentFarmer
     MsqClearHelper.CurrentDungeonId = nil
     MsqClearHelper.CurrentFarmer = nil
     MsqClearHelper.NeedToDisband = false
     MsqClearHelper.LastBroadcast = 0
-    FileDelete(sharedStatePath)
+    MsqClearHelper.HostState = nil
+    MsqClearHelper.PfReadyAt = nil
+    MsqClearHelper.JoinPfScheduled = false
+    if MsqClearHelper.Role == "host" then
+        FileDelete(sharedStatePath)
+        if farmer then
+            MsqClearHelper.UnpublishPfReady(farmer)
+        end
+    end
 end
 
---- Check if farmer is in party
+--- Check if farmer is in party (regular or crossworld)
 local function isFarmerInParty()
     if not MsqClearHelper.CurrentFarmer then
         return false
@@ -247,32 +348,21 @@ local function isFarmerInParty()
         end
     end
 
-    return false
-end
-
-local function handleInvites()
-    if not IsControlOpen("SelectYesno") then
-        return
-    end
-
-    local inviter = NoobgamUtils.ExtractInviterName()
-    if not inviter then
-        UseControlAction("SelectYesno", "No")
-    else
-        UseControlAction("SelectYesno", "Yes")
-    end
-    wait(500)
-end
-
-local function updateHost()
-    if not MsqClearHelper.CurrentFarmer then
-        if table.valid(EntityList.myparty) then
-            MsqClearHelper.NeedToDisband = true
+    if table.valid(EntityList.crossworldparty) then
+        for _, member in pairs(EntityList.crossworldparty) do
+            if member.name == MsqClearHelper.CurrentFarmer then
+                return true
+            end
         end
     end
 
+    return false
+end
+
+
+local function updateHost()
     if MsqClearHelper.NeedToDisband then
-        if not table.valid(EntityList.myparty) then
+        if not table.valid(EntityList.myparty) and not table.valid(EntityList.crossworldparty) then
             log("Party disbanded, resetting")
             MsqClearHelper.Reset()
             return true
@@ -317,14 +407,51 @@ local function updateHost()
             log("Found request from " .. req.farmerName .. " for dungeon " .. req.dungeonId)
             MsqClearHelper.CurrentDungeonId = req.dungeonId
             MsqClearHelper.CurrentFarmer = req.farmerName
+            MsqClearHelper.HostState = nil
+            MsqClearHelper.PfReadyAt = nil
         end
     end
 
-    -- If we have a current farmer but they're not in party, invite them
-    if MsqClearHelper.CurrentFarmer and not isFarmerInParty() then
-        log("Inviting farmer: " .. MsqClearHelper.CurrentFarmer)
-        NoobgamPrivateAPI.InviteToParty(MsqClearHelper.CurrentFarmer)
-        wait(3000)
+    if not MsqClearHelper.CurrentFarmer then
+        return false
+    end
+
+    -- We have a farmer but they're not in party — drive a PF
+    if MsqClearHelper.HostState == nil then
+        log("Scheduling createPF for farmer: " .. MsqClearHelper.CurrentFarmer)
+        local farmer = MsqClearHelper.CurrentFarmer
+        local dungeonId = MsqClearHelper.CurrentDungeonId
+        MsqClearHelper.HostState = "creating_pf"
+        NoobgamTaskManager.Schedule({
+            type = "createPF",
+            params = { mode = 1, password = PF_PASSWORD },
+            onEnd = function()
+                if MsqClearHelper.CurrentFarmer ~= farmer then
+                    log("Farmer changed during createPF, dropping result")
+                    return
+                end
+                MsqClearHelper.PublishPfReady(farmer, dungeonId, PF_PASSWORD)
+                MsqClearHelper.HostState = "pf_ready"
+                MsqClearHelper.PfReadyAt = Now()
+            end,
+        })
+        wait(2000)
+        return true
+    end
+
+    if MsqClearHelper.HostState == "creating_pf" then
+        wait(2000)
+        return true
+    end
+
+    if MsqClearHelper.HostState == "pf_ready" then
+        if MsqClearHelper.PfReadyAt and Now() - MsqClearHelper.PfReadyAt > PF_WAIT_TIMEOUT_MS then
+            log("PF wait timed out, disbanding")
+            MsqClearHelper.UnpublishPfReady(MsqClearHelper.CurrentFarmer)
+            MsqClearHelper.NeedToDisband = true
+            return true
+        end
+        wait(2000)
         return true
     end
 
@@ -333,7 +460,6 @@ end
 
 local function updateFarmer()
     gStuckRemesh = false
-    handleInvites()
 
     if IsControlOpen("ContentsFinderConfirm") then
         log("Confirming dungeon entry")
@@ -342,7 +468,7 @@ local function updateFarmer()
         return true
     end
 
-    if MsqClearHelper.CurrentDungeonId and table.valid(EntityList.myparty) then
+    if MsqClearHelper.CurrentDungeonId and (table.valid(EntityList.myparty) or table.valid(EntityList.crossworldparty)) then
         log("In party, waiting for dungeon entry")
         wait(2000)
         return true
@@ -376,6 +502,28 @@ local function updateFarmer()
         if MsqClearHelper.CurrentDungeonId ~= neededDungeon then
             MsqClearHelper.CurrentDungeonId = neededDungeon
             MsqClearHelper.RegisterForClear(neededDungeon)
+            MsqClearHelper.JoinPfScheduled = false
+            return true
+        end
+
+        -- Check for a host-published PF and join it
+        local pfReady = MsqClearHelper.GetPfReadyForMe()
+        if pfReady and pfReady.dungeonId == neededDungeon and not MsqClearHelper.JoinPfScheduled then
+            log("PF ready from " .. pfReady.recruiterName .. ", scheduling joinPF")
+            MsqClearHelper.JoinPfScheduled = true
+            local recruiter = pfReady.recruiterName
+            NoobgamTaskManager.Schedule({
+                type = "joinPF",
+                params = {
+                    recruiterName = recruiter,
+                    password = pfReady.password,
+                    onFailure = function()
+                        log("joinPF failed for " .. recruiter .. ", will retry")
+                        MsqClearHelper.JoinPfScheduled = false
+                    end,
+                },
+            })
+            wait(2000)
             return true
         end
 
@@ -542,7 +690,13 @@ function MsqClearHelper.Update()
             MsqClearHelper.FightStarted = nil
             MsqClearHelper.NeedToDisband = true
             MsqClearHelper.UnregisterClear()
+            if MsqClearHelper.Role == "host" and MsqClearHelper.CurrentFarmer then
+                MsqClearHelper.UnpublishPfReady(MsqClearHelper.CurrentFarmer)
+            end
             MsqClearHelper.CurrentDungeonId = nil
+            MsqClearHelper.HostState = nil
+            MsqClearHelper.PfReadyAt = nil
+            MsqClearHelper.JoinPfScheduled = false
             MsqClearHelper.BlueEngaged = nil
             MsqClearHelper.BlueWaitUntil = nil
         end
