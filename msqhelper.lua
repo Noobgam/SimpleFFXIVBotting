@@ -261,9 +261,6 @@ end
 --- Check what dungeon is currently needed based on quest progress
 --- @return number|nil dungeonId
 function MsqClearHelper.DetectNeededDungeon()
-    if true then
-        return 86
-    end
     for questId, steps in pairs(questStepIdToDungeonId) do
         local completed = Quest:IsQuestCompleted(questId, false)
         if not completed then
