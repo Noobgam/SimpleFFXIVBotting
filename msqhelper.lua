@@ -486,6 +486,7 @@ local function updateHost()
                     log("Farmer changed during createPF, dropping result")
                     return
                 end
+                MsqClearHelper.PfStopped = false
                 MsqClearHelper.PublishPfReady(farmer, dungeonId, PF_PASSWORD)
                 MsqClearHelper.HostState = "pf_ready"
                 MsqClearHelper.PfReadyAt = Now()
