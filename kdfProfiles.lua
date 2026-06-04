@@ -51,6 +51,36 @@ NoobgamKdfProfiles = {
 }
 
 NoobgamKdfProfiles.DungeonProfiles = {
+    [432] = {
+        name = "Thok ast Thok (Hard)",
+        mesh = "Thok ast Thok",
+        dutyid = 432,
+        level = 53,
+        expansion = 3,
+        creator = "Koyote",
+        notes = "",
+        queuetype = 2,
+        FFA = false,
+        hacks = false,
+        requeuetimer = 10,
+        objectivedestinations = {
+            [1] = {objective = 1, pos = {x = 100, y = 0, z = 100}},
+        },
+        interacts = {},
+        bossids = {
+            3660, -- Ravana -- Ravana Card & (Ravana's Forewing (Synced Only))
+        },
+        forcemeleerange= {3660},
+        enemytargetdistance = 50,
+        prioritytarget = {},
+        tankat= {
+            [1] = {contentid = 3660, frompercent = 100, topercent = 1, pos = {x = 0.77, y = 0, z = -0}, desc = "Tank at this pos from 100-1%"},
+        },
+        advancedavoid = {},
+        hasbuff = {},
+        overheadmarkers = {},
+        excludeavoid = {},
+    },
     [674] = {
         name = "The Pool of Tribute",
         mesh = "[Trial] The Pool Of Tribute",
@@ -1955,7 +1985,10 @@ function NoobgamKdfProfiles.Interphos()
     if TimeSince(KitanoiSettings.InCombatTimer) < 100 then
         return
     end
+    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
     Mech.UpdateState()
+
+    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
 
     if NoobgamKdfProfiles.TryingToWipe or NoobgamKdfProfiles.StopMovingIfRaising() then
         return
