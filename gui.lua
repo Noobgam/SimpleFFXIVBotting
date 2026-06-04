@@ -204,6 +204,176 @@ local function drawDebugPanel()
     GUI:Unindent()
 end
 
+local logsStateFolder = GetLuaModsPath() .. "SimpleFFXIVBotting\\logs\\"
+local sharedStateFolder = GetLuaModsPath() .. "SimpleFFXIVBotting\\shared\\"
+
+local function clearSharedFolder()
+    local sharedStatePath = sharedStateFolder .. "msq_clear_requests.json"
+    local pfReadyPath = sharedStateFolder .. "msq_pf_ready.json"
+    FileDelete(sharedStatePath)
+    FileDelete(pfReadyPath)
+end
+
+local function buildBugReport()
+    local lines = {}
+
+    local function add(text)
+        lines[#lines + 1] = text
+    end
+
+    add("=== NoobgamSidekick Bug Report ===")
+    add("Date: " .. os.date("%Y-%m-%d %H:%M:%S"))
+    add("")
+
+    add("--- Player Info ---")
+    add("Job: " .. tostring(Player.job))
+    add("Level: " .. tostring(Player.levels[Player.job] or 0))
+    add("Map ID: " .. tostring(Player.localmapid))
+    add("Gil: " .. tostring(GilCount()))
+    add("")
+
+    add("--- Bot State ---")
+    add("Mode: " .. tostring(NoobgamConfigManager.Config.mode))
+    add("Enabled: " .. tostring(NoobgamConfigManager.Config.enabled))
+    add("Bot Running: " .. tostring(FFXIV_Common_BotRunning))
+    add("Quest Profile: " .. tostring(gQuestProfile or "None"))
+    add("Bot Mode: " .. tostring(gBotMode or "None"))
+    add("Active Profile: " .. tostring(MsqBootstrap.LastProfile or "None"))
+    add("Use Duty Finder: " .. tostring(NoobgamConfigManager.Config.useDutyFinder or false))
+    add("")
+
+    add("--- Wait State ---")
+    if MsqBootstrap.WaitUntil and MsqBootstrap.WaitUntil > Now() then
+        local remaining = math.floor((MsqBootstrap.WaitUntil - Now()) / 1000)
+        add("Waiting: " .. remaining .. "s remaining")
+        add("Has Break-out Condition: " .. tostring(MsqBootstrap.WaitCondition ~= nil))
+    else
+        add("Not waiting")
+    end
+    add("")
+
+    add("--- Quest Settings ---")
+    add("Quest Rule: " .. tostring(QuestOpts_100_v1_QuestRule or "None"))
+    add("Quest Sub-Rule: " .. tostring(QuestOpts_100_v1_QuestSubRule or "None"))
+    add("Aether Currents: " .. tostring(gQuestGatherAetherCurrents and "Yes" or "No"))
+    add("Buy Greens: " .. tostring(QuestOpts_Q_BuyGreens and "Yes" or "No"))
+    add("")
+
+    add("--- Prerequisite Quests ---")
+    local prereqs = {
+        { id = 1162, name = "Chocobo" },
+        { id = 952,  name = "Airship Quest (Has)" },
+        { id = 953,  name = "Airship Quest (Complete)" },
+        { id = 715,  name = "First Contact" },
+        { id = 4522, name = "Can Do Porta" },
+        { id = 1619, name = "Heavensward Complete" },
+        { id = 3649, name = "Role Quest Unlock" },
+        { id = 3650, name = "Role Quest Check" },
+    }
+    for _, quest in ipairs(prereqs) do
+        local completed = QuestCompleted(quest.id)
+        local hasQuest = HasQuest(quest.id)
+        local status = completed and "Complete" or (hasQuest and "Active" or "Not Started")
+        add("  " .. quest.name .. " (" .. quest.id .. "): " .. status)
+    end
+    add("")
+
+    add("--- Decision Logic ---")
+    local haveChocobo = QuestCompleted(1162)
+    local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
+    local canDoPorta = QuestCompleted(4522)
+    local timeToJob = not deadlockedByAirship and haveChocobo and QuestCompleted(715)
+    add("Have Chocobo: " .. (haveChocobo and "Yes" or "No"))
+    add("Deadlocked by Airship: " .. (deadlockedByAirship and "Yes" or "No"))
+    add("Can Do Porta: " .. (canDoPorta and "Yes" or "No"))
+    add("Time To Job: " .. (timeToJob and "Yes" or "No"))
+    add("")
+
+    add("--- Job Quest Status ---")
+    local myJob = MsqBootstrap.CONFIG.jobMapping[Player.job] or Player.job
+    add("Mapped Job: " .. tostring(myJob))
+    local levels = { 15, 30, 50, 60, 70, 80 }
+    for _, level in ipairs(levels) do
+        local mapping = MsqBootstrap.CONFIG.jobQuestCompletion[level]
+        if mapping then
+            local questId = mapping[myJob]
+            if questId then
+                local completed = QuestCompleted(questId)
+                add("  Level " .. level .. " (Quest " .. questId .. "): " .. (completed and "Complete" or "Incomplete"))
+            else
+                add("  Level " .. level .. ": No quest defined")
+            end
+        end
+    end
+    add("")
+
+    add("--- Unskippable Dungeons ---")
+    local foundUnskippable = false
+    for questId, steps in pairs(MsqClearHelper.QuestStepIdToDungeonId) do
+        for stepId, dungeonId in pairs(steps) do
+            local currentStep = Quest:GetQuestCurrentStep(questId)
+            if currentStep == stepId then
+                add("BLOCKED: Quest " .. questId .. " Step " .. stepId .. " -> Dungeon " .. dungeonId)
+                foundUnskippable = true
+            end
+        end
+    end
+    if not foundUnskippable then
+        add("No unskippable dungeons blocking")
+    end
+    add("")
+
+    add("=== End of Report ===")
+
+    return table.concat(lines, "\n")
+end
+
+local function execute(cmd)
+    local handle = io.popen(cmd)
+    d("Executing " .. cmd)
+    if not handle then return nil end
+    local output = handle:read("*a")
+    handle:close()
+    return output
+end
+
+local function generateBugReportZip()
+    local timestamp = os.date("%Y%m%d_%H%M%S")
+    local baseFolder = GetLuaModsPath() .. "SimpleFFXIVBotting\\"
+    local stagingDir = baseFolder .. "bugreport_" .. timestamp
+    local zipPath = baseFolder .. "bugreport_" .. timestamp .. ".zip"
+
+    execute('mkdir "' .. stagingDir .. '"')
+    execute('mkdir "' .. stagingDir .. '\\shared"')
+    execute('mkdir "' .. stagingDir .. '\\logs"')
+
+    local report = buildBugReport()
+    local reportFile = io.open(stagingDir .. "\\report.txt", "w")
+    if reportFile then
+        reportFile:write(report)
+        reportFile:close()
+    end
+
+    local consoleLines = GetConsoleLines()
+    local consoleFile = io.open(stagingDir .. "\\console.log", "w")
+    if consoleFile then
+        consoleFile:write(consoleLines)
+        consoleFile:close()
+    end
+
+    execute(string.format('xcopy "%s*" "%s\\shared\\" /E /I /Y /Q', sharedStateFolder, stagingDir))
+    execute(string.format('xcopy "%s*" "%s\\logs\\" /E /I /Y /Q', logsStateFolder, stagingDir))
+
+    local zipCmd = string.format(
+        'powershell -NoProfile -Command "Compress-Archive -Path \'%s\\*\' -DestinationPath \'%s\'"',
+        stagingDir,
+        zipPath
+    )
+    execute(zipCmd)
+
+    return zipPath
+end
+
 local function drawBootstrapUI()
     GUI:Text("MSQ Bootstrap")
     GUI:Separator()
@@ -289,6 +459,7 @@ local function drawBootstrapUI()
     GUI:Separator()
 
     if GUI:Button("Reset Bootstrap##Bootstrap") then
+        clearSharedFolder()
         MsqBootstrap.Reset()
     end
 
@@ -298,6 +469,13 @@ local function drawBootstrapUI()
         MsqBootstrap.WaitUntil = nil
         MsqBootstrap.WaitCondition = nil
         MsqBootstrap.BreakOutDelayMillis = nil
+    end
+
+    GUI:SameLine()
+
+    if GUI:Button("Bug Report##Bootstrap") then
+        local zipName = generateBugReportZip()
+        GUI:SetClipboardText("Bug report saved to: " .. zipName)
     end
 
     GUI:Separator()
