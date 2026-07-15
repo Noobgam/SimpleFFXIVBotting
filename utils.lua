@@ -74,6 +74,29 @@ local function decStringToHex32(dec)
   return string.rep("0", 32 - #s) .. s
 end
 
+function NoobgamUtils.GetMyAlliance()
+    local allAlliances = { "A", "B", "C" }
+    local visibleAlliances = {}
+
+    for i = 1, 2 do
+        local str = GetControlStrings("_AllianceList" .. i, 2)
+        if str ~= nil and str ~= "" then
+            local letter = str:match("Alliance (%a)")
+            if letter then
+                visibleAlliances[letter] = true
+            end
+        end
+    end
+
+    for _, letter in ipairs(allAlliances) do
+        if not visibleAlliances[letter] then
+            return letter
+        end
+    end
+
+    return nil
+end
+
 function NoobgamUtils.GetMinionAppUUIDHex()
     local decStr = GetMinionAppUUID()
     if decStr == nil then

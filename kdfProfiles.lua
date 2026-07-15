@@ -1793,6 +1793,131 @@ NoobgamKdfProfiles.DungeonProfiles[1045] = {
     pullenemyoutofpuddle = false,
 }
 
+-- Labyrinth of the Ancients (24-man alliance raid).
+-- mapid = 174, dutyid = 92.
+NoobgamKdfProfiles.DungeonProfiles[174] = {
+    name = "The Labyrinth of the Ancients",
+    mesh = "The Labyrinth of the Ancients",
+    dutyid = 92,
+    level = 50,
+    expansion = 2,
+    creator = "Noobgam",
+    notes = "24-man. Navigation only, no teleport hacks.\nEach alliance (A/B/C) contests its own atomos spot (1/2/3).",
+    queuetype = 2,
+    FFA = true,
+    hacks = false,
+    requeuetimer = 10,
+    objectivedestinations = {
+        [1] = {objective = 1, pos = {x = -451, y = 25.6, z = 20}},
+    },
+    interacts = {},
+    bossids = {},
+    enemytargetdistance = 70,
+    prioritytarget = {},
+    tankat = {},
+    advancedavoid = {
+        [1] = {type = "custom", customdetails = "libraryfunction", functioncode = "NoobgamKdfProfiles.LabyrinthOfTheAncients()"},
+    },
+    hasbuff = {},
+    overheadmarkers = {},
+    excludeavoid = {},
+}
+
+-- Waypoints / constants for The Labyrinth of the Ancients (mirrors the MsqHelper lota flow).
+local LOTA = {
+    IRON_GIANT_CONTENT_ID = 730,
+    ATOMOS_CONTENT_ID = 1872,
+    -- ATOMOS_POS = {
+    --     { x = 253.6, y = 51, z = 244 },
+    --     { x = 253.6, y = 51, z = 280 },
+    --     { x = 253.6, y = 51, z = 316 },
+    -- },
+    -- Alliance A/B/C each parks on atomos spot 1/2/3 respectively.
+    ALLIANCE_ATOMOS_SPOT = {
+        A = { x = 216.4, y = 51, z = 244 },
+        B = { x = 216.4, y = 51, z = 280 },
+        C = { x = 216.4, y = 51, z = 316 },
+    },
+    WAYPOINTS = {
+        P5       = { x = -451,   y = 25.6,  z = 20 },
+        P6       = { x = 166.44, y = 58.5,  z = 279.3 },
+        P7       = { x = 211,    y = 51,    z = 244 },
+        THANATOS = { x = 440.4,  y = 66.27, z = 280 },
+        BEHEMOTH = { x = -108,   y = 68,    z = -347 },
+        DUDE     = { x = -109,   y = 650,   z = 200 },
+    },
+}
+
+-- One big step-detecting function. Detects the current phase from completed
+-- duty objectives and walks (never teleports) to the matching waypoint. KDF's
+-- ACR handles the actual fighting once we are in range.
+function NoobgamKdfProfiles.LabyrinthOfTheAncients()
+    if not table.valid(Duty:GetActiveDutyInfo()) then
+        return
+    end
+
+    -- If the exit is up we are done, let the framework leave.
+    local exit = NoobgamUtils.PickClosestExit()
+    if exit ~= nil and exit.targetable then
+        return
+    end
+
+    local function completedObjectives()
+        local c = 0
+        local objs = Duty:GetActiveDutyObjectives()
+        if table.valid(objs) then
+            for i, obj in pairs(objs) do
+                if obj.completed then
+                    c = math.max(i, c)
+                end
+            end
+        end
+        return c
+    end
+
+    --- Walk to a position. Returns true once we are within radius.
+    local function moveTo(pos, radius)
+        radius = radius or 2
+        if pos == nil then
+            return true
+        end
+        if NoobgamUtils.calculateDist(Player.pos, pos) > radius then
+            KitanoiNavigation.NavAPI.MoveTo(pos.x, pos.y, pos.z)
+            KitanoiSettings.avoidingtime = Now()
+            local sprint = ActionList:Get(1, 3)
+            if sprint and sprint:IsReady() then
+                sprint:Cast()
+            end
+            return false
+        end
+        return true
+    end
+
+    local W = LOTA.WAYPOINTS
+    local completed = completedObjectives()
+
+    -- Phase mapping mirrors the skips table in the MsqHelper lota config:
+    --   objectives >= 3 -> atomos contest, >= 4 -> Thanatos, >= 5 -> Behemoth, >= 7 -> final drop.
+    if completed < 1 then
+        moveTo(W.P5)
+    elseif completed < 2 then
+        moveTo(W.P6)
+    elseif completed < 3 then
+        moveTo(W.P7)
+    elseif completed == 3 then
+        -- Atomos contest phase. Each alliance parks on its own spot.
+        local alliance = NoobgamUtils.GetMyAlliance() or "A"
+        local spot = LOTA.ALLIANCE_ATOMOS_SPOT[alliance]
+        moveTo(spot)
+    elseif completed == 4 then
+        moveTo(W.THANATOS)
+    elseif completed == 5 or completed == 6 then
+        moveTo(W.BEHEMOTH)
+    else
+        moveTo(W.DUDE)
+    end
+end
+
 function NoobgamKdfProfiles.UseMits(mits)
     mits = mits or {
         -- common
@@ -2831,6 +2956,8 @@ end
 local function update()
     if Player.localmapid == 1202 then
         NoobgamKdfProfiles.Interphos()
+    elseif Player.localmapid == 174 then
+        NoobgamKdfProfiles.LabyrinthOfTheAncients()
     end
 end
 
