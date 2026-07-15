@@ -211,6 +211,118 @@ local function describeParty()
     return table.concat(parts, ", ")
 end
 
+--- Emit a single, self-contained JSON snapshot of everything relevant to the
+--- PF handoff loop (host state, party members, name-match check, shared files,
+--- controls, duty). Designed to be pasted straight into a bug report. Call it
+--- at failure points (e.g. PF wait timeout) so the log captures the state.
+--- @param reason string tag describing why the dump was requested
+function MsqClearHelper.DumpDebugState(reason)
+    local function collectParty(list)
+        local t = {}
+        if table.valid(list) then
+            for _, m in pairs(list) do
+                table.insert(t, {
+                    name = m.name,
+                    world = m.world,
+                    leader = m.isleader,
+                    online = m.isonline,
+                    id = m.id,
+                })
+            end
+        end
+        return t
+    end
+
+    -- Recompute the farmer name-match here (rather than calling isPartyReady,
+    -- which is declared later in the file and thus not in lexical scope) so the
+    -- report is self-contained and shows exactly which names matched.
+    local farmer = MsqClearHelper.CurrentFarmer
+    local farmerMatches = {}
+    if farmer then
+        if table.valid(EntityList.myparty) then
+            for _, m in pairs(EntityList.myparty) do
+                if m.name == farmer then table.insert(farmerMatches, "myparty:" .. tostring(m.name)) end
+            end
+        end
+        if table.valid(EntityList.crossworldparty) then
+            for _, m in pairs(EntityList.crossworldparty) do
+                if m.name == farmer then table.insert(farmerMatches, "xworld:" .. tostring(m.name)) end
+            end
+        end
+    end
+    local farmerMatch = (not farmer) and "no CurrentFarmer"
+        or (#farmerMatches > 0 and farmerMatches or ("NO MATCH for '" .. farmer .. "'"))
+    local partyReady = farmer ~= nil and #farmerMatches > 0
+
+    local function readShared(path)
+        return FileExists(path) and NoobgamUtils.ReadFile(path) or "<missing>"
+    end
+
+    local ok, dump = pcall(json.encode, {
+        reason = tostring(reason),
+        now = Now(),
+        playerName = Player.name,
+        playerWorld = Player.world,
+        localmapid = Player.localmapid,
+        config = {
+            mode = NoobgamConfigManager and NoobgamConfigManager.Config and NoobgamConfigManager.Config.mode or nil,
+            useDutyFinder = NoobgamConfigManager and NoobgamConfigManager.Config and NoobgamConfigManager.Config.useDutyFinder or nil,
+        },
+        msq = {
+            Role = MsqClearHelper.Role,
+            CurrentFarmer = MsqClearHelper.CurrentFarmer,
+            CurrentDungeonId = MsqClearHelper.CurrentDungeonId,
+            HostState = MsqClearHelper.HostState,
+            PfReadyAt = MsqClearHelper.PfReadyAt,
+            pfReadyElapsedMs = MsqClearHelper.PfReadyAt and (Now() - MsqClearHelper.PfReadyAt) or nil,
+            pfWaitTimeoutMs = PF_WAIT_TIMEOUT_MS,
+            NeedToDisband = MsqClearHelper.NeedToDisband,
+            DisbandScheduled = MsqClearHelper.DisbandScheduled,
+            PfStopped = MsqClearHelper.PfStopped,
+            JoinPfScheduled = MsqClearHelper.JoinPfScheduled,
+            InDungeon = MsqClearHelper.InDungeon,
+            LastBroadcast = MsqClearHelper.LastBroadcast,
+            SettingsValid = MsqClearHelper.SettingsValid,
+            WaitUntil = MsqClearHelper.WaitUntil,
+            waitRemainingMs = MsqClearHelper.WaitUntil and (MsqClearHelper.WaitUntil - Now()) or nil,
+            hasWaitCondition = MsqClearHelper.WaitCondition ~= nil,
+            keyPressQueueLen = MsqClearHelper.KeyPressQueue and #MsqClearHelper.KeyPressQueue or 0,
+            partyReady = partyReady,
+        },
+        myparty = collectParty(EntityList.myparty),
+        crossworldparty = collectParty(EntityList.crossworldparty),
+        farmerMatch = farmerMatch,
+        duty = {
+            activeDuty = table.valid(Duty:GetActiveDutyInfo()) and Duty:GetActiveDutyInfo() or nil,
+            queueStatus = Duty:GetQueueStatus(),
+        },
+        controls = {
+            ContentsFinder = IsControlOpen("ContentsFinder"),
+            ContentsFinderSetting = IsControlOpen("ContentsFinderSetting"),
+            ContentsFinderConfirm = IsControlOpen("ContentsFinderConfirm"),
+            ContentsFinderMenu = IsControlOpen("ContentsFinderMenu"),
+            LookingForGroup = IsControlOpen("LookingForGroup"),
+            LookingForGroupDetail = IsControlOpen("LookingForGroupDetail"),
+            SelectYesno = IsControlOpen("SelectYesno"),
+        },
+        sharedFiles = {
+            requests = readShared(sharedStatePath),
+            pfReady = readShared(pfReadyPath),
+        },
+        detectedNeededDungeon = MsqClearHelper.DetectNeededDungeon(),
+        taskManager = {
+            currentTaskType = NoobgamTaskManager.Task and NoobgamTaskManager.Task.type or nil,
+            queueLen = NoobgamTaskManager.TaskQueue and #NoobgamTaskManager.TaskQueue or nil,
+        },
+    }, { indent = 2 })
+
+    if ok then
+        log("[DebugState:" .. tostring(reason) .. "] " .. tostring(dump))
+    else
+        log("[DebugState:" .. tostring(reason) .. "] failed to encode: " .. tostring(dump))
+    end
+end
+
 --- Host announces a ready PF for a specific farmer
 --- @param farmerName string
 --- @param dungeonId number
@@ -576,6 +688,7 @@ local function updateHost()
         end
         if MsqClearHelper.PfReadyAt and Now() - MsqClearHelper.PfReadyAt > PF_WAIT_TIMEOUT_MS then
             log("PF wait timed out, disbanding. Final party snapshot: [" .. describeParty() .. "]")
+            MsqClearHelper.DumpDebugState("pf_wait_timeout")
             MsqClearHelper.UnpublishPfReady(MsqClearHelper.CurrentFarmer)
             MsqClearHelper.NeedToDisband = true
             return true
