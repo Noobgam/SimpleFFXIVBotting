@@ -548,29 +548,30 @@ function MsqClearHelper.Reset()
     end
 end
 
---- Check if farmer is in party (regular or crossworld)
+--- Check whether anyone has joined the party (regular or crossworld).
+---
+--- We deliberately do NOT match on the farmer's name. Cross-world party member
+--- names frequently come back blank/unresolved for a while after a PF join
+--- (observed: the farmer shows up as `xworld[name= world=22 leader=false
+--- online=true]`), so name-matching deadlocks the host until the PF-wait
+--- timeout even though the farmer is sitting right there. Since the host
+--- advertises a *private, password-protected* PF, the only person who can join
+--- is the invited farmer, so the mere presence of a second party member is
+--- sufficient to proceed.
 local function isPartyReady()
     if not MsqClearHelper.CurrentFarmer then
         return false
     end
 
+    local count = 0
     if table.valid(EntityList.myparty) then
-        for _, member in pairs(EntityList.myparty) do
-            if member.name == MsqClearHelper.CurrentFarmer then
-                return true
-            end
-        end
+        for _ in pairs(EntityList.myparty) do count = count + 1 end
     end
-
     if table.valid(EntityList.crossworldparty) then
-        for _, member in pairs(EntityList.crossworldparty) do
-            if member.name == MsqClearHelper.CurrentFarmer then
-                return true
-            end
-        end
+        for _ in pairs(EntityList.crossworldparty) do count = count + 1 end
     end
 
-    return false
+    return count > 1
 end
 
 
