@@ -21,6 +21,24 @@ local function log(msg)
     d("[MsqClearHelper] " .. msg)
 end
 
+local logThrottleState = {}
+--- Log a message at most once per intervalMs for a given key.
+--- Returns true when the message was actually emitted (useful to gate
+--- expensive follow-up dumps behind the same throttle window).
+--- @param key string
+--- @param intervalMs integer
+--- @param msg string
+--- @return boolean emitted
+local function logThrottled(key, intervalMs, msg)
+    local now = Now()
+    if logThrottleState[key] == nil or now - logThrottleState[key] >= intervalMs then
+        logThrottleState[key] = now
+        log(msg)
+        return true
+    end
+    return false
+end
+
 -- Quest step to dungeon mapping
 --- @type table<number, table<number, number>>
 local questStepIdToDungeonId = {
@@ -160,6 +178,39 @@ local function savePfReadyState(state)
     FileWrite(pfReadyPath, json.encode(state, { indent = 2 }))
 end
 
+--- Dump the raw contents of the shared coordination files for debugging.
+--- Intended to be called behind a throttle so it does not flood the log.
+--- @param reason string tag describing why the dump was requested
+local function dumpSharedFiles(reason)
+    local reqContent = FileExists(sharedStatePath) and NoobgamUtils.ReadFile(sharedStatePath) or "<missing>"
+    local pfContent = FileExists(pfReadyPath) and NoobgamUtils.ReadFile(pfReadyPath) or "<missing>"
+    log(string.format("[SharedFiles:%s] %s -> %s", tostring(reason), sharedStatePath, tostring(reqContent)))
+    log(string.format("[SharedFiles:%s] %s -> %s", tostring(reason), pfReadyPath, tostring(pfContent)))
+end
+
+--- Human-readable snapshot of the current party (regular + crossworld).
+--- Used to diagnose farmer-detection failures (e.g. crossworld name
+--- mismatch between what the farmer registers and what the host sees).
+--- @return string
+local function describeParty()
+    local parts = {}
+    if table.valid(EntityList.myparty) then
+        for _, m in pairs(EntityList.myparty) do
+            table.insert(parts, string.format("myparty[name=%s leader=%s]", tostring(m.name), tostring(m.isleader)))
+        end
+    end
+    if table.valid(EntityList.crossworldparty) then
+        for _, m in pairs(EntityList.crossworldparty) do
+            table.insert(parts, string.format("xworld[name=%s world=%s leader=%s online=%s]",
+                tostring(m.name), tostring(m.world), tostring(m.isleader), tostring(m.isonline)))
+        end
+    end
+    if #parts == 0 then
+        return "<empty>"
+    end
+    return table.concat(parts, ", ")
+end
+
 --- Host announces a ready PF for a specific farmer
 --- @param farmerName string
 --- @param dungeonId number
@@ -180,6 +231,7 @@ function MsqClearHelper.PublishPfReady(farmerName, dungeonId, password)
         password = password,
     })
     savePfReadyState({ entries = entries })
+    dumpSharedFiles("PublishPfReady")
 end
 
 --- Remove a published PF ready entry (by farmer name)
@@ -459,8 +511,13 @@ local function updateHost()
         local requests = MsqClearHelper.GetPendingRequests()
 
         if #requests > 0 then
+            local names = {}
+            for _, r in ipairs(requests) do
+                table.insert(names, string.format("%s->%s", tostring(r.farmerName), tostring(r.dungeonId)))
+            end
+            log(string.format("Pending clear requests (%d): %s", #requests, table.concat(names, ", ")))
             local req = requests[1]
-            log("Found request from " .. req.farmerName .. " for dungeon " .. req.dungeonId)
+            log("Selecting request from " .. req.farmerName .. " for dungeon " .. req.dungeonId)
             MsqClearHelper.CurrentDungeonId = req.dungeonId
             MsqClearHelper.CurrentFarmer = req.farmerName
             MsqClearHelper.HostState = nil
@@ -469,6 +526,9 @@ local function updateHost()
     end
 
     if not MsqClearHelper.CurrentFarmer then
+        if logThrottled("host_idle", 15000, "Idle: no farmer assigned and no pending requests.") then
+            dumpSharedFiles("host_idle")
+        end
         return false
     end
 
@@ -502,8 +562,20 @@ local function updateHost()
     end
 
     if MsqClearHelper.HostState == "pf_ready" then
+        local elapsed = MsqClearHelper.PfReadyAt and (Now() - MsqClearHelper.PfReadyAt) or 0
+        log(string.format(
+            "Waiting for farmer '%s' (dungeon %s) to join PF. elapsed=%.0fs/%ds partyReady=%s party=[%s]",
+            tostring(MsqClearHelper.CurrentFarmer),
+            tostring(MsqClearHelper.CurrentDungeonId),
+            elapsed / 1000,
+            PF_WAIT_TIMEOUT_MS / 1000,
+            tostring(isPartyReady()),
+            describeParty()))
+        if logThrottled("pf_ready_files", 10000, "Dumping shared coordination files while waiting for farmer:") then
+            dumpSharedFiles("pf_ready")
+        end
         if MsqClearHelper.PfReadyAt and Now() - MsqClearHelper.PfReadyAt > PF_WAIT_TIMEOUT_MS then
-            log("PF wait timed out, disbanding")
+            log("PF wait timed out, disbanding. Final party snapshot: [" .. describeParty() .. "]")
             MsqClearHelper.UnpublishPfReady(MsqClearHelper.CurrentFarmer)
             MsqClearHelper.NeedToDisband = true
             return true
