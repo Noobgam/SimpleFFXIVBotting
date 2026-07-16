@@ -77,6 +77,7 @@ local questStepIdToDungeonId = {
 MsqClearHelper.QuestStepIdToDungeonId = questStepIdToDungeonId
 
 local dungeonsToClearInDutyFinder = {
+    [92] = true, -- lota
     [738] = true,
     [796] = true,
     [984] = true,

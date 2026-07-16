@@ -1643,24 +1643,398 @@ NoobgamKdfProfiles.DungeonProfiles = {
         requeuetimer = 10,
         type = "duty",
         advancedavoid = {
-            [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
-                    function customfunction()
-                        --NoobgamKdfProfiles.Interphos()
+            -- we update interphos on every tick, not on every kdf tick.
+        },
+    },
+    [1270] = {
+        meleeavoid = true,
+        bossids = {
+            13861
+        },
+        creator = "Noobgam",
+        FFA = true,
+        level = 100,
+        dutyid = 1270,
+        mesh = "Recollection",
+        enemytargetdistance = 120,
+        excludeavoid = {
+            43129,
+            43085,
+            43084,
+            43093,
+            43479,
+            43095,
+
+            43083, -- thunder slash
+        },
+        dontexcludeaoe = {  
+        },
+        reactions = {
+        },
+        forcemeleerange = {
+            --12586,
+        },
+        hasbuff = {},
+        interactdistance = 20,
+        interacts = {},
+        name = "Recollection",
+        objectivedestinations =
+        {
+            [1] = {	objective = 1,pos = {x=100,y=0,z=100},},
+        },
+        overrideaoedetails = {
+            fan = {[43126] = "fan120"}
+        },
+        overheadmarkers = {
+        },
+        prioritytarget = {},
+        prioritytargetdistance = 50,
+        pullenemyoutofpuddle = false,
+        puddledata= {
+
+        },
+        tankbuster = {43129},
+        queuetype = 1,
+        requeuetimer = 10,
+        type = "duty",
+        advancedavoid = {
+            -- we update recollection on every tick, not on every kdf tick.
+        },
+    },
+    [1245] = {
+        name = "Halatali",
+        mesh = "[Dungeon] Halatali v2",
+        dutyid = 1245,
+        level = 20,
+        expansion = 2,
+        creator = "Latty79",
+        notes = "",
+        queuetype = 2,
+        FFA = false,
+        hacks = false,
+        objectivedestinations = {
+            [1] = {objective = 1, pos = {x = 26.17, y = 0.93, z = 126.78}}, -- Clear the Hall of the Cesti
+            [2] = {objective = 2, pos = {x = -183.55, y = -15.31, z = -130.79}}, -- Activate the chain winches
+            [3] = {objective = 3, pos = {x = -183.55, y = -15.31, z = -130.79}}, -- Clear the Hall of the Secutores
+            [4] = {objective = 4, pos = {x = -271.13, y = 17.23, z = 19.96}}, -- Defeat Tangata
+        },
+        interactdistance = 45,
+        interacts = {
+            --[1] = {contentid = 86, req = {}, priority = 1, type = "Loot 1"}, -- Too out of the way
+            [2] = {contentid = 89, req = {objective = 1, complete = true}, priority = 2, type = "Boss 1 Loot"},
+            [3] = {contentid = 2001619, req = {objective = 1, complete = true}, priority = 3, type = "Aetherial Flow"},
+            [4] = {contentid = 2001624, req = {objective = 2, complete = false}, priority = 4, type = "Chain Winch 1"},
+            [5] = {contentid = 113, req = {objective = 2, complete = false}, priority = 5, type = "Chain Winch Loot 1"},
+            [6] = {contentid = 2001625, req = {objective = 1, complete = true}, priority = 6, type = "Chain Winch 2"},
+            [7] = {contentid = 114, req = {objective = 2, complete = false}, priority = 7, type = "Chain Winch Loot 2"},
+            [8] = {contentid = 2001626, req = {objective = 2, complete = false}, priority = 8, type = "Chain Winch 3"},
+            [9] = {contentid = 115, req = {objective = 2, complete = false}, priority = 9, type = "Chain Winch Loot 3"},
+            --[10] = {contentid = 87, req = {objective = 2, complete = false}, priority = 10, type = "Loot 2"}, -- Too out of the way
+            [11] = {contentid = 2001627, req = {objective = 2, complete = false}, priority = 11, type = "Chain Winch 4"},
+            [12] = {contentid = 116, req = {objective = 2, complete = false}, priority = 12, type = "Chain Winch Loot 4"},
+            [13] = {contentid = 2001628, req = {objective = 2, complete = false}, priority = 13, type = "Chain Winch 5"},
+            [14] = {contentid = 117, req = {objective = 2, complete = false}, priority = 14, type = "Chain Winch Loot 5"},
+            [15] = {contentid = 90, req = {objective = 4, complete = false}, priority = 15, type = "Boss 2 Loot 1"},
+            [16] = {contentid = 91, req = {objective = 4, complete = false}, priority = 16, type = "Boss 2 Loot 2"},
+            [17] = {contentid = 2001647, req = {objective = 4, complete = false}, priority = 17, type = "Aetherial Flow"},
+            --[18] = {contentid = 88, req = {objective = 4, complete = false}, priority = 18, type = "Loot 3"}, -- Too out of the way
+            [19] = {contentid = 2001623, req = {objective = 4, complete = false}, priority = 19, type = "Ludus Door"},
+            [20] = {contentid = 92, priority = 20, type = "Boss 3 Loot"}, -- The Ludus Orchestrion Roll
+        },
+        bossids = {
+            1194, -- Firemane
+            1196, -- Thunderclap Guivre
+            1197, -- Tangata
+        },
+        forcemeleerange = {1197},
+        enemytargetdistance = 50,
+        prioritytargetdistance = 50,
+        prioritytarget = {
+            [1] = {contentid = 1187, priority = 1, type = "Damantus"},
+            [2] = {contentid = 1195, priority = 2, type = "Noxious"},
+            [3] = {contentid = 1197, priority = 3, type = "Tangata"},
+        },
+        avoidentity = {},
+        advancedavoid = {
+            [1] = {type = "custom", customdetails = "function", functionname = "Boss 2 & 3 Mechanics", functioncode = [[
+                    local targ = Player:GetTarget()
+                    if
+                        (Player.incombat and KitanoiSettings.SavedMapEffects["112"] ~= nil and
+                            TimeSince(KitanoiSettings.SavedMapEffects["112"].timeadded) < 10000)
+                    then
+                        local point = {x = -183.28, y = -14.27, z = -111.05}
+                        KitanoiNavigation.NavAPI.MoveTo(point.x, point.y, point.z)
+                        KitanoiSettings.avoidingtime = Now() + 2000
+                    end
+                    local firstcircle = KitanoiFuncs.ScanForCaster2(40599)
+                    if (firstcircle) then
+                        KitanoiFuncs.TempBlackListAOE[40600] = {
+                            aoeID = 40600,
+                            removeat = KitanoiFuncs.Now() + 1000,
+                            forceremove = 1000
+                        }
+                        KitanoiSettings.ExcludeAOES[40600] = true
+                        KitanoiFuncs.TempBlackListAOE[40601] = {
+                            aoeID = 40601,
+                            removeat = KitanoiFuncs.Now() + 1000,
+                            forceremove = 1000
+                        }
+                        KitanoiSettings.ExcludeAOES[40601] = true
+                        KitanoiFuncs.API.RemoveAOEbyAOEID(40600)
+                        KitanoiFuncs.API.RemoveAOEbyAOEID(40601)
+                    else
+                        KitanoiFuncs.TempBlackListAOE[40600] = nil
+                        KitanoiSettings.ExcludeAOES[40600] = nil
+                        KitanoiFuncs.TempBlackListAOE[40601] = nil
+                        KitanoiSettings.ExcludeAOES[40601] = nil
                     end
                 ]],
             },
             [2] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
                     function customfunction()
-                        -- local count = NoobgamKdfProfiles.CountMaxLevel()
-                        -- if count > 3 then
-                        --     return
-                        -- end
-                        -- NoobgamKdfProfiles.FarmEcho(5, 125, 0, 100)
+                        KitanoiFuncs.LoadMesh("[Dungeon] Halatali v2")
                     end
                 ]]
             },
         },
+        reactions = {},
+        overheadmarkers = {},
+        overrideaoedetails = {
+            innerrad = {
+                [40600] = 10,
+                [40601] = 20,
+            },
+        },
+        autoblacklist = true,
     },
+    [1267] = {
+        name = "The Sunken Temple of Qarn",
+        mesh = "[Dungeon] The Sunken Temple of Qarn v2",
+        dutyid = 1267,
+        level = 35,
+        expansion = 2,
+        creator = "Exmachinas",
+        notes = "",
+        queuetype = 2,
+        FFA = false,
+        hacks = false,
+        objectivedestinations = {
+            [1] = {objective = 1, pos = {x = -70.00, y = -11.95, z = -62.00 }},
+            [2] = {objective = 2, pos = {x = 53.52, y = -49.46, z = 1.22}},
+            [3] = {objective = 3, pos = {x = 53.52, y = -49.46, z = 1.22}},
+            [4] = {objective = 4, pos = {x = 243.00, y = -4.00, z = 0.00}},
+            [5] = {objective = 5, pos = {x = 243.00, y = -4.00, z = 0.00}},
+        },
+        interactdistance = 65,
+        interacts = { -- WIP to get every chest
+            [1] = {contentid = 2000418, req = {complete = false, objective = 1}, priority = 1, type = "The Helm of Might"},
+            [2] = {contentid = 135, priority = 2, type = "Loot 1"},
+            [3] = {contentid = 2000417, req = {complete = false, objective = 1}, priority = 3, type = "The Gem of Affluence"},
+            [4] = {contentid = 136, priority = 4, type = "Boss 1 Loot"},
+            [5] = {contentid = 2000415, req = {complete = true, objective = 2}, priority = 5, type = "The Flame of Magic"},
+            [6] = {contentid = 2000416, req = {complete = true, objective = 2}, priority = 6, type = "The Fruit of Knowledge"},
+            [7] = {contentid = 137, priority = 7, type = "Boss 2 Loot"},
+            --[8] = {contentid = 2000423, req = {complete = true, objective = 3}, priority = 8, type = "Stone Pedestal - Gem of Affluence"}, -- 1
+            --[9] = {contentid = 129, priority = 9, type = "Statuette Loot 1"}, -- Shards -- Belah'dian Glass -- Out of Mesh WIP
+            --[10] = {contentid = 2000425, req = {complete = true, objective = 3}, priority = 10, type = "Stone Pedestal - Helm of Might"}, -- 0
+            --[11] = {contentid = 128, priority = 11, type = "Statuette Loot 2"}, -- Shards -- Belah'dian Glass -- Out of Mesh WIP
+            --[12] = {contentid = 2000421, req = {complete = true, objective = 3}, priority = 12, type = "Stone Pedestal - Fruit of Knowledge"}, -- 3
+            --[13] = {contentid = 131, priority = 13, type = "Statuette Loot 3"}, -- Shards -- Belah'dian Glass -- Out of Mesh WIP
+            --[14] = {contentid = 2000419, req = {complete = true, objective = 3}, priority = 14, type = "Stone Pedestal - Flame of Magic"}, -- 2
+            --[15] = {contentid = 130, priority = 15, type = "Statuette Loot 4"}, -- Shards -- Belah'dian Glass -- Out of Mesh WIP
+            [16] = {contentid = 2000427, req = {complete = true, objective = 3}, priority = 16, type = "Left Pan - Flame of Magic"}, -- 2
+            [17] = {contentid = 2000428, req = {complete = true, objective = 3}, priority = 17, type = "Right Pan - Fruit of Knowledge"}, -- 2
+            [18] = {contentid = 2000658, req = {complete = true, objective = 3}, priority = 18, type = "The Scales of Judgment"},
+            --[19] = {contentid = 133, req = {complete = true, objective = 4}, priority = 19, type = "Loot 2"}, -- Out of Mesh WIP
+            --[20] = {contentid = 132, req = {complete = true, objective = 4}, priority = 20, type = "Loot 3"}, -- Shards -- Belah'dian Glass -- Out of Mesh WIP
+            --[21] = {contentid = 134, req = {complete = true, objective = 4}, priority = 21, type = "Loot 4"}, -- Out of Mesh WIP
+            [22] = {contentid = 138, priority = 22, type = "Boss 3 Loot"}, -- Belah'dian Glass & Echoes of Ages Past Orchestrion Roll
+        },
+        bossids = {
+            1567, -- Teratotaur
+            1569, -- Temple Guardian
+            1570, -- Adjudicator
+        },
+        forcemeleerange = {},
+        enemytargetdistance = 30,
+        prioritytargetdistance = 30,
+        prioritytarget = {
+            [1] = {contentid = 1490, priority = 1, type = "Golem Soulstone"},
+            [2] = {contentid = 1798, priority = 1, type = "Mythril Verge"},
+        },
+        ignoretarget = {},
+        dontclearfriendlytargets = {2000423,2000425,2000421,2000419,2000427,2000428},
+        advancedavoid =	{
+            [1] = {type = "custom", customdetails = "function", functionname = "Boss 1 Doom Dispell", functioncode = [[
+                    local hasdoom = HasBuff(Player.id, 5187)
+                    local AOECount = KitanoiFuncs.HowManyAOES(true)
+                    if (hasdoom and AOECount == 0) then
+                        local ents = KitanoiFuncs.MEntityList("contentid=2000866;2000867;2000868")
+                        if (ents) then
+                            for i, e in pairs(ents) do
+                                if (i and e and e.eventid == 0 and math.distance2d(Player.pos, e.pos) > 0.8) then
+                                    local point = e.pos
+                                    if (not Player:IsMoving()) then
+                                        local npoint = KitanoiFuncs.randompointInCircle(e.pos.x, e.pos.z, 0.7)
+                                        point.x = npoint.x
+                                        point.z = npoint.z
+                                    end
+                                    KitanoiNavigation.NavAPI.MoveTo(point.x, point.y, point.z)
+                                    KitanoiSettings.avoidingtime = Now() + 2000
+                                end
+                            end
+                        end
+                    end
+                ]]
+            },
+            [2] = {type = "custom", customdetails = "function", functionname = "Place Statuettes", functioncode = [[
+                    function customfunction()
+                        if IsControlOpen("SelectString") then
+                            UseControlAction("SelectString","SelectIndex",2)
+                        end
+                    end
+                ]]
+            },
+            [3] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        KitanoiFuncs.LoadMesh("[Dungeon] The Sunken Temple of Qarn v2")
+                    end
+                ]]
+            },
+        },
+        hasbuff = {},
+        overheadmarkers = {},
+        excludeavoid = {},
+        pullenemyoutofpuddle = false,
+        enemylos = true,
+    },
+    [1330] = {
+        name = "Dzemael Darkhold",
+        mesh = "[Dungeon] Dzemael Darkhold v2",
+        dutyid = 1330,
+        level = 44,
+        expansion = 2,
+        creator = "Exmachinas",
+        notes = "",
+        queuetype = 2,
+        FFA = false,
+        hacks = false,
+        objectivedestinations = {
+            [1] = {objective = 1, pos = {x = 43.21, y = -14.40, z = 73.19}},
+            [2] = {objective = 2, pos = {x = -95.29, y = -30.50, z = -33.90}},
+            [3] = {objective = 3, pos = {x = 16.34, y = -17.89, z = -162.82}},
+            [4] = {objective = 4, pos = {x = 83.48, y = -38.95, z = -169.56}},
+        },
+        interactdistance = 30,
+        interacts = {
+            --[1] = {contentid = 170, priority = 1, type = "Loot 1"}, -- Too out of the way
+            [2] = {contentid = 174, priority = 2, type = "Boss 1 Loot"},
+            [3] = {contentid = 2000458, priority = 3, type = "Magitek Transporter"},
+            [4] = {contentid = 172, priority = 4, type = "Loot 2"},
+            [5] = {contentid = 173, priority = 5, type = "Loot 3"},
+            [6] = {contentid = 175, priority = 6, type = "Boss 2 Loot 1"},
+            [7] = {contentid = 176, priority = 7, type = "Boss 2 Loot 2"},
+            [8] = {contentid = 2000474, priority = 8, type = "Magitek Transporter"},
+            [9] = {contentid = 177, priority = 9, type = "Boss 3 Loot"}, -- The Darkhold Orchestrion Roll
+        },
+        bossids = {
+            1397, -- All-seeing Eye
+            1415, -- Taulurd
+            1396, -- Batraal -- Ahriman Card
+        },
+        forcemeleerange = {},
+        enemytargetdistance = 40,
+        prioritytargetdistance = 50,
+        prioritytarget = {
+            [1] = {contentid = 2154, priority = 1, type = "Corrupted Crystal"},
+            [2] = {contentid = 1396, priority = 2, type = "Batraal"},
+        },
+        ignoretarget = {},
+        tankat = {},
+        advancedavoid = {
+            [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        KitanoiFuncs.LoadMesh("[Dungeon] Dzemael Darkhold v2")
+                    end
+                ]]
+            },
+        },
+        hasbuff = {},
+        overheadmarkers = {},
+        excludeavoid = {},
+        dontexcludeaoe = {1167},
+        staybehindentity = {1396},
+        puddledata = {},
+        pullenemyoutofpuddle = false,
+    },
+    [1331] = {
+        name = "The Aurum Vale",
+        mesh = "[Dungeon] Aurum Vale v2",
+        dutyid = 1331,
+        level = 47,
+        expansion = 2,
+        creator = "Kitanoi",
+        notes = "",
+        queuetype = 2,
+        FFA = false,
+        hacks = false,
+        objectivedestinations = {
+            [1] = {objective = 1, pos = {x = 27, y = -9.2399997711182, z = 2.6199998855591}},
+            [2] = {objective = 2, pos = {x = -156.7200012207, y = -30.430000305176, z = -133.64999389648}},
+            [3] = {objective = 3, pos = {x = -156.7200012207, y = -30.430000305176, z = -133.64999389648}},
+            [4] = {objective = 4, pos = {x = -340.17001342773, y = -32.119998931885, z = -133.86999511719}},
+            [5] = {objective = 5, pos = {x = -406.29000854492, y = -33.119998931885, z = -115.83000183105}},
+        },
+        interacts = {
+            [1] = {contentid = 149, priority = 1, type = "Boss 1 Loot"},
+            [2] = {contentid = 153, priority = 2, type = "Loot 1"}, -- Morbol Seedling
+            [3] = {contentid = 154, priority = 3, type = "Loot 2"}, -- Mossy Horn
+            [4] = {contentid = 151, priority = 4, type = "Boss 2 Loot"},
+            [5] = {contentid = 155, priority = 6, type = "Loot 3"}, -- Dodore Wing & Carnivorous Seedling
+            [6] = {contentid = 156, priority = 6, type = "Loot 4"},
+            [7] = {contentid = 148, priority = 8, type = "Boss 3 Loot"}, -- Miser's Folly Orchestrion Roll
+        },
+        bossids = {
+            1534, -- Locksmith
+            1533, -- Coincounter
+            1532, -- Miser's Mistress -- Morbol Card
+        },
+        enemytargetdistance = 30,
+        prioritytargetdistance = 5,
+        prioritytarget = {
+            [1] = {contentid = 1536, priority = 1, type = "Morbol Fruit"},
+            [2] = {contentid = 1535, priority = 2, type = "Morbol Seedling"},
+        },
+        tankat = {},
+        faceenemyaway = {},
+        useaction = {},
+        advancedavoid = {
+            [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        KitanoiFuncs.LoadMesh("[Dungeon] Aurum Vale v2")
+                    end
+                ]]
+            },
+        },
+        hasbuff = {
+            [1] = {
+                buffid = 302,
+                desc = "first boss",
+                interactid = "2002648;2002647;2000778;2002649",
+                stacksrequired = 2,
+                type = "interact",
+            },
+            [2] = {
+                buffid = 303,
+                desc = "last boss",
+                interactid = "2002663;2002662;2002661;2002660;2002659;2002658;2002657;2002656;2002655;2002654",
+                stacksrequired = 3,
+                type = "interact",
+            },
+        },
+        overheadmarkers = {},
+        staybehindentity = {1534,1533,1532},
+    }
 }
 
 -- private profiles.
@@ -1794,11 +2168,11 @@ NoobgamKdfProfiles.DungeonProfiles[1045] = {
 }
 
 -- Labyrinth of the Ancients (24-man alliance raid).
--- mapid = 174, dutyid = 92.
+-- temporarily commented out. Haven't tested it yet fully
 NoobgamKdfProfiles.DungeonProfiles[174] = {
     name = "The Labyrinth of the Ancients",
     mesh = "The Labyrinth of the Ancients",
-    dutyid = 92,
+    dutyid = 174,
     level = 50,
     expansion = 2,
     creator = "Noobgam",
@@ -1808,7 +2182,6 @@ NoobgamKdfProfiles.DungeonProfiles[174] = {
     hacks = false,
     requeuetimer = 10,
     objectivedestinations = {
-        [1] = {objective = 1, pos = {x = -451, y = 25.6, z = 20}},
     },
     interacts = {},
     bossids = {},
@@ -1827,25 +2200,30 @@ NoobgamKdfProfiles.DungeonProfiles[174] = {
 local LOTA = {
     IRON_GIANT_CONTENT_ID = 730,
     ATOMOS_CONTENT_ID = 1872,
-    -- ATOMOS_POS = {
-    --     { x = 253.6, y = 51, z = 244 },
-    --     { x = 253.6, y = 51, z = 280 },
-    --     { x = 253.6, y = 51, z = 316 },
-    -- },
+    ATOMOS_POS = {
+        { x = 253.6, y = 51, z = 244 },
+        { x = 253.6, y = 51, z = 280 },
+        { x = 253.6, y = 51, z = 316 },
+    },
     -- Alliance A/B/C each parks on atomos spot 1/2/3 respectively.
     ALLIANCE_ATOMOS_SPOT = {
-        A = { x = 216.4, y = 51, z = 244 },
-        B = { x = 216.4, y = 51, z = 280 },
-        C = { x = 216.4, y = 51, z = 316 },
+        A = { x = 214, y = 51, z = 244 },
+        B = { x = 214, y = 51, z = 280 },
+        C = { x = 214, y = 51, z = 316 },
     },
     WAYPOINTS = {
         P5       = { x = -451,   y = 25.6,  z = 20 },
         P6       = { x = 166.44, y = 58.5,  z = 279.3 },
+        BEHEMOTH = { x = -108,   y = 68,    z = -347 },
         P7       = { x = 211,    y = 51,    z = 244 },
         THANATOS = { x = 440.4,  y = 66.27, z = 280 },
-        BEHEMOTH = { x = -108,   y = 68,    z = -347 },
         DUDE     = { x = -109,   y = 650,   z = 200 },
     },
+    FLARE_SPOTS = {
+        A = { x = -148.83262634277, y = 650.30261230469, z = 192.06996154785, h = 0.87862992286682 },
+        B = { x = -109.96013641357, y = 650.30450439453, z = 221.50909423828, h = -3.0462687015533 },
+        C = { x = -71.285591125488, y = 650.30834960938, z = 191.57553100586, h = 2.9060029983521 },
+    }
 }
 
 -- One big step-detecting function. Detects the current phase from completed
@@ -1860,19 +2238,6 @@ function NoobgamKdfProfiles.LabyrinthOfTheAncients()
     local exit = NoobgamUtils.PickClosestExit()
     if exit ~= nil and exit.targetable then
         return
-    end
-
-    local function completedObjectives()
-        local c = 0
-        local objs = Duty:GetActiveDutyObjectives()
-        if table.valid(objs) then
-            for i, obj in pairs(objs) do
-                if obj.completed then
-                    c = math.max(i, c)
-                end
-            end
-        end
-        return c
     end
 
     --- Walk to a position. Returns true once we are within radius.
@@ -1893,28 +2258,75 @@ function NoobgamKdfProfiles.LabyrinthOfTheAncients()
         return true
     end
 
+    -- Ancient Flare (aoeID 1730) is the final boss's raidwide spread marker.
+    -- Whenever we see it being cast, immediately run to our alliance's flare
+    -- spot. This takes priority over everything else (even combat).
+    local flareUp = false
+    for _, v in pairs(Argus.getCurrentAOEs()) do
+        if v.aoeID == 1730 then
+            flareUp = true
+            break
+        end
+    end
+    if flareUp then
+        local alliance = NoobgamUtils.GetMyAlliance() or "A"
+        local spot = LOTA.FLARE_SPOTS[alliance]
+        if spot ~= nil then
+            moveTo(spot)
+            return
+        end
+    end
+
+    local completed = NoobgamUtils.CompletedObjectivesCount()
+    if completed == 0 and not table.valid(Duty:GetActiveDutyObjectives()) then
+        -- then we need to exit kinda, but exit is not visible. Nav to the guy
+        moveTo({
+            x = -110,
+            y = 650,
+            z = 165
+        })
+        return
+    end
+    
+    if completed ~= 3 then
+        -- If we are in combat, don't run off to the next waypoint. Join the fight
+        -- the rest of the alliance is dealing with. Move toward the enemy that a
+        -- friendly is targeting and let the ACR handle the actual rotation.
+        local enemy = NoobgamUtils.PickFriendlyTargetEnemy(Player.pos)
+            or NoobgamUtils.PickClosestEntity("alive,attackable,targetable", Player.pos)
+        if enemy ~= nil then
+            if Player.targetid ~= enemy.id then
+                Player:SetTarget(enemy.id)
+            end
+            -- Normally we just set the target and let the ACR fight. Only bother
+            -- moving if we're way too far and nothing is selected to fight.
+            if (Player.targetid == nil or Player.targetid == 0)
+                and NoobgamUtils.calculateDist(Player.pos, enemy.pos) > 30 then
+                moveTo(enemy.pos, 5)
+            end
+            return
+        end
+    end
+
     local W = LOTA.WAYPOINTS
-    local completed = completedObjectives()
 
     -- Phase mapping mirrors the skips table in the MsqHelper lota config:
     --   objectives >= 3 -> atomos contest, >= 4 -> Thanatos, >= 5 -> Behemoth, >= 7 -> final drop.
-    if completed < 1 then
+    if completed < 3 then
         moveTo(W.P5)
-    elseif completed < 2 then
-        moveTo(W.P6)
-    elseif completed < 3 then
-        moveTo(W.P7)
     elseif completed == 3 then
         -- Atomos contest phase. Each alliance parks on its own spot.
         local alliance = NoobgamUtils.GetMyAlliance() or "A"
         local spot = LOTA.ALLIANCE_ATOMOS_SPOT[alliance]
         moveTo(spot)
+        -- we don't target anything during atomos things. We just stay afk on platform
+        KitanoiFuncs.targettime = Now()
     elseif completed == 4 then
         moveTo(W.THANATOS)
-    elseif completed == 5 or completed == 6 then
+    elseif completed <= 6 then
         moveTo(W.BEHEMOTH)
-    else
-        moveTo(W.DUDE)
+    elseif completed == 7 then
+        moveTo(W.THANATOS)
     end
 end
 
@@ -1942,6 +2354,8 @@ function NoobgamKdfProfiles.UseMits(mits)
         24298,
         24310,
         24311,
+        24305,
+        24137,
     }
     for _, v in pairs(mits) do
         if ActionList:Get(1, v):CanCastResult(Player.id) == 0 then
@@ -1960,7 +2374,7 @@ function NoobgamKdfProfiles.Rubicante()
     end
     local infernoId = 123718371
     if KitanoiFuncs.ScanForCaster2(31943) then
-        if KitanoiSettings.AvoidThisArea[infernoId] == nil then
+        if KitanoiSettings.CurrentAOEs[infernoId] == nil then
             KitanoiFuncs.CurrentAOEs[infernoId] = {
                 type = "circle",
                 entity = infernoId,
@@ -2066,12 +2480,9 @@ function NoobgamKdfProfiles.Golbez()
                 useIfCan(43)
             end
         end
-        local idx = NoobgamKdfProfiles.GetSortedIndex()
-        if idx <= 4 then
-            KitanoiNavigation.NavAPI.MoveTo(105, 0, 100)
-        else
-            KitanoiNavigation.NavAPI.MoveTo(95, 0, 100)
-        end
+        local mypoint = NoobgamKdfProfiles.ClockPositions(100, 0, 100, 11)
+        d("eventide spreads: " .. json.encode(mypoint))
+        KitanoiNavigation.NavAPI.MoveTo(mypoint.x, 0, mypoint.z)
         KitanoiSettings.avoidingtime = Now()
         return
     end
@@ -2107,24 +2518,23 @@ end
 function NoobgamKdfProfiles.Interphos()
     local Mech = NoobgamKdfProfiles.Mechanics
 
-    if TimeSince(KitanoiSettings.InCombatTimer) < 100 then
-        return
-    end
-    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
-    Mech.UpdateState()
-
-    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
-
-    if NoobgamKdfProfiles.TryingToWipe or NoobgamKdfProfiles.StopMovingIfRaising() then
-        return
-    end
-
     -- Target logic
     local queen = KitanoiFuncs.entityList("alive,attackable,targetable")
     if (not Player:GetTarget() and queen ~= nil) then
         local i, e = next(queen)
         if (i and e) then Player:SetTarget(i) end
     end
+    if TimeSince(KitanoiSettings.InCombatTimer) < 100 then
+        return
+    end
+    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
+    Mech.UpdateState()
+
+
+    if NoobgamKdfProfiles.TryingToWipe or NoobgamKdfProfiles.StopMovingIfRaising() then
+        return
+    end
+
 
     local fz = 92
     local somethingOngoing = false
@@ -2556,6 +2966,335 @@ function NoobgamKdfProfiles.Interphos()
     end
 end
 
+function NoobgamKdfProfiles.Recollection()
+    local Mech = NoobgamKdfProfiles.Mechanics
+
+    -- Target logic
+    local queen = KitanoiFuncs.entityList("alive,attackable,targetable")
+    if (not Player:GetTarget() and queen ~= nil) then
+        local i, e = next(queen)
+        if (i and e) then Player:SetTarget(i) end
+    end
+    if TimeSince(KitanoiSettings.InCombatTimer) < 100 then
+        return
+    end
+    NoobgamKdfProfiles.FarmEcho(5, 100, 0, 75)
+    Mech.UpdateState()
+
+    if NoobgamKdfProfiles.TryingToWipe or NoobgamKdfProfiles.StopMovingIfRaising() then
+        return
+    end
+
+    -- map effects:
+    -- 2 8 16 [visual shit outside]
+    -- 3 1 2 [visual full circle top]
+    -- 3 4 8 [circle go down]
+    -- 10 1 2 [arena turn to shit]
+    -- 1 1 2  [center arena go ]
+    -- there are no mapeffects on spawning triangle
+
+    local somethingOngoing = false
+    local CANONICAL = {
+        -math.pi,                  -- -3.14159
+        -2 * math.pi / 3,          -- -2.0944
+        -math.pi / 3,              -- -1.0472
+        0,
+        math.pi / 3,              --  1.0472
+        2 * math.pi / 3,          --  2.0944
+    }
+
+    local function handleMechanic(name)
+        local mechState = NoobgamKdfProfiles.State[name]
+        if mechState == nil then
+            return
+        end
+        somethingOngoing = true
+        local start, expiry, innerState = mechState.Start, mechState.Expiry, mechState.InnerState
+        if not expiry or not start then return end
+        local progress = GetTickCount() - start
+
+        if name == "Shock" then
+            local mypoint = NoobgamKdfProfiles.ClockPositions(100, 0, 100, 7, true)
+            if progress > 7500 then
+                mypoint = NoobgamKdfProfiles.ClockPositions(100, 0, 100, 13, true)
+            end
+
+            KitanoiNavigation.NavAPI.MoveTo(mypoint.x, 0, mypoint.z)
+            KitanoiSettings.avoidingtime = Now()
+            NoobgamKdfProfiles.UseMits()
+            return
+        elseif name == "InOut" then
+            local boomIn, boomOut = nil, nil
+            for _, e in pairs(Argus.getCurrentAOEs()) do
+                if e.aoeID == 43084 then boomIn = e
+                elseif e.aoeID == 43085 then boomOut = e end
+            end
+            if boomIn == nil and boomOut == nil then
+                Mech.Stop("InOut")
+                return
+            end
+            if Mech.IsActive("ThunderSlash") then
+                return
+            end
+
+            if boomOut == nil or (boomIn ~= nil and boomOut.startTime > boomIn.startTime) then
+                KitanoiNavigation.NavAPI.MoveTo(100, 0, 109)
+            else
+                KitanoiNavigation.NavAPI.MoveTo(100, 0, 106)
+            end
+            KitanoiSettings.avoidingtime = Now()
+            return
+        elseif name == "Tankbuster" then
+            local pt = KitanoiFuncs.ReturnSortedParty()
+            local cnt = 0
+            if not NoobgamKdfProfiles.IsMarkerUp(471) then
+                return Mech.Stop("Tankbuster")
+            end
+            for i = 1, 8 do
+                if NoobgamKdfProfiles.DoIHaveMarker(471, pt[i]) then
+                    cnt = cnt + 1
+                    if (pt[i] == Player.id) then
+                        if cnt == 1 then
+                            KitanoiNavigation.NavAPI.MoveTo(100, 0, 105)
+                        else
+                            KitanoiNavigation.NavAPI.MoveTo(95, 0, 105)
+                        end
+                    end
+                else
+                    if (pt[i] == Player.id) then
+                        KitanoiNavigation.NavAPI.MoveTo(100, 0, 95)
+                    end
+                end
+            end
+            KitanoiSettings.avoidingtime = Now()
+            return
+        elseif name == "ThunderSlash" then
+            -- gather currently-active cones
+            local EPS = 0.05
+            NoobgamKdfProfiles.UseMits()
+
+            local function matchCanonical(h)
+                for _, c in ipairs(CANONICAL) do
+                    if math.abs(((h - c + math.pi) % (2 * math.pi)) - math.pi) < EPS then
+                        return c
+                    end
+                end
+                return nil
+            end
+
+            -- gather currently-active cones
+            local active = {}
+            local activeSet = {}  -- canonical heading -> aoe entry
+            for _, e in pairs(Argus.getCurrentAOEs()) do
+                if e.aoeID == 43083 or e.aoeID == 43078 then
+                    local c = matchCanonical(e.heading)
+                    if c ~= nil then
+                        active[#active + 1] = { heading = c, startTime = e.startTime }
+                        activeSet[c] = { heading = c, startTime = e.startTime }
+                    end
+                end
+            end
+
+            -- snapshot once we have at least 5 cones; infer the 6th
+            if innerState.headings == nil then
+                if #active < 5 then
+                    -- not enough yet; safe to hold center (none have fired)
+                    KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+                    KitanoiSettings.avoidingtime = Now() + 2000
+                    return
+                end
+
+                innerState.headings = {}
+                local missing = nil
+                for _, c in ipairs(CANONICAL) do
+                    if activeSet[c] ~= nil then
+                        innerState.headings[#innerState.headings + 1] = activeSet[c]
+                    else
+                        missing = c
+                    end
+                end
+
+                if missing ~= nil then
+                    -- the missing cone is the latest-firing one
+                    -- give it a startTime > all known ones so it's chosen for bait
+                    local maxStart = 0
+                    for _, c in ipairs(innerState.headings) do
+                        if c.startTime > maxStart then maxStart = c.startTime end
+                    end
+                    table.insert(innerState.headings, { heading = missing, startTime = maxStart + 1 })
+                    log("ThunderSlash inferred missing cone heading=" .. tostring(missing))
+                end
+
+                for _, c in ipairs(innerState.headings) do
+                    log("ThunderSlash snapshot heading=" .. tostring(c.heading) .. " startTime=" .. tostring(c.startTime))
+                end
+            end
+
+            -- radius from overlapping in/out
+            local radius = 6
+            if Mech.IsActive("InOut") then
+                local boomIn, boomOut = nil, nil
+                for _, e in pairs(Argus.getCurrentAOEs()) do
+                    if e.aoeID == 43084 then boomIn = e
+                    elseif e.aoeID == 43085 then boomOut = e end
+                end
+                if boomIn ~= nil then
+                    radius = 9
+                else
+                    radius = 6
+                end
+            end
+
+            -- a snapshot heading has fired iff it's no longer in the live AOE table
+            local function stillActive(h)
+                for _, a in ipairs(active) do
+                    if math.abs(((a.heading - h + math.pi) % (2 * math.pi)) - math.pi) < EPS then
+                        return true
+                    end
+                end
+                return false
+            end
+
+            -- find the latest-firing cone (we baited it during snapshot)
+            local latest = innerState.headings[1]
+            for _, c in ipairs(innerState.headings) do
+                if c.startTime > latest.startTime then latest = c end
+            end
+
+            -- collect all fired (safe) headings — those no longer in active table
+            local firedHeadings = {}
+            for _, c in ipairs(innerState.headings) do
+                if not stillActive(c.heading) then
+                    firedHeadings[#firedHeadings + 1] = c.heading
+                end
+            end
+
+            local target = latest.heading
+            if #firedHeadings > 0 then
+                local best = nil
+                local bestDiff = math.huge
+                for _, h in ipairs(firedHeadings) do
+                    local diff = math.abs((h - latest.heading + math.pi) % (2 * math.pi) - math.pi)
+                    if diff < bestDiff - EPS then
+                        bestDiff = diff
+                        best = h
+                    end
+                end
+                if best ~= nil then
+                    target = best
+                end
+            end
+
+            local dx = 100 + radius * math.sin(target)
+            local dz = 100 + radius * math.cos(target)
+            KitanoiNavigation.NavAPI.MoveTo(dx, 0, dz)
+            KitanoiSettings.avoidingtime = Now()
+            return
+        end
+        --  D = "[Evasion] Detected aoe: {[\"aoeAnimationInfo\"] = {[\"aoeAnimationTypeEnd\"] = 14572, [\"aoeCastVFX\"] = 0, [\"aoeAnimationTimelineHit\"] = 5996, [\"aoeAnimationTypeStart\"] = 8}, [\"aoeName\"] = \"Specter of the Lost\", [\"aoeCastType\"] = 13, [\"coneWidth\"] = 135, [\"aoeEffectInfo\"] = {[\"aoeEffectCastType\"] = 0, [\"aoeEffectLargeScale\"] = 1, [\"aoeEffectName\"] = \"\", [\"aoeEffectRestrictYScale\"] = false}, [\"heading\"] = -0.46747449605563, [\"startTime\"] = 108638130.179, [\"entityID\"] = 1073752818, [\"aoeLength\"] = 50, [\"aoeType\"] = 0, [\"friendly\"] = false, [\"aoeID\"] = 43129, [\"y\"] = 0, [\"x\"] = 100, [\"duration\"] = 5.3999996185303, [\"z\"] = 100, [\"goOffTimestamp\"] = 108643530.17862, [\"isAreaTarget\"] = false, [\"targetAttach\"] = 269241221, [\"aoeWidth\"] = 0}"
+
+    end
+
+    if NoobgamKdfProfiles.IsMarkerUp(590) then
+        log("Stack marker")
+        KitanoiNavigation.NavAPI.MoveTo(100, 0, 105)
+        KitanoiSettings.avoidingtime = Now()
+        return
+    end
+
+    if KitanoiFuncs.ScanForCaster2({ 43095 }) then
+        KitanoiNavigation.NavAPI.MoveTo(100, 0, 100)
+        KitanoiSettings.avoidingtime = Now()
+        return
+    end
+
+    if NoobgamKdfProfiles.IsMarkerUp(581) and not Mech.IsActive("Shock") then
+        log("Thunder marker")
+        Mech.Trigger("Shock", 14500)
+    end
+
+    if KitanoiFuncs.ScanForCaster2({ 43078 }) and not Mech.IsActive("ThunderSlash") then
+        Mech.Trigger("ThunderSlash", 20000)
+    end
+
+    if KitanoiFuncs.ScanForCaster2({ 43085, 43084 }) and not Mech.IsActive("InOut") then
+        local boomIn = nil
+        local boomOut = nil
+        for _, ee in pairs(Argus.getCurrentAOEs()) do
+            if ee.aoeID == 43084 then
+                boomIn = ee
+            else
+                boomOut = ee
+            end
+        end
+        if boomIn ~= nil or boomOut ~= nil then
+            Mech.Trigger("InOut", 15000)
+        end
+    end
+
+    -- P1: N/S first pattern
+    -- P2: NW/SE safe second pattern ++ left
+    -- P3: S/NW/NE unsafe + shard
+    -- P4: W/E unsafe + shard + holy hazard
+    -- P5: S/NW/NE unsafe + shard
+
+    -- 43093 bloom?
+    local bloomId = 430931231
+    KitanoiSettings.AvoidThisArea[bloomId] = {
+        type = "circle",
+        entity = bloomId,
+        target = 0,
+        aoeID = bloomId,
+        name = "noname",
+        radius = 4.5,
+        length = 4.5,
+        width = 4.5,
+        pos = {x=100,y=0,z=100},
+        heading = 0,
+        casttime = 2,
+        channelingtime = 0,
+        deletetime = Now() + 5000,
+    }
+
+    if NoobgamKdfProfiles.IsMarkerUp(471) and not Mech.IsActive("Tankbuster") then
+        Mech.Trigger("Tankbuster", 20000)
+    end
+
+    if Mech.IsActive("Shock") then
+        handleMechanic("Shock")
+    end
+
+    if Mech.IsActive("InOut") then
+        handleMechanic("InOut")
+    end
+
+    -- 43446 rose in boom
+    -- 43447 rose out boom
+
+    if Mech.IsActive("ThunderSlash") then
+        handleMechanic("ThunderSlash")
+    end
+
+    if Mech.IsActive("Tankbuster") then
+        handleMechanic("Tankbuster")
+    end
+
+    if KitanoiFuncs.ScanForCaster2({ 43112, 43113 }) then
+        NoobgamKdfProfiles.UseMits()
+    end
+
+    if Player.hp.percent < 40 then
+        NoobgamKdfProfiles.UseMits()
+    end
+
+    if not somethingOngoing and KitanoiFuncs.HowManyAOES(true) <= 0 then
+        local r = 5
+        local dx = r * math.sin(1.45)
+        local dz = r * math.cos(1.45)
+        KitanoiNavigation.NavAPI.MoveTo(100 + dx, 0, 100 + dz)
+    end
+end
+
 function NoobgamKdfProfiles.Zeromus()
     if NoobgamKdfProfiles.TryingToWipe then
         return
@@ -2829,16 +3568,19 @@ function NoobgamKdfProfiles.GetSortedIndex()
     return nil
 end
 
-function NoobgamKdfProfiles.ClockPositions(x, y, z, radius)
-    local cnt = NoobgamUtils.tableSize(EntityList.myparty)
+function NoobgamKdfProfiles.ClockPositions(x, y, z, radius, dontgo)
+    dontgo = dontgo or false
+    local cnt = NoobgamUtils.tableSize(KitanoiFuncs.ReturnSortedParty())
     local angle = 2 * 3.14159265 / cnt
     for i, entId in pairs(KitanoiFuncs.ReturnSortedParty()) do
         if entId == Player.id then
-            KitanoiNavigation.NavAPI.MoveTo(
-                x + radius * math.sin(angle * i),
-                y,
-                z + radius * math.cos(angle * i)
-            )
+            if not dontgo then
+                KitanoiNavigation.NavAPI.MoveTo(
+                    x + radius * math.sin(angle * i),
+                    y,
+                    z + radius * math.cos(angle * i)
+                )
+            end
             return {
                 x = x + radius * math.sin(angle * i),
                 y = y,
@@ -2954,10 +3696,13 @@ end
 
 -- kdf doesn't run on every tick. this sucks ass.
 local function update()
+    if not NoobgamConfigManager.Config.enabled then
+        return
+    end
     if Player.localmapid == 1202 then
         NoobgamKdfProfiles.Interphos()
-    elseif Player.localmapid == 174 then
-        NoobgamKdfProfiles.LabyrinthOfTheAncients()
+    elseif Player.localmapid == 1270 then
+        NoobgamKdfProfiles.Recollection()
     end
 end
 
