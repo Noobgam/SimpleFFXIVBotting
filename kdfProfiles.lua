@@ -1643,7 +1643,13 @@ NoobgamKdfProfiles.DungeonProfiles = {
         requeuetimer = 10,
         type = "duty",
         advancedavoid = {
-            -- we update interphos on every tick, not on every kdf tick.
+            -- we want to update interphos on every tick, not on every kdf tick.
+            [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        NoobgamKdfProfiles.Interphos()
+                    end
+                ]],
+            },
         },
     },
     [1270] = {
@@ -1698,7 +1704,13 @@ NoobgamKdfProfiles.DungeonProfiles = {
         requeuetimer = 10,
         type = "duty",
         advancedavoid = {
-            -- we update recollection on every tick, not on every kdf tick.
+            -- we want to update recollection on every tick, not on every kdf tick.
+            [1] = {type = "custom", customdetails = "function", functionname = "customfunction", functioncode = [[
+                    function customfunction()
+                        NoobgamKdfProfiles.Recollection()
+                    end
+                ]],
+            },
         },
     },
     [1245] = {
@@ -3636,6 +3648,29 @@ function NoobgamKdfProfiles.DoIHaveMarker2(markerType, id)
     return false
 end
 
+--- Estimate the number of Echo stacks (buff 42) we currently have by comparing
+--- our current max HP against the base (0-stack) max HP recorded on instance entry.
+--- Each Echo stack adds a flat 10% of *base* max HP (additive), so:
+---   stacks = round((currentMaxHp / baseMaxHp - 1) / 0.10)
+--- No Echo buff => 0 stacks.
+---@return integer
+function NoobgamKdfProfiles.DetectEchoStacks()
+    if not HasBuff(Player, 42) then
+        return 0
+    end
+    local baseHp = KitanoiSettings.StoreVar.EchoBaseHp
+    local maxHp = Player.hp and Player.hp.max
+    if not baseHp or baseHp <= 0 or not maxHp or maxHp <= 0 then
+        -- Can't estimate yet; keep whatever we had.
+        return KitanoiSettings.StoreVar.EchoStacks or 0
+    end
+    local stacks = math.floor((maxHp / baseHp - 1) * 10 + 0.5)
+    if stacks < 0 then
+        stacks = 0
+    end
+    return stacks
+end
+
 ---@param echoStacks integer number of echo stacks to get
 ---@param x number x to walk off the cliff
 ---@param y number yto walk off the cliff
@@ -3649,38 +3684,9 @@ function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z, timeOverride)
         Player:SetAutoFollowOn(false)
     end
 
+    -- Stack detection now happens in the update flow (see UpdateEchoStacks), we just consume it here.
     local echoStacksWeHave = KitanoiSettings.StoreVar.EchoStacks or 0
 
-    if HasBuff(Player, 42) then
-        local ctrls = GetControls()
-        for _, ctrl in pairs(ctrls) do
-            if ctrl.name == "_WideText" and ctrl:IsOpen() then
-                local wideLine = ctrl:GetStrings()[3]
-                if wideLine ~= nil then
-                    local percent = tonumber(wideLine:match("increased by (%d+)%%"))
-                    if percent and echoStacksWeHave < percent / 10 then
-                        echoStacksWeHave = percent / 10
-                        d("[EchoStacker] detected " .. echoStacksWeHave .. " from wide text")
-                    end
-                end
-            end
-        end
-        local chatlines = GetChatLines()
-        -- DGAF. Just rely on chat going fast.
-        for _, v in pairs(chatlines) do
-            if v.code == 57 and v.subcode == 8 then
-                local percent = tonumber(v.line:match("restoration have been increased by (%d+)%%"))
-                if percent and echoStacksWeHave < percent / 10 then
-                    echoStacksWeHave = percent / 10
-                    d("[EchoStacker] detected " .. echoStacksWeHave .. " from chat")
-                end
-            end
-        end
-    else
-        echoStacksWeHave = 0
-    end
-
-    KitanoiSettings.StoreVar.EchoStacks = echoStacksWeHave
     if echoStacksWeHave < echoStacks and TimeSince(KitanoiSettings.InCombatTimer) > timeToEcho then
         Player:SetAutoFollowPos(x, y, z)
         Player:SetAutoFollowOn(true)
@@ -3694,15 +3700,50 @@ function NoobgamKdfProfiles.FarmEcho(echoStacks, x, y, z, timeOverride)
     end
 end
 
--- kdf doesn't run on every tick. this sucks ass.
-local function update()
-    if not NoobgamConfigManager.Config.enabled then
+--- Records base HP on first instance entry and re-estimates Echo stacks after a wipe.
+--- Runs from the update flow regardless of whether the echo stacker (FarmEcho) is in use.
+local function UpdateEchoStacks()
+    local mapid = Player.localmapid
+    if mapid == 0 then
+        -- Not inside an instance: forget the instance-specific baseline.
+        KitanoiSettings.StoreVar.EchoBaseMapId = nil
+        KitanoiSettings.StoreVar.EchoBaseHp = nil
+        KitanoiSettings.StoreVar.EchoStacks = nil
         return
     end
+
+    -- First time we enter this instance: record the base (0-stack) max HP.
+    -- Guard on "no Echo buff" so we capture a clean baseline.
+    if KitanoiSettings.StoreVar.EchoBaseMapId ~= mapid then
+        local maxHp = Player.hp.max
+        if maxHp and maxHp > 0 and not HasBuff(Player, 42) then
+            KitanoiSettings.StoreVar.EchoBaseMapId = mapid
+            KitanoiSettings.StoreVar.EchoBaseHp = maxHp
+            KitanoiSettings.StoreVar.EchoStacks = 0
+            d("[EchoStacker] recorded base HP " .. maxHp .. " for map " .. mapid)
+        end
+        return
+    end
+
+    -- Re-estimate stacks right after a wipe/new pull (same signal as the mechanic-state reset),
+    -- or once if we have no reading yet.
+    if Player.alive and (KitanoiSettings.StoreVar.EchoStacks == nil or TimeSince(KitanoiSettings.InCombatTimer) < 3000) then
+        local es = NoobgamKdfProfiles.DetectEchoStacks()
+        if es ~= KitanoiSettings.StoreVar.EchoStacks then
+            KitanoiSettings.StoreVar.EchoStacks = es
+            d("[EchoStacker] recorded base HP " .. Player.hp.max .. ", echo= " .. es)
+        end
+    end
+end
+
+-- kdf doesn't run on every tick. this sucks ass.
+local function update()
+    UpdateEchoStacks()
+    -- we need to get this working again.
     if Player.localmapid == 1202 then
-        NoobgamKdfProfiles.Interphos()
+        -- NoobgamKdfProfiles.Interphos()
     elseif Player.localmapid == 1270 then
-        NoobgamKdfProfiles.Recollection()
+        -- NoobgamKdfProfiles.Recollection()
     end
 end
 
