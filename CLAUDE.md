@@ -17,7 +17,7 @@ Most non-trivial behavior is composing those two with quest-state machines, not 
 `module.def` declares the file list and is the source of truth for load order:
 
 ```
-main, gui, ravanafarm, navigationtask, bootstrap, private_sus, utils, config, msqhelper, kdfProfiles, noobgamTaskManager
+main, gui, ravanafarm, navigationtask, bootstrap, private, utils, config, msqhelper, kdfProfiles, noobgamTaskManager
 ```
 
 Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads are idempotent. `main.lua` registers three event handlers: `Module.Initalize` → `preinit` (config + log shim), `Gameloop.Update` → `onUpdate` (per-tick driver), `Gameloop.Draw` → `GUI_Manager.Draw`.
@@ -40,7 +40,7 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 **Profile control surface.** `bootstrap.lua` toggles other addons by mutating their globals (`gQuestProfile`, `QuestOpts_*`, `gBotMode`, `FFXIV_Common_BotRunning`, `KitanoiFuncs.EnableAddon`, `NoobgamPrivateAPI.SetKDFTo*`) — these are not owned by this codebase. `utils.lua`'s `SwitchMode` / `SetQuestingProfile` are the right entry points; don't write to those globals directly elsewhere.
 
-**`private_sus.lua` is generated.** It's the obfuscated (Prometheus) build of `private_raw.lua`; both `private_raw.lua` and `Prometheus/` and `obfuscation_config.lua` are gitignored. It exports `NoobgamPrivateAPI` with helpers like `InviteToParty`, `SetKDFToMsqIntegration`, `SetKDFToNone`, `DisbandParty`. Don't edit `private_sus.lua` directly — re-obfuscate from `private_raw.lua` if changes are needed.
+**Private KDF helpers.** `private.lua` exports `NoobgamPrivateAPI` with `SetKDFToMsqIntegration` and `SetKDFToNone`. It is regular source code and can be edited directly.
 
 ## Persistence
 
