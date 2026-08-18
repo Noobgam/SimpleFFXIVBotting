@@ -204,6 +204,9 @@ local function setQuestingProfile(targetProfile, aether)
     end
 
     local subRule = "Aether Current Quests"
+    if NoobgamConfigManager.Config.useBlueQuestFilter then
+        subRule = "Blue Quests"
+    end
     if aether == false and rule == "MSQ" then
         subRule = "All"
     end
@@ -234,7 +237,7 @@ end
 --- @param profile "msq" | "job" | "none"
 --- @param job integer|nil
 local function ensureProfileEnabled(profile, job)
-    QuestOpts_C_v1_Level = 10
+    QuestOpts_C_v1_Level = NoobgamConfigManager.Config.questLevelCap or 10
 
     if MsqBootstrap.LastProfile ~= profile then
         local in_dungeon = table.valid(Duty:GetActiveDutyInfo())

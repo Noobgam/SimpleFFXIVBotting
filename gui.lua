@@ -380,11 +380,42 @@ local function drawBootstrapUI()
 
     if NoobgamConfigManager.Config.mode == "Bootstrap" then
         local checked, enabledPressed = GUI:Checkbox("Use duty finder for unskippable", NoobgamConfigManager.Config.useDutyFinder or false)
-        GUI:Separator()
         if enabledPressed then
             NoobgamConfigManager.Config.useDutyFinder = checked
             NoobgamConfigManager.SaveConfig()
         end
+
+        local useBlueQuestFilter, blueQuestFilterPressed = GUI:Checkbox(
+            "Use Blue Quests for aether currents",
+            NoobgamConfigManager.Config.useBlueQuestFilter or false
+        )
+        if blueQuestFilterPressed then
+            NoobgamConfigManager.Config.useBlueQuestFilter = useBlueQuestFilter
+            NoobgamConfigManager.SaveConfig()
+        end
+
+        local questLevelCap, levelCapChanged = GUI:SliderInt(
+            "Quest level cap",
+            NoobgamConfigManager.Config.questLevelCap or 10,
+            1,
+            100
+        )
+        if levelCapChanged then
+            NoobgamConfigManager.Config.questLevelCap = questLevelCap
+            NoobgamConfigManager.SaveConfig()
+        end
+
+        GUI:Text("MSQ trial opt-outs:")
+        local trialOptOuts = NoobgamConfigManager.Config.msqTrialOptOuts or {}
+        for _, trial in ipairs(MsqClearHelper.UnsupportedMsqTrials) do
+            local optedOut, optOutChanged = GUI:Checkbox(trial.label, trialOptOuts[trial.key] == true)
+            if optOutChanged then
+                trialOptOuts[trial.key] = optedOut
+                NoobgamConfigManager.Config.msqTrialOptOuts = trialOptOuts
+                NoobgamConfigManager.SaveConfig()
+            end
+        end
+        GUI:Separator()
     end
 
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then

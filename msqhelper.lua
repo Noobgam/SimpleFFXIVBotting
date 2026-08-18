@@ -74,6 +74,33 @@ local questStepIdToDungeonId = {
     [4748] = { [5] = 964 }, --- zeromus (abyssal fracture)
     [4959] = { [4] = 984 }, --- the interphos
 }
+local unsupportedMsqTrials = {
+    { key = "seatOfSacrifice", label = "The Seat of Sacrifice", questId = 3778, dutyId = 922 },
+    { key = "finalDay", label = "The Final Day", questId = 4464, dutyId = 997 },
+    { key = "abyssalFracture", label = "The Abyssal Fracture", questId = 4748, dutyId = 1168 },
+}
+MsqClearHelper.UnsupportedMsqTrials = unsupportedMsqTrials
+
+local unsupportedTrialByQuestId = {}
+local unsupportedTrialByDutyId = {}
+for _, trial in ipairs(unsupportedMsqTrials) do
+    unsupportedTrialByQuestId[trial.questId] = trial
+    unsupportedTrialByDutyId[trial.dutyId] = trial
+end
+
+local function isTrialOptedOut(trial)
+    local optOuts = NoobgamConfigManager.Config.msqTrialOptOuts or {}
+    return trial ~= nil and optOuts[trial.key] == true
+end
+
+local function isDungeonEnabled(questId)
+    return not isTrialOptedOut(unsupportedTrialByQuestId[questId])
+end
+
+local function isKdfProfileEnabled(dutyId)
+    return not isTrialOptedOut(unsupportedTrialByDutyId[dutyId])
+end
+
 MsqClearHelper.QuestStepIdToDungeonId = questStepIdToDungeonId
 
 local dungeonsToClearInDutyFinder = {
@@ -428,7 +455,7 @@ end
 function MsqClearHelper.DetectNeededDungeon()
     for questId, steps in pairs(questStepIdToDungeonId) do
         local completed = Quest:IsQuestCompleted(questId, false)
-        if not completed then
+        if isDungeonEnabled(questId) and not completed then
             local currentStepId = Quest:GetQuestCurrentStep(questId, false)
             if steps[currentStepId] ~= nil then
                 local dungeonId = steps[currentStepId]
@@ -902,7 +929,7 @@ function MsqClearHelper.Update()
             MsqClearHelper.FightStarted = GetTickCount()
         end
         local kdfProfile = NoobgamKdfProfiles.DungeonProfiles[Player.localmapid]
-        if kdfProfile ~= nil then
+        if kdfProfile ~= nil and isKdfProfileEnabled(Player.localmapid) then
             KitanoiFuncs.LoadDungeonTbl(kdfProfile)
             if not KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
                 log("Enabling KDF")
