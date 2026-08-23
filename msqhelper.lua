@@ -751,6 +751,17 @@ local function updateFarmer()
         return false
     end
     if neededDungeon then
+        if LattyLib.QuestCore.running or LattyLib.QuestCore.stopping then
+            log("Stopping Latty questing, need to clear dungeon")
+            local ok, stopped, detail = pcall(LattyLib.StopQuesting)
+            if not ok then
+                log("[ERROR] LattyLib.StopQuesting failed: " .. tostring(stopped))
+            elseif stopped == false then
+                log("[WARNING] LattyLib deferred STOP QUESTING: " .. tostring(detail))
+            end
+            wait(1000)
+            return
+        end
         if FFXIV_Common_BotRunning then
             log("Disabling bot, need to clear dungeon")
             ffxivminion.DutyCurrentData = {}
@@ -938,8 +949,8 @@ function MsqClearHelper.Update()
             end
             return
         end
-        if gBotMode ~= "Assist" then
-            NoobgamUtils.SwitchMode("Assist")
+        if gBotMode ~= "assistMode" then
+            NoobgamUtils.SwitchMode("assistMode")
             wait(1000)
             return
         end

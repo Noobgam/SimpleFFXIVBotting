@@ -13,7 +13,6 @@ end
 
 -- Configuration
 local CONFIG = {
-    msqProfile = "(Latty) 1-100 [Unlocked]",
     jobProfile = "Class Quests Pack",
     jobMapping = {
         [FFXIV.JOBS.GLADIATOR] = FFXIV.JOBS.PALADIN,
@@ -185,33 +184,225 @@ local function wait(millis, breakOutCondition, breakOutDelayMillis)
     end
 end
 
+local function isLattyQuestingRunning()
+    return LattyLib.QuestCore.running == true
+end
+
+-- Bootstrap's MSQ flow includes either Aether Current quests (default) or Blue
+-- Quests when the existing config option requests that filter. Every other side
+-- pack stays disabled. Pin and validate before every start because Latty persists
+-- the previous UI selection.
+local function configureLattyQuesting()
+    local settings = LattyLib.Settings
+    local useBlueQuests = NoobgamConfigManager.Config.useBlueQuestFilter == true
+    local sideRule = useBlueQuests and "BLUE" or "AETHER"
+    local changed = false
+    local function setValue(tbl, key, value)
+        if tbl[key] ~= value then
+            tbl[key] = value
+            changed = true
+        end
+    end
+
+    setValue(settings, "QuestRule", "MSQ")
+    setValue(settings, "SideQuestRule", sideRule)
+
+    if type(settings.SideQuestPacks) ~= "table" then
+        settings.SideQuestPacks = {}
+        changed = true
+    end
+    setValue(settings.SideQuestPacks, "AetherCurrent", not useBlueQuests)
+    setValue(settings.SideQuestPacks, "BlueQuests", useBlueQuests)
+    setValue(settings.SideQuestPacks, "Moogle", false)
+    setValue(settings.SideQuestPacks, "Namazu", false)
+
+    if type(settings.Questing) ~= "table" then
+        settings.Questing = {}
+        changed = true
+    end
+    setValue(settings.Questing, "CatalogName", "Latty Native Quest Runtime")
+    if type(settings.Questing.CatalogVars) ~= "table"
+        or next(settings.Questing.CatalogVars) ~= nil
+    then
+        settings.Questing.CatalogVars = {}
+        changed = true
+    end
+
+    if changed then
+        LattyLib.MarkSettingsDirty()
+    end
+
+    local rule = LattyLib.GetQuestRuleValue()
+    local effectiveSideRule = LattyLib.GetEffectiveSideQuestRule()
+    local includesMSQ = LattyLib.InLattyPackRule("MSQ")
+    local includesSide = LattyLib.InLattyPackRule("Side")
+    local includesAether = LattyLib.LattyPackAetherQuests()
+    local includesBlue = LattyLib.LattyPackBlueQuests()
+    if rule ~= "MSQ" or effectiveSideRule ~= sideRule
+        or includesMSQ ~= true or includesSide ~= false
+        or includesAether ~= (not useBlueQuests) or includesBlue ~= useBlueQuests
+    then
+        log("[ERROR] Refusing to start Latty questing with unexpected rules: " .. json.encode({
+            rule = rule,
+            sideRule = effectiveSideRule,
+            includesMSQ = includesMSQ,
+            includesSide = includesSide,
+            includesAether = includesAether,
+            includesBlue = includesBlue,
+        }))
+        return false, changed
+    end
+
+    return true, changed
+end
+
+local function startLattyQuesting()
+    local configured, changed = configureLattyQuesting()
+    if not configured then
+        return false
+    end
+
+    local core = LattyLib.QuestCore
+    if core.running == true then
+        if changed then
+            core.Resolve(true)
+            log("Corrected running Latty questing settings")
+        end
+        return true
+    end
+
+    if core.stopping == true then
+        return false
+    end
+
+    -- KDF owns movement, combat, and duty state for the whole handoff. Check this
+    -- on every pulse so bootstrap cannot restart Latty underneath an active duty.
+    local inDungeon = table.valid(Duty:GetActiveDutyInfo())
+    local kdfActive = KitanoiFuncs ~= nil
+        and KitanoiFuncs.AreKitanoiAddonsRunning ~= nil
+        and KitanoiFuncs.AreKitanoiAddonsRunning("KDF")
+    if inDungeon or kdfActive then
+        local now = GetTickCount()
+        if MsqBootstrap.LastLattyKDFSuppressionLog == nil
+            or MsqBootstrap.LastLattyKDFSuppressionLog < now - 30000
+        then
+            log("Preventing Latty start while KDF/duty owns execution: " .. json.encode({
+                kdfActive = kdfActive,
+                inDungeon = inDungeon,
+            }))
+            MsqBootstrap.LastLattyKDFSuppressionLog = now
+        end
+        return false
+    end
+
+    -- Latty refuses to start while Minion owns the task hub. Relinquish a stale
+    -- questMode run first and start Latty on the next update.
+    if FFXIV_Common_BotRunning then
+        log("Disabling Minion bot before starting Latty questing")
+        ffxivminion.DutyCurrentData = {}
+        ml_global_information.ToggleRun()
+        wait(1000)
+        return false
+    end
+
+    -- Avoid hammering Start while Latty publishes its execution modules.
+    local now = GetTickCount()
+    if MsqBootstrap.LastLattyStartAttempt ~= nil
+        and MsqBootstrap.LastLattyStartAttempt > now - 3000
+    then
+        return false
+    end
+    MsqBootstrap.LastLattyStartAttempt = now
+    NoobgamPrivateAPI.SetKDFToMsqIntegration()
+
+    local startSource = nil
+    if core.fatalStopLatched == true then
+        -- Automatic API starts cannot clear a fatal latch. Mirror a manual UI
+        -- start once per minute after the KDF/duty handoff has fully ended.
+        if MsqBootstrap.LastLattyFatalRecoveryAt ~= nil
+            and MsqBootstrap.LastLattyFatalRecoveryAt > now - 60000
+        then
+            if MsqBootstrap.LastLattyFatalRecoveryBlockedLog == nil
+                or MsqBootstrap.LastLattyFatalRecoveryBlockedLog < now - 30000
+            then
+                log("[ERROR] Latty fatal stop re-latched inside recovery cooldown; leaving it stopped: "
+                    .. json.encode({
+                        reason = core.fatalStopReason,
+                        lastBlock = core.lastFatalStopBlock,
+                        fatalAt = core.fatalStopAt,
+                    }))
+                MsqBootstrap.LastLattyFatalRecoveryBlockedLog = now
+            end
+            return false
+        end
+
+        MsqBootstrap.LastLattyFatalRecoveryAt = now
+        startSource = "ui"
+        log("[WARNING] Recovering Latty fatal stop after KDF handoff without reload: "
+            .. json.encode({
+                reason = core.fatalStopReason,
+                lastBlock = core.lastFatalStopBlock,
+                fatalAt = core.fatalStopAt,
+            }))
+    end
+
+    local ok, started, detail
+    if startSource ~= nil then
+        ok, started, detail = pcall(LattyLib.StartQuesting, startSource)
+    else
+        ok, started, detail = pcall(LattyLib.StartQuesting)
+    end
+    if not ok then
+        log("[ERROR] LattyLib.StartQuesting failed: " .. tostring(started))
+        return false
+    end
+    if started == false then
+        log("[WARNING] LattyLib rejected START QUESTING: " .. tostring(detail))
+        return false
+    end
+
+    log("Started Latty questing with MSQ + "
+        .. (NoobgamConfigManager.Config.useBlueQuestFilter and "Blue" or "Aether") .. " settings: "
+        .. tostring(core.lastStatus or core.executionStatus or "starting"))
+    return true
+end
+
+local function stopLattyQuesting()
+    local core = LattyLib.QuestCore
+    if core.running ~= true and core.stopping ~= true then
+        return false
+    end
+
+    local ok, stopped, detail = pcall(LattyLib.StopQuesting)
+    if not ok then
+        log("[ERROR] LattyLib.StopQuesting failed: " .. tostring(stopped))
+        return false
+    end
+    if stopped == false and core.running == true then
+        log("[WARNING] LattyLib deferred STOP QUESTING: " .. tostring(detail))
+    else
+        log("Stopped Latty questing")
+    end
+    return true
+end
+
+--- Select a Minion Questing profile. The native Latty MSQ flow does not use this;
+--- this helper remains for the existing Sebb job/role quest functionality.
 --- @param targetProfile string
---- @param aether boolean|nil
-local function setQuestingProfile(targetProfile, aether)
-    if gBotMode ~= "Quest" then
-        log("Switching to Quest mode")
-        NoobgamUtils.SwitchMode("Quest")
+local function setQuestingProfile(targetProfile)
+    if gBotMode ~= "questMode" then
+        log("Switching to questMode")
+        NoobgamUtils.SwitchMode("questMode")
         if FFXIV_Common_BotRunning then
             -- switching bot off prior to doing quests once.
-            log("Disabling bot once because switched to quest mode")
+            log("Disabling bot once because switched to questMode")
             ml_global_information.ToggleRun()
         end
     end
 
     local rule = "MSQ"
-    if aether then
-        rule = "Side"
-    end
-
-    local subRule = "Aether Current Quests"
-    if NoobgamConfigManager.Config.useBlueQuestFilter then
-        subRule = "Blue Quests"
-    end
-    if aether == false and rule == "MSQ" then
-        subRule = "All"
-    end
-
-    gQuestGatherAetherCurrents = true
+    local subRule = "All"
+    gQuestGatherAetherCurrents = false
 
     if gQuestProfile ~= targetProfile or QuestOpts_100_v1_QuestRule ~= rule or QuestOpts_100_v1_QuestSubRule ~= subRule then
         log("Setting quest profile. " .. json.encode({
@@ -255,34 +446,14 @@ local function ensureProfileEnabled(profile, job)
     end
 
     if profile == "msq" then
-        if not setQuestingProfile(CONFIG.msqProfile) then
-            return
-        end
-        
-
-        if KitanoiFuncs and KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
-            log("KDF is still doing something, will let it be. Questing disabled temporarily")
-            wait(5000)
-            return
-        end
-
-        if not FFXIV_Common_BotRunning then
-            log("Enabling bot")
-            ffxivminion.DutyCurrentData = {}
-            ml_global_information.ToggleRun()
-            wait(5000)
-            return
-        end
-        -- these two are incompatible with kdf msq levelling, it relies on endprofile.
-        gGrindDoFates = false
-        gGrindDoHuntlog = false
-
-
-        QuestOpts_Q_BuyGreens = true
-        QuestOpts_Greens_new = false
-        NoobgamPrivateAPI.SetKDFToMsqIntegration()
+        startLattyQuesting()
         return
     elseif profile == "job" then
+        if isLattyQuestingRunning() then
+            stopLattyQuesting()
+            wait(1000)
+            return
+        end
         if not setQuestingProfile(CONFIG.jobProfile) then
             log("job profile could not be set. Assuming it's missing, will try to pick some other")
             local allProfiles = Questing.profilesDisplay
@@ -326,6 +497,10 @@ local function ensureProfileEnabled(profile, job)
         end
         return
     elseif profile == "none" then
+        if stopLattyQuesting() then
+            wait(1000)
+            return
+        end
         if FFXIV_Common_BotRunning then
             log("Disabling bot")
             ffxivminion.DutyCurrentData = {}
@@ -640,6 +815,10 @@ function MsqBootstrap.Reset()
     MsqBootstrap.WaitCondition = nil
     MsqBootstrap.BreakOutDelayMillis = nil
     MsqBootstrap.LastProfile = nil
+    MsqBootstrap.LastLattyStartAttempt = nil
+    MsqBootstrap.LastLattyKDFSuppressionLog = nil
+    MsqBootstrap.LastLattyFatalRecoveryAt = nil
+    MsqBootstrap.LastLattyFatalRecoveryBlockedLog = nil
     log("Reset complete")
 end
 

@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Lua addon for the **FFXIVMinion** bot framework (the "Module" system, see `module.def`). There is no build, no tests, no package manager — files are dropped into the FFXIVMinion mods folder and loaded directly. Lua 5.2 runtime; type hints in `.vscode/globals.lua` are consumed by sumneko's lua-language-server only (`.luarc.json`).
+A Lua addon for the **FFXIVMinion** bot framework (the "Module" system, see `module.def`). There is no build, no tests, no package manager — files are dropped into the FFXIVMinion mods folder and loaded directly. Lua 5.2 runtime; type hints in `.vscode/globals.lua` are consumed by sumneko's lua-language-server only (`.luarc.json`). LattyLib is an external runtime dependency; this repository deliberately does not carry a copied `latty.lua` API declaration.
 
 The addon (display name **NoobgamSidekick**) drives end-to-end character progression by orchestrating two upstream addons it does not own:
-- **Questing** (FFXIVMinion built-in) — selects MSQ vs job/role quest profiles and toggles bot Run state.
+- **LattyLib native quest runtime** — drives MSQ plus Aether Current quests independently of Minion's Quest bot mode.
+- **Questing** (FFXIVMinion built-in) — still drives the existing job/role quest profile flow.
 - **KDF (Kitanoi Dungeon Framework)** — clears dungeons; profiles for it live in `kdfProfiles.lua`.
 
 Most non-trivial behavior is composing those two with quest-state machines, not implementing combat or navigation from scratch.
@@ -38,7 +39,7 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 **`NoobgamTaskManager` is the queue, `NavigationTask` is the primitive.** Higher-level flows push tasks via `Schedule` / `PushSchedule` / `PushMultiple`; the Update loop dequeues one at a time and runs it through a fixed dispatch (`genericGoTo`, `createPF`, `joinPF`, `leaveParty`, `disbandParty`). `NavigationTask` wraps `ml_task_hub` / `ffxiv_task_movetomap` / `ffxiv_task_movetopos` and is what `genericGoTo` ultimately calls.
 
-**Profile control surface.** `bootstrap.lua` toggles other addons by mutating their globals (`gQuestProfile`, `QuestOpts_*`, `gBotMode`, `FFXIV_Common_BotRunning`, `KitanoiFuncs.EnableAddon`, `NoobgamPrivateAPI.SetKDFTo*`) — these are not owned by this codebase. `utils.lua`'s `SwitchMode` / `SetQuestingProfile` are the right entry points; don't write to those globals directly elsewhere.
+**Profile control surface.** `bootstrap.lua` starts/stops MSQ through `LattyLib.StartQuesting` / `StopQuesting` and pins Latty to MSQ + Aether Current quests. The existing job/role flow still mutates Questing globals through `utils.lua`'s `SwitchMode` / `SetQuestingProfile`. KDF is controlled through `NoobgamPrivateAPI.SetKDFTo*`.
 
 **Private KDF helpers.** `private.lua` exports `NoobgamPrivateAPI` with `SetKDFToMsqIntegration` and `SetKDFToNone`. It is regular source code and can be edited directly.
 
@@ -54,4 +55,4 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 ## Distribution requirements (from README)
 
-End users must have the **(Latty) 1-100 [Unlocked]** MSQ profile and **Sebb's Class Quests Pack** installed in FFXIVMinion's Questing addon — those names are referenced as string literals (`bootstrap.lua` `CONFIG.msqProfile` / `jobProfile`) and a fallback search for `" Class Quests"` is in place if the exact name is missing.
+End users must have **LattyLib** with the native quest runtime and **Sebb's Class Quests Pack** installed. Only the job profile is selected through Minion Questing; a fallback search for `" Class Quests"` remains if its exact name is missing.

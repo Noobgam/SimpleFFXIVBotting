@@ -37,6 +37,6 @@ A specialized farming module for Ravana Extreme.
 ## 📦 Requirements
 
 To function correctly, the following must be installed:
-*   Standard MSQ questing profiles (e.g., "(Latty) 1-100").
+*   LattyLib with the native quest runtime.
 *   Sebb's "Class Quests Pack" for all job transitions.
 

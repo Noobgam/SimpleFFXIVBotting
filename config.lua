@@ -11,7 +11,7 @@ end
 ---@field enabled boolean
 ---@field mode "Bootstrap"|"Ravana"|"Helper"
 ---@field useDutyFinder? boolean - whether to use duty finder for duties where helpers can't help you (for now only seat of sacrifice)
----@field useBlueQuestFilter? boolean - use the Blue Quests sub-rule while gathering aether currents
+---@field useBlueQuestFilter? boolean - use Blue Quests instead of Aether Current quests in the Latty MSQ scope
 ---@field questLevelCap? integer - Questing level option; defaults to 10
 ---@field msqTrialOptOuts? table<string, boolean> - unsupported MSQ trials the user opted out of
 ---@field bootstrapConfig? (BootstrapConfigPart[]|nil)

@@ -66,6 +66,12 @@ local function closeUselessControls()
 end
 
 local function onUpdate()
+    -- Questing is now exposed through FFXIVLib on the live runtime.
+    if Questing == nil and FFXIVLib ~= nil and FFXIVLib.Questing ~= nil then
+        d("[NoobgamSideKick] Injecting Questing from FFXIVLib")
+        Questing = FFXIVLib.Questing
+    end
+
     if NoobgamTaskManager.Update() then
         return
     end

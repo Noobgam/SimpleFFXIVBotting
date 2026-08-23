@@ -19,7 +19,7 @@ function NoobgamUtils.findIndex(tbl, element)
     return nil
 end
 
---- @param botMode "Assist" | "Quest" | "Grind"
+--- @param botMode "assistMode" | "questMode" | "grindMode"
 function NoobgamUtils.SwitchMode(botMode)
     log("Switching bot mode to " .. botMode)
 

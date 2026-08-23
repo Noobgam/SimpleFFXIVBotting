@@ -253,10 +253,11 @@ local function buildBugReport()
     add("")
 
     add("--- Quest Settings ---")
-    add("Quest Rule: " .. tostring(QuestOpts_100_v1_QuestRule or "None"))
-    add("Quest Sub-Rule: " .. tostring(QuestOpts_100_v1_QuestSubRule or "None"))
-    add("Aether Currents: " .. tostring(gQuestGatherAetherCurrents and "Yes" or "No"))
-    add("Buy Greens: " .. tostring(QuestOpts_Q_BuyGreens and "Yes" or "No"))
+    add("Latty Running: " .. tostring(LattyLib.QuestCore.running == true))
+    add("Quest Rule: " .. tostring(LattyLib.GetQuestRuleValue()))
+    add("Quest Sub-Rule: " .. tostring(LattyLib.GetEffectiveSideQuestRule()))
+    add("Aether Quests: " .. tostring(LattyLib.LattyPackAetherQuests() and "Yes" or "No"))
+    add("Latty Status: " .. tostring(LattyLib.QuestCore.lastStatus or ""))
     add("")
 
     add("--- Prerequisite Quests ---")
@@ -386,7 +387,7 @@ local function drawBootstrapUI()
         end
 
         local useBlueQuestFilter, blueQuestFilterPressed = GUI:Checkbox(
-            "Use Blue Quests for aether currents",
+            "Use Blue Quests instead of Aether Current quests",
             NoobgamConfigManager.Config.useBlueQuestFilter or false
         )
         if blueQuestFilterPressed then
@@ -478,10 +479,11 @@ local function drawBootstrapUI()
     ColoredText(0.8, 0.8, 0.2, "Quest Settings")
     GUI:Separator()
 
-    GUI:Text("Quest Rule: " .. (QuestOpts_100_v1_QuestRule or "None"))
-    GUI:Text("Quest Sub-Rule: " .. (QuestOpts_100_v1_QuestSubRule or "None"))
-    GUI:Text("Aether Currents: " .. (gQuestGatherAetherCurrents and "Yes" or "No"))
-    GUI:Text("Buy Greens: " .. (QuestOpts_Q_BuyGreens and "Yes" or "No"))
+    GUI:Text("Latty Running: " .. (LattyLib.QuestCore.running and "Yes" or "No"))
+    GUI:Text("Quest Rule: " .. LattyLib.GetQuestRuleValue())
+    GUI:Text("Quest Sub-Rule: " .. LattyLib.GetEffectiveSideQuestRule())
+    GUI:Text("Aether Quests: " .. (LattyLib.LattyPackAetherQuests() and "Yes" or "No"))
+    GUI:Text("Latty Status: " .. tostring(LattyLib.QuestCore.lastStatus or ""))
 
     GUI:Separator()
 
@@ -533,6 +535,16 @@ function GUI_Manager.Draw()
             NoobgamConfigManager.Config.enabled = checked
             NoobgamConfigManager.SaveConfig()
             if not checked then
+                -- Disabling the addon stops Latty immediately as well as the
+                -- legacy Minion/KDF automation handled by the "none" profile.
+                if LattyLib.QuestCore.running or LattyLib.QuestCore.stopping then
+                    local ok, stopped, detail = pcall(LattyLib.StopQuesting, "NoobgamSidekick disabled")
+                    if not ok then
+                        d("[GUI] LattyLib.StopQuesting failed: " .. tostring(stopped))
+                    elseif stopped == false then
+                        d("[GUI] LattyLib deferred STOP QUESTING: " .. tostring(detail))
+                    end
+                end
                 MsqBootstrap.EnsureProfileEnabled("none")
             end
         end
