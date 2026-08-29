@@ -763,7 +763,10 @@ function MsqBootstrap.CommonMsqCycle(params)
 
     local neededDungeon = MsqClearHelper.CurrentDungeonId or MsqClearHelper.DetectNeededDungeon()
     if neededDungeon ~= nil then
-        if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
+        local useDutyFinderWithoutHelpers = NoobgamConfigManager.Config.doNotUseHelpers == true
+            and NoobgamConfigManager.Config.useDutyFinder == true
+        if (neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111)
+            and not useDutyFinderWithoutHelpers then
             log("[WARNING] we're on a quest step with unskippable trial. Can't do anything")
             wait(15000)
             return true

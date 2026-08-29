@@ -295,6 +295,7 @@ function MsqClearHelper.DumpDebugState(reason)
         config = {
             mode = NoobgamConfigManager and NoobgamConfigManager.Config and NoobgamConfigManager.Config.mode or nil,
             useDutyFinder = NoobgamConfigManager and NoobgamConfigManager.Config and NoobgamConfigManager.Config.useDutyFinder or nil,
+            doNotUseHelpers = NoobgamConfigManager and NoobgamConfigManager.Config and NoobgamConfigManager.Config.doNotUseHelpers or nil,
         },
         msq = {
             Role = MsqClearHelper.Role,
@@ -568,6 +569,7 @@ function MsqClearHelper.Reset()
     MsqClearHelper.HostState = nil
     MsqClearHelper.PfReadyAt = nil
     MsqClearHelper.JoinPfScheduled = false
+    MsqClearHelper.HelperOptOutCleaned = false
     if MsqClearHelper.Role == "host" then
         FileDelete(sharedStatePath)
         if farmer then
@@ -746,8 +748,11 @@ local function updateFarmer()
     end
 
     local neededDungeon = MsqClearHelper.DetectNeededDungeon()
+    local doNotUseHelpers = NoobgamConfigManager.Config.doNotUseHelpers == true
+    local useDutyFinder = NoobgamConfigManager.Config.useDutyFinder == true
     MsqClearHelper.NeededDungeon = neededDungeon
-    if neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111 then
+    if (neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111)
+        and not (doNotUseHelpers and useDutyFinder) then
         return false
     end
     if neededDungeon then
@@ -770,7 +775,20 @@ local function updateFarmer()
             return
         end
         NoobgamPrivateAPI.SetKDFToNone()
-        if NoobgamConfigManager.Config.useDutyFinder and dungeonsToClearInDutyFinder[neededDungeon] then
+
+        -- Duty Finder normally handles only duties that cannot use the helper
+        -- clear flow. With helpers disabled it becomes the route for every
+        -- detected story duty instead.
+        local shouldUseDutyFinder = useDutyFinder
+            and (doNotUseHelpers or dungeonsToClearInDutyFinder[neededDungeon])
+        if shouldUseDutyFinder then
+            if not MsqClearHelper.HelperOptOutCleaned then
+                MsqClearHelper.UnregisterClear()
+                MsqClearHelper.UnpublishPfReady(Player.name)
+                MsqClearHelper.CurrentDungeonId = nil
+                MsqClearHelper.JoinPfScheduled = false
+                MsqClearHelper.HelperOptOutCleaned = true
+            end
             if Duty:GetQueueStatus() == 0 then
                 log("Registering for duty " .. tostring(neededDungeon))
                 Duty:JoinDuty(2, neededDungeon)
@@ -781,6 +799,22 @@ local function updateFarmer()
             log("Waiting for queue to pop")
             return true
         end
+
+        if doNotUseHelpers then
+            if not MsqClearHelper.HelperOptOutCleaned then
+                log("Helpers disabled; removing any existing clear request")
+                MsqClearHelper.UnregisterClear()
+                MsqClearHelper.UnpublishPfReady(Player.name)
+                MsqClearHelper.CurrentDungeonId = nil
+                MsqClearHelper.JoinPfScheduled = false
+                MsqClearHelper.HelperOptOutCleaned = true
+            end
+            wait(5000)
+            log("Story duty detected, but both helpers and Duty Finder are disabled")
+            return true
+        end
+
+        MsqClearHelper.HelperOptOutCleaned = false
         if MsqClearHelper.CurrentDungeonId ~= neededDungeon then
             MsqClearHelper.CurrentDungeonId = neededDungeon
             MsqClearHelper.RegisterForClear(neededDungeon)

@@ -10,7 +10,8 @@ end
 ---@class DynamicAccountConfig
 ---@field enabled boolean
 ---@field mode "Bootstrap"|"Ravana"|"Helper"
----@field useDutyFinder? boolean - whether to use duty finder for duties where helpers can't help you (for now only seat of sacrifice)
+---@field useDutyFinder? boolean - use Duty Finder for unsupported duties, or all story duties when helpers are disabled
+---@field doNotUseHelpers? boolean - never publish or join multi-box helper clear requests
 ---@field useBlueQuestFilter? boolean - use Blue Quests instead of Aether Current quests in the Latty MSQ scope
 ---@field questLevelCap? integer - Questing level option; defaults to 10
 ---@field msqTrialOptOuts? table<string, boolean> - unsupported MSQ trials the user opted out of
@@ -21,7 +22,9 @@ local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\configs\\"
 --- @type DynamicAccountConfig
 local defaultConfig = {
     enabled = false,
-    mode="Bootstrap"
+    mode = "Bootstrap",
+    useDutyFinder = false,
+    doNotUseHelpers = false,
 }
 
 local function getStaticConfigPath()

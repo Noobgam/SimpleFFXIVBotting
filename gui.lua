@@ -2,9 +2,16 @@ if GUI_Manager == nil then
     GUI_Manager = {}
     GUI_Manager.open = true
     GUI_Manager.visible = true
-    GUI_Manager.SelectedMode = "Bootstrap"
+    GUI_Manager.SelectedMode = "Bootstrap" -- Kept for compatibility with older reloads.
     GUI_Manager.ShowDebug = true
 end
+
+local MODE_NAMES = { "Bootstrap", "Helper", "Ravana" }
+local MODE_DESCRIPTIONS = {
+    Bootstrap = "Automated MSQ, job quests, and story duty progression",
+    Helper = "Host story-duty clears for another game instance",
+    Ravana = "Dedicated Ravana Extreme farming loop",
+}
 
 local function ColoredText(r, g, b, text)
     GUI:PushStyleColor(GUI.Col_Text, r, g, b, 1)
@@ -13,45 +20,80 @@ local function ColoredText(r, g, b, text)
 end
 
 local function drawModePicker()
-    GUI:Text("Select Mode:")
-    GUI:SameLine()
-
-    if GUI:RadioButton("Bootstrap", NoobgamConfigManager.Config.mode == "Bootstrap") then
-        NoobgamConfigManager.Config.mode = "Bootstrap"
+    local currentMode = NoobgamConfigManager.Config.mode or "Bootstrap"
+    local currentIndex = 1
+    for index, mode in ipairs(MODE_NAMES) do
+        if mode == currentMode then
+            currentIndex = index
+            break
+        end
     end
 
-    GUI:SameLine()
+    GUI:PushItemWidth(180)
+    local selectedIndex, changed = GUI:Combo("Mode", currentIndex, MODE_NAMES)
+    GUI:PopItemWidth()
 
-    if GUI:RadioButton("Ravana", NoobgamConfigManager.Config.mode == "Ravana") then
-        NoobgamConfigManager.Config.mode = "Ravana"
+    if changed and MODE_NAMES[selectedIndex] then
+        currentMode = MODE_NAMES[selectedIndex]
+        NoobgamConfigManager.Config.mode = currentMode
+        NoobgamConfigManager.SaveConfig()
     end
 
-    GUI:SameLine()
-
-    if GUI:RadioButton("Helper", NoobgamConfigManager.Config.mode == "Helper") then
-        NoobgamConfigManager.Config.mode = "Helper"
-    end
+    -- SelectedMode used to be independent from Config.mode, which made the
+    -- visible page disagree with the mode actually running.
+    GUI_Manager.SelectedMode = currentMode
+    ColoredText(0.65, 0.65, 0.65, MODE_DESCRIPTIONS[currentMode] or "")
     GUI:Separator()
 end
 
-local function drawRavanaFarmGUI()
-    GUI:Text("Ravana Extreme Farmer")
-    GUI:Separator()
+local function drawRavanaOverview()
+    ColoredText(0.9, 0.65, 0.2, "Ravana Extreme Farmer")
+    GUI:Text("State: " .. tostring(RavanaFarm.State or "Unknown"))
+
+    if MGetGameState() == FFXIV.GAMESTATE.INGAME then
+        GUI:Text("Gil: " .. tostring(GilCount()))
+    else
+        ColoredText(0.8, 0.2, 0.2, "Not in game")
+    end
 
     GUI:Separator()
-    GUI:Text("State: " .. RavanaFarm.State)
-
-    if GUI:Button("Reset##RavanaFarm") then
+    if GUI:Button("Reset Farm##RavanaFarm") then
         RavanaFarm.Reset()
     end
-
-    GUI:Separator()
-    GUI:Text("Gil: " .. tostring(GilCount()))
 end
 
-local function drawHelperGUI()
-    GUI:Text("MSQ Bootstrap helper")
+local function drawRavanaSettings()
+    ColoredText(0.9, 0.3, 0.2, "High-risk mode")
+    GUI:Text("Ravana farming has no configurable options.")
+    GUI:Text("Avoid prolonged or unattended farming sessions.")
+end
+
+local function drawHelperOverview()
+    ColoredText(0.8, 0.8, 0.2, "MSQ Clear Helper")
+    GUI:Text("Role: " .. tostring(MsqClearHelper.Role or "Waiting"))
+    GUI:Text("Host State: " .. tostring(MsqClearHelper.HostState or "Idle"))
+    GUI:Text("Dungeon ID: " .. tostring(MsqClearHelper.CurrentDungeonId or "None"))
+    GUI:Text("Farmer: " .. tostring(MsqClearHelper.CurrentFarmer or "None"))
+
+    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+        ColoredText(0.8, 0.2, 0.2, "Not in game")
+    elseif MsqClearHelper.CurrentFarmer then
+        ColoredText(0.2, 0.8, 0.2, "A clear request is active")
+    else
+        ColoredText(0.65, 0.65, 0.65, "Waiting for a clear request")
+    end
+
     GUI:Separator()
+    if GUI:Button("Reset Helper##Helper") then
+        MsqClearHelper.Reset()
+    end
+end
+
+local function drawHelperSettings()
+    GUI:Text("Helper mode watches the shared request folder and hosts")
+    GUI:Text("undersized story-duty clears for a Bootstrap instance.")
+    GUI:Separator()
+    GUI:Text("There are no per-helper settings.")
 end
 
 local function drawDebugPanel()
@@ -240,6 +282,7 @@ local function buildBugReport()
     add("Bot Mode: " .. tostring(gBotMode or "None"))
     add("Active Profile: " .. tostring(MsqBootstrap.LastProfile or "None"))
     add("Use Duty Finder: " .. tostring(NoobgamConfigManager.Config.useDutyFinder or false))
+    add("Do Not Use Helpers: " .. tostring(NoobgamConfigManager.Config.doNotUseHelpers or false))
     add("")
 
     add("--- Wait State ---")
@@ -375,38 +418,73 @@ local function generateBugReportZip()
     return zipPath
 end
 
-local function drawBootstrapUI()
-    GUI:Text("MSQ Bootstrap")
+local function drawBootstrapSettings()
+    ColoredText(0.8, 0.8, 0.2, "Quest Selection")
+
+    local useBlueQuestFilter, blueQuestFilterPressed = GUI:Checkbox(
+        "Use Blue Quests instead of Aether Current quests",
+        NoobgamConfigManager.Config.useBlueQuestFilter or false
+    )
+    if blueQuestFilterPressed then
+        NoobgamConfigManager.Config.useBlueQuestFilter = useBlueQuestFilter
+        NoobgamConfigManager.SaveConfig()
+    end
+
+    local questLevelCap, levelCapChanged = GUI:SliderInt(
+        "Quest level cap",
+        NoobgamConfigManager.Config.questLevelCap or 10,
+        1,
+        100
+    )
+    if levelCapChanged then
+        NoobgamConfigManager.Config.questLevelCap = questLevelCap
+        NoobgamConfigManager.SaveConfig()
+    end
+
     GUI:Separator()
+    ColoredText(0.8, 0.8, 0.2, "Duty Handling")
 
-    if NoobgamConfigManager.Config.mode == "Bootstrap" then
-        local checked, enabledPressed = GUI:Checkbox("Use duty finder for unskippable", NoobgamConfigManager.Config.useDutyFinder or false)
-        if enabledPressed then
-            NoobgamConfigManager.Config.useDutyFinder = checked
-            NoobgamConfigManager.SaveConfig()
+    local doNotUseHelpers, helpersChanged = GUI:Checkbox(
+        "Do not use helpers",
+        NoobgamConfigManager.Config.doNotUseHelpers or false
+    )
+    if helpersChanged then
+        NoobgamConfigManager.Config.doNotUseHelpers = doNotUseHelpers
+        NoobgamConfigManager.SaveConfig()
+        if doNotUseHelpers then
+            -- updateFarmer also performs this cleanup. Doing it here makes
+            -- the setting immediate when changed while logged in.
+            if MGetGameState() == FFXIV.GAMESTATE.INGAME then
+                MsqClearHelper.UnregisterClear()
+                MsqClearHelper.UnpublishPfReady(Player.name)
+            end
+            MsqClearHelper.CurrentDungeonId = nil
+            MsqClearHelper.JoinPfScheduled = false
+            MsqClearHelper.HelperOptOutCleaned = false
         end
+    end
 
-        local useBlueQuestFilter, blueQuestFilterPressed = GUI:Checkbox(
-            "Use Blue Quests instead of Aether Current quests",
-            NoobgamConfigManager.Config.useBlueQuestFilter or false
-        )
-        if blueQuestFilterPressed then
-            NoobgamConfigManager.Config.useBlueQuestFilter = useBlueQuestFilter
-            NoobgamConfigManager.SaveConfig()
-        end
+    local useDutyFinder, dutyFinderPressed = GUI:Checkbox(
+        "Use Duty Finder",
+        NoobgamConfigManager.Config.useDutyFinder or false
+    )
+    if dutyFinderPressed then
+        NoobgamConfigManager.Config.useDutyFinder = useDutyFinder
+        NoobgamConfigManager.SaveConfig()
+    end
 
-        local questLevelCap, levelCapChanged = GUI:SliderInt(
-            "Quest level cap",
-            NoobgamConfigManager.Config.questLevelCap or 10,
-            1,
-            100
-        )
-        if levelCapChanged then
-            NoobgamConfigManager.Config.questLevelCap = questLevelCap
-            NoobgamConfigManager.SaveConfig()
-        end
+    if doNotUseHelpers and useDutyFinder then
+        ColoredText(0.2, 0.8, 0.2, "All detected story duties will use Duty Finder.")
+    elseif doNotUseHelpers then
+        ColoredText(0.9, 0.5, 0.2, "Story duties will pause; no helper requests will be sent.")
+    elseif useDutyFinder then
+        ColoredText(0.65, 0.65, 0.65, "Duty Finder handles unsupported duties; helpers handle the rest.")
+    else
+        ColoredText(0.65, 0.65, 0.65, "Helpers handle supported story duties.")
+    end
 
-        GUI:Text("MSQ trial opt-outs:")
+    if GUI:CollapsingHeader("Unsupported trial opt-outs") then
+        GUI:Indent()
         local trialOptOuts = NoobgamConfigManager.Config.msqTrialOptOuts or {}
         for _, trial in ipairs(MsqClearHelper.UnsupportedMsqTrials) do
             local optedOut, optOutChanged = GUI:Checkbox(trial.label, trialOptOuts[trial.key] == true)
@@ -416,8 +494,12 @@ local function drawBootstrapUI()
                 NoobgamConfigManager.SaveConfig()
             end
         end
-        GUI:Separator()
+        GUI:Unindent()
     end
+end
+
+local function drawBootstrapOverview()
+    ColoredText(0.8, 0.8, 0.2, "MSQ Bootstrap")
 
     if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
         ColoredText(0.8, 0.1, 0.2, "Not in game")
@@ -514,10 +596,79 @@ local function drawBootstrapUI()
     GUI:Separator()
     GUI:Text("Gil: " .. tostring(GilCount()))
 
-    GUI:Separator()
+end
 
-    -- Debug Panel
-    drawDebugPanel()
+local function drawOverview(mode)
+    if mode == "Ravana" then
+        drawRavanaOverview()
+    elseif mode == "Helper" then
+        drawHelperOverview()
+    else
+        drawBootstrapOverview()
+    end
+end
+
+local function drawSettings(mode)
+    if mode == "Ravana" then
+        drawRavanaSettings()
+    elseif mode == "Helper" then
+        drawHelperSettings()
+    else
+        drawBootstrapSettings()
+    end
+end
+
+local function drawDiagnostics(mode)
+    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+        ColoredText(0.8, 0.2, 0.2, "Diagnostics are available while in game.")
+        return
+    end
+
+    if mode == "Bootstrap" then
+        if GUI:Button("Create Bug Report##Diagnostics") then
+            local zipName = generateBugReportZip()
+            GUI:SetClipboardText("Bug report saved to: " .. zipName)
+        end
+        GUI:SameLine()
+        if GUI:Button("Clear Shared State##Diagnostics") then
+            clearSharedFolder()
+        end
+        GUI:Separator()
+        drawDebugPanel()
+    elseif mode == "Helper" then
+        GUI:Text("Role: " .. tostring(MsqClearHelper.Role or "None"))
+        GUI:Text("Host State: " .. tostring(MsqClearHelper.HostState or "Idle"))
+        GUI:Text("Need to Disband: " .. tostring(MsqClearHelper.NeedToDisband == true))
+        GUI:Text("In Dungeon: " .. tostring(MsqClearHelper.InDungeon == true))
+        if GUI:Button("Clear Shared State##HelperDiagnostics") then
+            clearSharedFolder()
+        end
+    else
+        GUI:Text("State: " .. tostring(RavanaFarm.State or "Unknown"))
+        GUI:Text("Waiting: " .. tostring(RavanaFarm.WaitUntil ~= nil and RavanaFarm.WaitUntil > Now()))
+        GUI:Text("Unsynced Setting Verified: " .. tostring(RavanaFarm.EnsuredUnsync == true))
+    end
+end
+
+local function drawModePages(mode)
+    if GUI:BeginTabBar("NoobgamSidekickPages") then
+        -- Older FFXIVMinion ImGui bindings require the legacy
+        -- (label, enabled, flags) signature. Omitting `enabled` causes every
+        -- tab item to return false, leaving an empty tab bar.
+        if GUI:BeginTabItem("Overview", true, 0) then
+            drawOverview(mode)
+            GUI:EndTabItem()
+        end
+        if GUI:BeginTabItem("Settings", true, 0) then
+            drawSettings(mode)
+            GUI:EndTabItem()
+        end
+        if GUI:BeginTabItem("Diagnostics", true, 0) then
+            drawDiagnostics(mode)
+            GUI:EndTabItem()
+        end
+        GUI:EndTabBar()
+    end
 end
 
 function GUI_Manager.Draw()
@@ -550,14 +701,7 @@ function GUI_Manager.Draw()
         end
 
         drawModePicker()
-
-        if GUI_Manager.SelectedMode == "Ravana" then
-            drawRavanaFarmGUI()
-        elseif GUI_Manager.SelectedMode == "Bootstrap" then
-            drawBootstrapUI()
-        elseif GUI_Manager.SelectedMode == "Helper" then
-            drawHelperGUI()
-        end
+        drawModePages(NoobgamConfigManager.Config.mode or "Bootstrap")
     end
 
     GUI:End()

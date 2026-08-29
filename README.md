@@ -18,6 +18,7 @@
 The primary mode for character leveling.
 *   **Common MSQ Cycle:** Continuously checks for gear upgrades, job quest availability, and dungeon roadblocks.
 *   **Smart Transitions:** Automatically switches between MSQ and Job Quest profiles as levels are reached.
+*   **Duty Routing:** Choose multi-box helpers, Duty Finder for unsupported duties, or enable **Do not use helpers** together with **Use Duty Finder** to queue all detected story duties normally.
 
 ### Helper Mode
 Designed for users running multiple game instances.
