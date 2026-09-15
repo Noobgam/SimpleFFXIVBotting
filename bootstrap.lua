@@ -199,8 +199,8 @@ local function configureLattyQuesting()
     local changed = false
     local function setValue(tbl, key, value)
         if tbl[key] ~= value then
+            log("Changed latty setting from " .. key .. " to " .. tostring(value))
             tbl[key] = value
-            log("Changed latty setting from " .. tostring(tbl[key]) .. " to " .. tostring(value))
             changed = true
         end
     end
