@@ -217,6 +217,26 @@ local function configureLattyQuesting()
     setValue(settings.SideQuestPacks, "Moogle", false)
     setValue(settings.SideQuestPacks, "Namazu", false)
     setValue(settings.Options, "KDFUseNativeQuesting", true )
+    if not settings.Company.GrandCompany or settings.Company.GrandCompany == "None" then
+        settings.Company.GrandCompany = "Maelstrom"
+        log("Pinned the gc to maelstrom")
+        changed = true
+    end
+
+    if type(settings.Custom) ~= "table" then
+        settings.Custom = {}
+        changed = true
+    end
+    if type(settings.Custom.ChocoboName) ~= "string"
+        or settings.Custom.ChocoboName:match("^%s*$") then
+        local chocoboNames = {
+            "Featherstep", "Sunplume", "Goldbeak", "Stormplume", "Swiftclaw",
+            "Amberwing", "Windspur", "Dusktalon", "Brightplume", "Skywhistle",
+            "Cloudstride", "Moonclaw", "Starwhistle", "Talongleam", "Sunchaser",
+            "Wingflare", "Galesong", "Thunderplume", "Duskrunner", "Brightwing",
+        }
+        setValue(settings.Custom, "ChocoboName", chocoboNames[math.random(#chocoboNames)])
+    end
 
     if type(settings.Questing) ~= "table" then
         settings.Questing = {}
