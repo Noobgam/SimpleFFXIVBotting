@@ -200,6 +200,7 @@ local function configureLattyQuesting()
     local function setValue(tbl, key, value)
         if tbl[key] ~= value then
             tbl[key] = value
+            log("Changed latty setting from " .. tostring(tbl[key]) .. " to " .. tostring(value))
             changed = true
         end
     end
@@ -215,6 +216,7 @@ local function configureLattyQuesting()
     setValue(settings.SideQuestPacks, "BlueQuests", useBlueQuests)
     setValue(settings.SideQuestPacks, "Moogle", false)
     setValue(settings.SideQuestPacks, "Namazu", false)
+    setValue(settings.Options, "KDFUseNativeQuesting", true )
 
     if type(settings.Questing) ~= "table" then
         settings.Questing = {}

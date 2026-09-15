@@ -146,6 +146,66 @@ function NoobgamUtils.shim_d(log_path)
     d = new_d
 end
 
+local function deepCopy(obj, depth)
+    depth = depth or 999999
+    if depth < 0 then
+        return nil
+    end
+    if type(obj) ~= 'table' then return obj end
+    local res = {}
+    for k, v in pairs(obj) do res[k] = deepCopy(v, depth - 1) end
+    return res
+end
+
+function Snapshot(settings, depth)
+    depth = depth or 999999
+    if not _LastSnapshot then
+        _LastSnapshot = deepCopy(settings, depth)
+        d("[Snapshot] Initial state captured. No diff to show.")
+        return
+    end
+
+    local diff = {}
+    local changed = false
+
+    for k, v in pairs(settings) do
+        if type(v) ~= "table" and type(v) ~= "function" then
+            if _LastSnapshot[k] == nil then
+                diff[k] = { status = "NEW", value = v }
+                changed = true
+            elseif _LastSnapshot[k] ~= v then
+                diff[k] = { status = "CHANGED", old = _LastSnapshot[k], new = v }
+                changed = true
+            end
+        end
+    end
+
+    for k, v in pairs(_LastSnapshot) do
+        if settings[k] == nil then
+            diff[k] = { status = "REMOVED", old = v }
+            changed = true
+        end
+    end
+
+    if changed then
+        d("[Snapshot] Diff detected:")
+        for k, info in pairs(diff) do
+            if info.status == "NEW" then
+                d(string.format("  [+] %s: %s", tostring(k), json.encode(info.value)))
+            elseif info.status == "CHANGED" then
+                d(string.format("  [*] %s: %s -> %s", tostring(k), tostring(info.old), tostring(info.new)))
+            elseif info.status == "REMOVED" then
+                d(string.format("  [-] %s: (was %s)", tostring(k), tostring(info.old)))
+            end
+        end
+    else
+        d("[Snapshot] No changes detected.")
+    end
+
+    -- Update the snapshot for the next comparison
+    _LastSnapshot = deepCopy(settings, depth)
+end
+
 --- @return string|nil
 function NoobgamUtils.ExtractInviterName()
     local tooltip = GetControlStrings("SelectYesno", 2)
