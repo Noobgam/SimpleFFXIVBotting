@@ -941,6 +941,9 @@ function MsqClearHelper.HostUpdate()
 end
 
 function MsqClearHelper.Update()
+    if MsqBootstrap.HoldLattyDungeonHandoff() then
+        return true
+    end
     if MsqClearHelper.WaitUntil and MsqClearHelper.WaitUntil > Now() then
         if MsqClearHelper.WaitCondition and MsqClearHelper.WaitCondition() then
             log("Breaking out of wait")

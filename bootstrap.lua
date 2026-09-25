@@ -188,6 +188,43 @@ local function isLattyQuestingRunning()
     return LattyLib.QuestCore.running == true
 end
 
+local function isLattyDungeonHandoffActive()
+    local handoff = LattyLib.DungeonHandoffCore
+    return type(handoff) == "table"
+        and type(handoff.active) == "table"
+        and handoff.stage ~= "idle", handoff
+end
+MsqBootstrap.IsLattyDungeonHandoffActive = isLattyDungeonHandoffActive
+
+local function resetLattyRestartDebounce()
+    MsqBootstrap.LattyStoppedSince = nil
+    MsqBootstrap.LattyStoppedProfile = nil
+    MsqBootstrap.LattyStoppedMap = nil
+end
+
+local function holdLattyDungeonHandoff()
+    local active, handoff = isLattyDungeonHandoffActive()
+    if not active then
+        MsqBootstrap.LastLattyHandoffStage = nil
+        return false
+    end
+    resetLattyRestartDebounce()
+    local now = GetTickCount()
+    if MsqBootstrap.LastLattyHandoffStage ~= handoff.stage
+        or MsqBootstrap.LastLattyHandoffLogAt == nil
+        or now - MsqBootstrap.LastLattyHandoffLogAt >= 30000
+    then
+        log("Yielding to Latty dungeon handoff: key=" .. tostring(handoff.active.key)
+            .. " stage=" .. tostring(handoff.stage)
+            .. " map=" .. tostring(Player.localmapid)
+            .. " status=" .. tostring(handoff.lastStatus))
+        MsqBootstrap.LastLattyHandoffStage = handoff.stage
+        MsqBootstrap.LastLattyHandoffLogAt = now
+    end
+    return true
+end
+MsqBootstrap.HoldLattyDungeonHandoff = holdLattyDungeonHandoff
+
 -- Bootstrap's MSQ flow includes either Aether Current quests (default) or Blue
 -- Quests when the existing config option requests that filter. Every other side
 -- pack stays disabled. Pin and validate before every start because Latty persists
@@ -279,31 +316,15 @@ local function configureLattyQuesting()
 end
 
 local function startLattyQuesting()
-    local configured, changed = configureLattyQuesting()
-    if not configured then
+    if holdLattyDungeonHandoff() then
         return false
     end
-
-    local core = LattyLib.QuestCore
-    if core.running == true then
-        if changed then
-            core.Resolve(true)
-            log("Corrected running Latty questing settings")
-        end
-        return true
-    end
-
-    if core.stopping == true then
-        return false
-    end
-
-    -- KDF owns movement, combat, and duty state for the whole handoff. Check this
-    -- on every pulse so bootstrap cannot restart Latty underneath an active duty.
     local inDungeon = table.valid(Duty:GetActiveDutyInfo())
     local kdfActive = KitanoiFuncs ~= nil
         and KitanoiFuncs.AreKitanoiAddonsRunning ~= nil
         and KitanoiFuncs.AreKitanoiAddonsRunning("KDF")
     if inDungeon or kdfActive then
+        resetLattyRestartDebounce()
         local now = GetTickCount()
         if MsqBootstrap.LastLattyKDFSuppressionLog == nil
             or MsqBootstrap.LastLattyKDFSuppressionLog < now - 30000
@@ -315,6 +336,49 @@ local function startLattyQuesting()
             MsqBootstrap.LastLattyKDFSuppressionLog = now
         end
         return false
+    end
+
+    local configured, changed = configureLattyQuesting()
+    if not configured then
+        return false
+    end
+
+    local core = LattyLib.QuestCore
+    if core.running == true then
+        MsqBootstrap.LattyWasRunning = true
+        resetLattyRestartDebounce()
+        if changed then
+            core.Resolve(true)
+            log("Corrected running Latty questing settings")
+        end
+        return true
+    end
+
+    if core.stopping == true then
+        resetLattyRestartDebounce()
+        return false
+    end
+
+    if MsqBootstrap.LattyWasRunning then
+        local now = GetTickCount()
+        local profile = NoobgamConfigManager.Config.useBlueQuestFilter == true and "blue" or "aether"
+        if Player.localmapid == 0 or Busy() then
+            resetLattyRestartDebounce()
+            return false
+        end
+        if MsqBootstrap.LattyStoppedSince == nil
+            or MsqBootstrap.LattyStoppedProfile ~= profile
+            or MsqBootstrap.LattyStoppedMap ~= Player.localmapid
+        then
+            MsqBootstrap.LattyStoppedSince = now
+            MsqBootstrap.LattyStoppedProfile = profile
+            MsqBootstrap.LattyStoppedMap = Player.localmapid
+            log("Latty stopped without an active dungeon handoff; allowing 3s before restart")
+            return false
+        end
+        if now - MsqBootstrap.LattyStoppedSince < 3000 then
+            return false
+        end
     end
 
     -- Latty refuses to start while Minion owns the task hub. Relinquish a stale
@@ -383,6 +447,8 @@ local function startLattyQuesting()
         return false
     end
 
+    MsqBootstrap.LattyWasRunning = true
+    resetLattyRestartDebounce()
     log("Started Latty questing with MSQ + "
         .. (NoobgamConfigManager.Config.useBlueQuestFilter and "Blue" or "Aether") .. " settings: "
         .. tostring(core.lastStatus or core.executionStatus or "starting"))
@@ -450,11 +516,38 @@ end
 --- @param profile "msq" | "job" | "none"
 --- @param job integer|nil
 local function ensureProfileEnabled(profile, job)
+    if profile == "none" then
+        MsqBootstrap.LattyWasRunning = nil
+        resetLattyRestartDebounce()
+        QuestOpts_C_v1_Level = NoobgamConfigManager.Config.questLevelCap or 10
+        if MsqBootstrap.LastProfile ~= profile then
+            log("Changing profile to " .. profile)
+            MsqBootstrap.LastProfile = profile
+        end
+        if stopLattyQuesting() then
+            wait(1000)
+            return
+        end
+        if FFXIV_Common_BotRunning then
+            log("Disabling bot")
+            ffxivminion.DutyCurrentData = {}
+            ml_global_information.ToggleRun()
+            wait(5000)
+            return
+        end
+        NoobgamPrivateAPI.SetKDFToNone()
+        return
+    end
+
+    if holdLattyDungeonHandoff() then
+        return
+    end
     QuestOpts_C_v1_Level = NoobgamConfigManager.Config.questLevelCap or 10
 
     if MsqBootstrap.LastProfile ~= profile then
         local in_dungeon = table.valid(Duty:GetActiveDutyInfo())
         if in_dungeon then
+            resetLattyRestartDebounce()
             log("Preventing profile switch while in dungeon")
             wait(5000)
             return
@@ -471,6 +564,7 @@ local function ensureProfileEnabled(profile, job)
         startLattyQuesting()
         return
     elseif profile == "job" then
+        resetLattyRestartDebounce()
         if isLattyQuestingRunning() then
             stopLattyQuesting()
             wait(1000)
@@ -518,19 +612,6 @@ local function ensureProfileEnabled(profile, job)
             return
         end
         return
-    elseif profile == "none" then
-        if stopLattyQuesting() then
-            wait(1000)
-            return
-        end
-        if FFXIV_Common_BotRunning then
-            log("Disabling bot")
-            ffxivminion.DutyCurrentData = {}
-            ml_global_information.ToggleRun()
-            wait(5000)
-            return
-        end
-        NoobgamPrivateAPI.SetKDFToNone()
     end
 end
 
@@ -773,10 +854,17 @@ end
 --- @param params MsqCycleParams|nil
 --- @return boolean whether common msq cycle is still ongoing
 function MsqBootstrap.CommonMsqCycle(params)
+    if holdLattyDungeonHandoff() then
+        return true
+    end
     params = params or {}
 
     if Player.localmapid == 0 then
+        resetLattyRestartDebounce()
         return true
+    end
+    if Busy() then
+        resetLattyRestartDebounce()
     end
 
     if openJobChests() then
@@ -785,6 +873,7 @@ function MsqBootstrap.CommonMsqCycle(params)
 
     local neededDungeon = MsqClearHelper.CurrentDungeonId or MsqClearHelper.DetectNeededDungeon()
     if neededDungeon ~= nil then
+        resetLattyRestartDebounce()
         local useDutyFinderWithoutHelpers = NoobgamConfigManager.Config.doNotUseHelpers == true
             and NoobgamConfigManager.Config.useDutyFinder == true
         if (neededDungeon == 92 or neededDungeon == 102 or neededDungeon == 111)
@@ -814,6 +903,12 @@ function MsqBootstrap.CommonMsqCycle(params)
 end
 
 function MsqBootstrap.Update()
+    if holdLattyDungeonHandoff() then
+        return
+    end
+    if Player.localmapid == 0 or Busy() then
+        resetLattyRestartDebounce()
+    end
     -- Handle wait conditions
     if MsqBootstrap.WaitUntil ~= nil and MsqBootstrap.WaitUntil > Now() then
         if MsqBootstrap.WaitCondition and MsqBootstrap.WaitCondition() then
@@ -836,6 +931,10 @@ function MsqBootstrap.Update()
 end
 
 function MsqBootstrap.Reset()
+    MsqBootstrap.LattyWasRunning = nil
+    resetLattyRestartDebounce()
+    MsqBootstrap.LastLattyHandoffStage = nil
+    MsqBootstrap.LastLattyHandoffLogAt = nil
     MsqBootstrap.WaitUntil = nil
     MsqBootstrap.WaitCondition = nil
     MsqBootstrap.BreakOutDelayMillis = nil

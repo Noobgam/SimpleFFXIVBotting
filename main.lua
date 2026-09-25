@@ -72,6 +72,9 @@ local function onUpdate()
         Questing = FFXIVLib.Questing
     end
 
+    if MGetGameState() == FFXIV.GAMESTATE.INGAME and MsqBootstrap.HoldLattyDungeonHandoff() then
+        return
+    end
     if NoobgamTaskManager.Update() then
         return
     end
