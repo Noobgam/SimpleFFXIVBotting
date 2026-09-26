@@ -658,11 +658,20 @@ local function doneWithJobQuests(job, level)
     return QuestCompleted(questId)
 end
 
+-- https://discord.com/channels/119613514863214592/119613514863214592/1552693119039045653
+-- this will seemingly never get fixed. I'm not fixing the profile in-flight in public addon, but I can reset the internal flag sebbs has a bug with
+local function sebbsHacks()
+    if gCurrQuestID == 3247 and Player.localmapid == 816 then
+        gSebbsNeedsBlock = nil
+    end
+end
+
 --- @param job integer
 --- @param targetLevel integer|nil
 --- @return boolean whether we're doing job quests
 local function doingSomeJobQuests(job, targetLevel)
     targetLevel = targetLevel or 100
+    sebbsHacks()
 
     if Player.levels[Player.job] >= 15 then
         if not doneWithJobQuests(job, 15) then
