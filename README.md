@@ -12,6 +12,33 @@
 
 ---
 
+## 💾 Installation (no Git required)
+
+1. Install FFXIVMinion and the addons listed under [Requirements](#-requirements).
+2. Open [the GitHub repository](https://github.com/Noobgam/SimpleFFXIVBotting), click the green **Code** button, then **Download ZIP**. You can also [download the ZIP directly](https://github.com/Noobgam/SimpleFFXIVBotting/archive/refs/heads/main.zip). You do not need Git or a GitHub account.
+3. Right-click the downloaded ZIP in Windows File Explorer and choose **Extract All**.
+4. Find the extracted folder containing `module.def`, `main.lua`, and `gui.lua`. Rename that folder from `SimpleFFXIVBotting-main` to **`SimpleFFXIVBotting`**.
+5. Copy the **whole folder**, including its subfolders and `report-public.cer`, into your Minion installation's `Bots\FFXIVMinion64\LuaMods` folder. For a default installation, the result should look like this:
+
+   ```text
+   C:\MINIONAPP\Bots\FFXIVMinion64\LuaMods\SimpleFFXIVBotting\
+       module.def
+       main.lua
+       gui.lua
+       report-public.cer
+       scripts\
+       ...
+   ```
+
+   **`module.def` must be directly inside `LuaMods\SimpleFFXIVBotting`.** Do not leave an extra `SimpleFFXIVBotting-main` folder nested inside it. If Minion is installed elsewhere, use that installation's `LuaMods` folder instead.
+6. Reload Lua in Minion, or restart the game with Minion attached, to load the addon. Its in-game window/menu entry is named **NoobgamSidekick**. Select the appropriate [operation mode](#-operation-modes), then check **Enabled** when ready to start.
+
+### Updating without Git
+
+Stop the addon on all instances using this installation. Download and extract the latest ZIP, then copy its contents into your existing `LuaMods\SimpleFFXIVBotting` folder and choose **Replace the files in the destination**. Keep the existing `configs` folder to preserve your settings—do not delete the addon folder first. Reload Lua on each instance afterward.
+
+---
+
 ## 🛠 Operation Modes
 
 ### Bootstrap Mode
