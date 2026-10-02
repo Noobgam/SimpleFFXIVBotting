@@ -111,6 +111,13 @@ local function onDraw()
 end
 
 local function preinit()
+    ml_gui.ui_mgr:AddMember({
+        id = "FFXIVMINION##MENU_NOOBGAMSIDEKICK",
+        name = "NoobgamSidekick",
+        onClick = function() GUI_Manager.open = not GUI_Manager.open end,
+        tooltip = "Show or hide SimpleFFXIVBotting (NoobgamSidekick).",
+    }, "FFXIVMINION##MENU_HEADER")
+
     NoobgamConfigManager.ReadConfig()
     local folder = GetLuaModsPath() .. "\\SimpleFFXIVBotting\\logs"
     if not FolderExists(folder) then

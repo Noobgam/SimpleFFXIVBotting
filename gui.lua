@@ -372,50 +372,151 @@ local function buildBugReport()
     return table.concat(lines, "\n")
 end
 
-local function execute(cmd)
-    local handle = io.popen(cmd)
-    d("Executing " .. cmd)
-    if not handle then return nil end
-    local output = handle:read("*a")
-    handle:close()
-    return output
+local function powershellQuote(text)
+    return "'" .. text:gsub("'", "''") .. "'"
+end
+
+local function runPowerShell(script)
+    -- Minion's write-only popen close can return before PowerShell exits.
+    -- Read stdout to EOF instead, and require an explicit completion marker.
+    local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\.tmp"
+    if not FolderExists(folder) then FolderCreate(folder) end
+    local path = folder .. "\\report_command_" .. GetCurrentPID() .. ".ps1"
+    local file = assert(io.open(path, "wb"))
+    local written, writeError = file:write("\239\187\191$ErrorActionPreference = 'Stop'\ntry { " .. script
+        .. "\nWrite-Output '__SFXB_PS_OK__' } catch { [Console]::Error.WriteLine($_.Exception.ToString()); exit 1 }\n")
+    local closed, closeError = file:close()
+    if not written or not closed then
+        pcall(FileDelete, path)
+        error(writeError or closeError)
+    end
+    -- Only the script path goes through cmd.exe, never percent-encoded URL text.
+    local ok, result = pcall(function()
+        local handle = assert(io.popen('powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'
+            .. path .. '" 2>&1', "r"))
+        local output = handle:read("*a") or ""
+        handle:close()
+        assert(output:match("__SFXB_PS_OK__%s*$"), "PowerShell failed: " .. output)
+        return output
+    end)
+    -- Minion omits os.remove. Cleanup must not mask the PowerShell result.
+    pcall(FileDelete, path)
+    if not ok then error(result) end
+    return result
 end
 
 local function generateBugReportZip()
     local timestamp = os.date("%Y%m%d_%H%M%S")
     local baseFolder = GetLuaModsPath() .. "SimpleFFXIVBotting\\"
-    local stagingDir = baseFolder .. "bugreport_" .. timestamp
-    local zipPath = baseFolder .. "bugreport_" .. timestamp .. ".zip"
-
-    execute('mkdir "' .. stagingDir .. '"')
-    execute('mkdir "' .. stagingDir .. '\\shared"')
-    execute('mkdir "' .. stagingDir .. '\\logs"')
-
-    local report = buildBugReport()
-    local reportFile = io.open(stagingDir .. "\\report.txt", "w")
-    if reportFile then
-        reportFile:write(report)
-        reportFile:close()
+    local stem = baseFolder .. "bugreport_" .. timestamp
+    local stagingDir = stem
+    local suffix = 0
+    while FolderExists(stagingDir) or FileExists(stagingDir .. ".zip") or FileExists(stagingDir .. "_encrypted.zip") do
+        suffix = suffix + 1
+        stagingDir = stem .. "_" .. suffix
     end
+    local zipPath = stagingDir .. "_encrypted.zip"
+    FolderCreate(stagingDir)
+    assert(FolderExists(stagingDir), "Could not create report staging directory")
 
-    local consoleLines = GetConsoleLines()
-    local consoleFile = io.open(stagingDir .. "\\console.log", "w")
-    if consoleFile then
-        consoleFile:write(consoleLines)
-        consoleFile:close()
+    local ok, err = pcall(function()
+        local function writeReportFile(name, content)
+            local file = assert(io.open(stagingDir .. "\\" .. name, "wb"))
+            local written, writeError = file:write(content)
+            local closed, closeError = file:close()
+            assert(written and closed, writeError or closeError)
+        end
+        writeReportFile("report.txt", buildBugReport())
+        writeReportFile("console.log", GetConsoleLines())
+        local script = {}
+        for _, source in ipairs({ sharedStateFolder, logsStateFolder }) do
+            script[#script + 1] = "if (Test-Path -LiteralPath " .. powershellQuote(source)
+                .. ") { Copy-Item -LiteralPath " .. powershellQuote(source)
+                .. " -Destination " .. powershellQuote(stagingDir) .. " -Recurse -Force };"
+        end
+        -- Standard Windows CMS encryption. Only the public certificate ships.
+        script[#script + 1] = "$dir = " .. powershellQuote(stagingDir)
+            .. "; $out = " .. powershellQuote(zipPath)
+            .. "; $certPath = " .. powershellQuote(baseFolder .. "report-public.cer") .. ";"
+        script[#script + 1] = ([[
+            Import-Module "$PSHOME\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1";
+            Add-Type -AssemblyName System.IO.Compression.FileSystem;
+            $plain = $dir + '.zip'; $cert = $null;
+            try {
+                $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath);
+                [System.IO.Compression.ZipFile]::CreateFromDirectory($dir, $plain);
+                Protect-CmsMessage -To $cert -Content ([Convert]::ToBase64String([IO.File]::ReadAllBytes($plain))) -OutFile ($dir + '\report.cms');
+                Compress-Archive -LiteralPath ($dir + '\report.cms') -DestinationPath $out;
+            } finally {
+                if ($cert) { $cert.Dispose() };
+                Remove-Item -LiteralPath $plain -Force -ErrorAction SilentlyContinue;
+            };
+            Remove-Item -LiteralPath $dir -Recurse -Force;
+        ]]):gsub("[\r\n]+", " ")
+        runPowerShell(table.concat(script, " "))
+        assert(FileExists(zipPath), "Encrypted attachment was not created")
+    end)
+    if not ok then
+        -- Never fall back to uploading plaintext. Best-effort cleanup of partial diagnostics.
+        local cleaned, cleanupError = pcall(runPowerShell,
+            "Remove-Item -LiteralPath " .. powershellQuote(stagingDir) .. ","
+            .. powershellQuote(zipPath) .. " -Recurse -Force -ErrorAction SilentlyContinue")
+        if not cleaned then d("[GUI] Report cleanup failed: " .. tostring(cleanupError)) end
+        error(err)
     end
-
-    execute(string.format('xcopy "%s*" "%s\\shared\\" /E /I /Y /Q', sharedStateFolder, stagingDir))
-    execute(string.format('xcopy "%s*" "%s\\logs\\" /E /I /Y /Q', logsStateFolder, stagingDir))
-
-    local zipCmd = string.format(
-        'powershell -NoProfile -Command "Compress-Archive -Path \'%s\\*\' -DestinationPath \'%s\'"',
-        stagingDir,
-        zipPath
-    )
-    execute(zipCmd)
-
     return zipPath
+end
+
+local function urlEncode(text)
+    return (text:gsub("([^A-Za-z0-9%-._~])", function(char)
+        return string.format("%%%02X", string.byte(char))
+    end))
+end
+
+local function openBugReportIssue(zipPath)
+    local mode = NoobgamConfigManager.Config.mode
+    if not MODE_DESCRIPTIONS[mode] then mode = "Unknown" end
+    local zipName = zipPath:match("[^/\\]+$")
+    -- Keep the URL short and free of logs, character names, and local paths.
+    -- GitHub accepts title/body query parameters, but not file attachments.
+    local body = table.concat({
+        "### Mode", mode, "",
+        "### Steps to reproduce", "1. ", "",
+        "### Expected behavior", "Describe what should happen.", "",
+        "### Actual behavior", "Describe what happened, including any error text.", "",
+        "### Bug report attachment",
+        "Upload `" .. zipName .. "` from `LuaMods/SimpleFFXIVBotting` here.",
+        "This ZIP is encrypted for the maintainer. It is not attached automatically.",
+        "Do not paste private information or plaintext logs into this public issue.",
+    }, "\n")
+    local url = "https://github.com/Noobgam/SimpleFFXIVBotting/issues/new?title="
+        .. urlEncode("[Bug] Describe the problem") .. "&body=" .. urlEncode(body)
+
+    runPowerShell("Start-Process -FilePath " .. powershellQuote(url))
+end
+
+local function createBugReport()
+    local ok, zipPath = pcall(generateBugReportZip)
+    if not ok or not FileExists(zipPath) then
+        GUI_Manager.BugReportStatus = "Could not create the encrypted report. Nothing was uploaded. Check the console for errors."
+        d("[GUI] Bug report generation failed: " .. tostring(zipPath))
+        return
+    end
+
+    GUI:SetClipboardText("Bug report saved to: " .. zipPath)
+    local opened, err = pcall(openBugReportIssue, zipPath)
+    if opened then
+        GUI_Manager.BugReportStatus = "GitHub issue page requested. Attach the encrypted ZIP manually, then submit the issue. ZIP path copied to clipboard."
+    else
+        GUI_Manager.BugReportStatus = "Encrypted ZIP saved; could not open the browser. Open github.com/Noobgam/SimpleFFXIVBotting/issues/new and attach it manually. ZIP path copied to clipboard."
+        d("[GUI] Could not open GitHub: " .. tostring(err))
+    end
+end
+
+local function drawBugReportStatus()
+    if GUI_Manager.BugReportStatus then
+        GUI:TextWrapped(GUI_Manager.BugReportStatus)
+    end
 end
 
 local function drawBootstrapSettings()
@@ -589,9 +690,9 @@ local function drawBootstrapOverview()
     GUI:SameLine()
 
     if GUI:Button("Bug Report##Bootstrap") then
-        local zipName = generateBugReportZip()
-        GUI:SetClipboardText("Bug report saved to: " .. zipName)
+        createBugReport()
     end
+    drawBugReportStatus()
 
     GUI:Separator()
     GUI:Text("Gil: " .. tostring(GilCount()))
@@ -626,13 +727,13 @@ local function drawDiagnostics(mode)
 
     if mode == "Bootstrap" then
         if GUI:Button("Create Bug Report##Diagnostics") then
-            local zipName = generateBugReportZip()
-            GUI:SetClipboardText("Bug report saved to: " .. zipName)
+            createBugReport()
         end
         GUI:SameLine()
         if GUI:Button("Clear Shared State##Diagnostics") then
             clearSharedFolder()
         end
+        drawBugReportStatus()
         GUI:Separator()
         drawDebugPanel()
     elseif mode == "Helper" then

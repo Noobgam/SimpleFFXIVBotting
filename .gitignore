@@ -1,3 +1,9 @@
 configs
 shared
 logs
+
+# Local report decryption secrets and generated reports (never distribute).
+/.local-report-keys/
+/bugreport_*/
+/bugreport_*.zip
+/.tmp/
