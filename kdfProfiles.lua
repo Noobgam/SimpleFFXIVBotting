@@ -3703,8 +3703,8 @@ end
 --- Records base HP on first instance entry and re-estimates Echo stacks after a wipe.
 --- Runs from the update flow regardless of whether the echo stacker (FarmEcho) is in use.
 local function UpdateEchoStacks()
-    local mapid = Player.localmapid
-    if mapid == 0 then
+    local mapid = (Player and Player.localmapid) or 0
+    if mapid == 0 or MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
         -- Not inside an instance: forget the instance-specific baseline.
         KitanoiSettings.StoreVar.EchoBaseMapId = nil
         KitanoiSettings.StoreVar.EchoBaseHp = nil
