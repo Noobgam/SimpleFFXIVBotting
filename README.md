@@ -41,6 +41,10 @@ Stop the addon on all instances using this installation. Download and extract th
 
 ## 🛠 Operation Modes
 
+### General settings (all modes)
+
+**Settings → Skip credits** is on by default, including for existing configs. While the addon is **Enabled** and in-game, it destroys the `CreditPlayer`, `CreditEnd`, `CreditScroll`, and `Credit` UI controls after they have been open for 2.5 seconds, matching VaultSpamer's credit handling. This directly removes credit screens rather than using normal cutscene skipping; other cutscenes are unaffected. Uncheck it to watch credits. The choice is saved per account.
+
 ### Bootstrap Mode
 The primary mode for character leveling.
 *   **Common MSQ Cycle:** Continuously checks for gear upgrades, job quest availability, and dungeon roadblocks.

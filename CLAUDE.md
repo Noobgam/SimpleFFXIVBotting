@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Lua addon for the **FFXIVMinion** bot framework (the "Module" system, see `module.def`). There is no build, no tests, no package manager — files are dropped into the FFXIVMinion mods folder and loaded directly. Lua 5.2 runtime; type hints in `.vscode/globals.lua` are consumed by sumneko's lua-language-server only (`.luarc.json`). LattyLib is an external runtime dependency; this repository deliberately does not carry a copied `latty.lua` API declaration.
+A Lua addon for the **FFXIVMinion** bot framework (the "Module" system, see `module.def`). There is no build or package manager — files are dropped into the FFXIVMinion mods folder and loaded directly. Offline credit-handling regression tests run from the repository root with `lua52 tests/test_skip_credits.lua`; they stub the game APIs and do not attach to a client. Lua 5.2 runtime; type hints in `.vscode/globals.lua` are consumed by sumneko's lua-language-server only (`.luarc.json`). LattyLib is an external runtime dependency; this repository deliberately does not carry a copied `latty.lua` API declaration.
 
 The addon (display name **NoobgamSidekick**) drives end-to-end character progression by orchestrating two upstream addons it does not own:
 - **LattyLib native quest runtime** — drives MSQ plus Aether Current quests independently of Minion's Quest bot mode.

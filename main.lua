@@ -65,12 +65,44 @@ local function closeUselessControls()
     end
 end
 
+local creditControls = { "CreditPlayer", "CreditEnd", "CreditScroll", "Credit" }
+local creditOpenTimes = {}
+
+local function updateCreditControls()
+    local config = NoobgamConfigManager.Config
+    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME
+        or not config or not config.enabled or config.skipCredits == false then
+        creditOpenTimes = {}
+        return
+    end
+
+    local now = GetTickCount()
+    for _, name in ipairs(creditControls) do
+        if IsControlOpen(name) then
+            creditOpenTimes[name] = creditOpenTimes[name] or now
+            -- Match VaultSpamer's safeAction delay before destroying credits.
+            if now - creditOpenTimes[name] >= 2500 then
+                local control = GetControlByName(name)
+                if control and control:IsOpen() then
+                    control:Destroy()
+                    creditOpenTimes[name] = nil
+                end
+            end
+        else
+            creditOpenTimes[name] = nil
+        end
+    end
+end
+
 local function onUpdate()
     -- Questing is now exposed through FFXIVLib on the live runtime.
     if Questing == nil and FFXIVLib ~= nil and FFXIVLib.Questing ~= nil then
         d("[NoobgamSideKick] Injecting Questing from FFXIVLib")
         Questing = FFXIVLib.Questing
     end
+
+    -- Credits must still be handled while a handoff or queued task is waiting.
+    updateCreditControls()
 
     if MGetGameState() == FFXIV.GAMESTATE.INGAME and MsqBootstrap.HoldLattyDungeonHandoff() then
         return

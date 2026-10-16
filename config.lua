@@ -10,6 +10,7 @@ end
 ---@class DynamicAccountConfig
 ---@field enabled boolean
 ---@field mode "Bootstrap"|"Ravana"|"Helper"
+---@field skipCredits? boolean - destroy credit screens after 2.5 seconds; defaults to true
 ---@field useDutyFinder? boolean - use Duty Finder for unsupported duties, or all story duties when helpers are disabled
 ---@field doNotUseHelpers? boolean - never publish or join multi-box helper clear requests
 ---@field useBlueQuestFilter? boolean - use Blue Quests instead of Aether Current quests in the Latty MSQ scope
@@ -23,6 +24,7 @@ local folder = GetLuaModsPath() .. "SimpleFFXIVBotting\\configs\\"
 local defaultConfig = {
     enabled = false,
     mode = "Bootstrap",
+    skipCredits = true,
     useDutyFinder = false,
     doNotUseHelpers = false,
 }
@@ -44,7 +46,9 @@ function NoobgamConfigManager.ReadConfig()
     end
     ---@diagnostic disable-next-line: param-type-mismatch
     NoobgamConfigManager.Config = json.decode(NoobgamUtils.ReadFile(path))
-    NoobgamConfigManager.Config.mode = NoobgamConfigManager.Config.mode
+    if NoobgamConfigManager.Config.skipCredits == nil then
+        NoobgamConfigManager.Config.skipCredits = true
+    end
 
     return NoobgamConfigManager.Config
 end

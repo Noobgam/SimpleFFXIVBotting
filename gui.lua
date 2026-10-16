@@ -64,7 +64,7 @@ end
 
 local function drawRavanaSettings()
     ColoredText(0.9, 0.3, 0.2, "High-risk mode")
-    GUI:Text("Ravana farming has no configurable options.")
+    GUI:Text("Ravana farming has no mode-specific options.")
     GUI:Text("Avoid prolonged or unattended farming sessions.")
 end
 
@@ -710,6 +710,19 @@ local function drawOverview(mode)
 end
 
 local function drawSettings(mode)
+    ColoredText(0.8, 0.8, 0.2, "General")
+    local skipCredits, skipCreditsChanged = GUI:Checkbox(
+        "Skip credits",
+        NoobgamConfigManager.Config.skipCredits ~= false
+    )
+    if skipCreditsChanged then
+        NoobgamConfigManager.Config.skipCredits = skipCredits
+        NoobgamConfigManager.SaveConfig()
+    end
+    GUI:Text("Destroys credit screens after 2.5 seconds, rather than")
+    GUI:Text("using cutscene skip. Runs in all modes while enabled.")
+    GUI:Separator()
+
     if mode == "Ravana" then
         drawRavanaSettings()
     elseif mode == "Helper" then
