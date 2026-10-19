@@ -45,6 +45,14 @@ Stop the addon on all instances using this installation. Download and extract th
 
 **Settings → Skip credits** is on by default, including for existing configs. While the addon is **Enabled** and in-game, it destroys the `CreditPlayer`, `CreditEnd`, `CreditScroll`, and `Credit` UI controls after they have been open for 2.5 seconds, matching VaultSpamer's credit handling. This directly removes credit screens rather than using normal cutscene skipping; other cutscenes are unaffected. Uncheck it to watch credits. The choice is saved per account.
 
+**Settings → Enable circuit breakers** is **off by default**, including for existing configs. This per-account opt-in enables the recoveries in `circuit_breaker.lua`:
+
+* Restart unexpectedly stopped Latty after 3 seconds in Bootstrap; fatal-stop recovery is limited to once per minute. Normal initial starts/profile changes still work with the toggle off.
+* Set the Bootstrap profile to `none` after 40 seconds stationary (less than 2 yalms movement over the sampled 10-second window), close stuck interaction windows, and try Return before allowing normal progression to resume.
+* Cast Return on navigation path failures (at most once per hour), or after 30 seconds stuck in a queued navigation task. The navigation shim remains installed, but never casts Return with the toggle off.
+
+Recovery only runs while the addon is enabled, and yields during combat, loading/busy states, duties, and KDF/Latty dungeon handoffs. The Bootstrap watchdog does not interrupt helper/party tasks. Return must be ready; if unavailable, the profile reset still allows a retry.
+
 ### Bootstrap Mode
 The primary mode for character leveling.
 *   **Common MSQ Cycle:** Continuously checks for gear upgrades, job quest availability, and dungeon roadblocks.

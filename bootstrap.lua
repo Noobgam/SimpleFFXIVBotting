@@ -197,9 +197,7 @@ end
 MsqBootstrap.IsLattyDungeonHandoffActive = isLattyDungeonHandoffActive
 
 local function resetLattyRestartDebounce()
-    MsqBootstrap.LattyStoppedSince = nil
-    MsqBootstrap.LattyStoppedProfile = nil
-    MsqBootstrap.LattyStoppedMap = nil
+    NoobgamCircuitBreaker.ResetLattyRestartDelay()
 end
 
 local function holdLattyDungeonHandoff()
@@ -359,26 +357,8 @@ local function startLattyQuesting()
         return false
     end
 
-    if MsqBootstrap.LattyWasRunning then
-        local now = GetTickCount()
-        local profile = NoobgamConfigManager.Config.useBlueQuestFilter == true and "blue" or "aether"
-        if Player.localmapid == 0 or Busy() then
-            resetLattyRestartDebounce()
-            return false
-        end
-        if MsqBootstrap.LattyStoppedSince == nil
-            or MsqBootstrap.LattyStoppedProfile ~= profile
-            or MsqBootstrap.LattyStoppedMap ~= Player.localmapid
-        then
-            MsqBootstrap.LattyStoppedSince = now
-            MsqBootstrap.LattyStoppedProfile = profile
-            MsqBootstrap.LattyStoppedMap = Player.localmapid
-            log("Latty stopped without an active dungeon handoff; allowing 3s before restart")
-            return false
-        end
-        if now - MsqBootstrap.LattyStoppedSince < 3000 then
-            return false
-        end
+    if not NoobgamCircuitBreaker.CanStartLatty(core) then
+        return false
     end
 
     -- Latty refuses to start while Minion owns the task hub. Relinquish a stale
@@ -401,36 +381,8 @@ local function startLattyQuesting()
     MsqBootstrap.LastLattyStartAttempt = now
     NoobgamPrivateAPI.SetKDFToMsqIntegration()
 
-    local startSource = nil
-    if core.fatalStopLatched == true then
-        -- Automatic API starts cannot clear a fatal latch. Mirror a manual UI
-        -- start once per minute after the KDF/duty handoff has fully ended.
-        if MsqBootstrap.LastLattyFatalRecoveryAt ~= nil
-            and MsqBootstrap.LastLattyFatalRecoveryAt > now - 60000
-        then
-            if MsqBootstrap.LastLattyFatalRecoveryBlockedLog == nil
-                or MsqBootstrap.LastLattyFatalRecoveryBlockedLog < now - 30000
-            then
-                log("[ERROR] Latty fatal stop re-latched inside recovery cooldown; leaving it stopped: "
-                    .. json.encode({
-                        reason = core.fatalStopReason,
-                        lastBlock = core.lastFatalStopBlock,
-                        fatalAt = core.fatalStopAt,
-                    }))
-                MsqBootstrap.LastLattyFatalRecoveryBlockedLog = now
-            end
-            return false
-        end
-
-        MsqBootstrap.LastLattyFatalRecoveryAt = now
-        startSource = "ui"
-        log("[WARNING] Recovering Latty fatal stop after KDF handoff without reload: "
-            .. json.encode({
-                reason = core.fatalStopReason,
-                lastBlock = core.lastFatalStopBlock,
-                fatalAt = core.fatalStopAt,
-            }))
-    end
+    local canStart, startSource = NoobgamCircuitBreaker.GetLattyStartSource(core)
+    if not canStart then return false end
 
     local ok, started, detail
     if startSource ~= nil then
@@ -950,8 +902,7 @@ function MsqBootstrap.Reset()
     MsqBootstrap.LastProfile = nil
     MsqBootstrap.LastLattyStartAttempt = nil
     MsqBootstrap.LastLattyKDFSuppressionLog = nil
-    MsqBootstrap.LastLattyFatalRecoveryAt = nil
-    MsqBootstrap.LastLattyFatalRecoveryBlockedLog = nil
+    NoobgamCircuitBreaker.Reset()
     log("Reset complete")
 end
 

@@ -277,31 +277,13 @@ local function genericGoTo(params)
             sprint:Cast()
         end
 
-        if ctp.LastStuckCheck == nil or ctp.LastStuckCheck < GetTickCount() - 2500 then
-            ctp.LastStuckCheck = GetTickCount()
-            local dist = (ctp.LastPos ~= nil)
-                and math.distance3d(ctp.LastPos, Player.pos)
-                or 999
-            if dist < 0.2 then
-                ctp.LastStuck = ctp.LastStuck or GetTickCount()
-            else
-                ctp.LastStuck = nil
-            end
-            ctp.LastPos = Player.pos
-
-            if ctp.LastStuck ~= nil and ctp.LastStuck < GetTickCount() - 30000 then
-                local ret = ActionList:Get(1, 6)
-                if ret and ret:IsReady() and ret:Cast() then
-                    log("Stuck for 30s, cast Return.")
-                    wait(5000)
-                end
-                return false
-            end
-
-            wait(3000, function()
-                return not NavigationTask.IsActive()
-            end)
+        if NoobgamCircuitBreaker.UpdateNavigationStuck(ctp) then
+            wait(5000)
+            return false
         end
+        wait(3000, function()
+            return not NavigationTask.IsActive()
+        end)
         return false
     end
 

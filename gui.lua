@@ -36,6 +36,7 @@ local function drawModePicker()
     if changed and MODE_NAMES[selectedIndex] then
         currentMode = MODE_NAMES[selectedIndex]
         NoobgamConfigManager.Config.mode = currentMode
+        NoobgamCircuitBreaker.Reset()
         NoobgamConfigManager.SaveConfig()
     end
 
@@ -723,6 +724,21 @@ local function drawSettings(mode)
     GUI:Text("using cutscene skip. Runs in all modes while enabled.")
     GUI:Separator()
 
+    local circuitBreakers, circuitBreakersChanged = GUI:Checkbox(
+        "Enable circuit breakers",
+        NoobgamConfigManager.Config.circuitBreakers == true
+    )
+    if circuitBreakersChanged then
+        NoobgamConfigManager.Config.circuitBreakers = circuitBreakers
+        NoobgamCircuitBreaker.Reset()
+        NoobgamConfigManager.SaveConfig()
+    end
+    GUI:Text("Off by default. Restarts stopped Latty in Bootstrap,")
+    GUI:Text("sets profile to none after 40s stuck, and casts Return")
+    GUI:Text("on navigation failures / 30s navigation stalls.")
+    GUI:Text("Recovery pauses during combat, loading and duties.")
+    GUI:Separator()
+
     if mode == "Ravana" then
         drawRavanaSettings()
     elseif mode == "Helper" then
@@ -799,6 +815,7 @@ function GUI_Manager.Draw()
         if enabledPressed then
             NoobgamConfigManager.Config.enabled = checked
             NoobgamConfigManager.SaveConfig()
+            NoobgamCircuitBreaker.Reset()
             if not checked then
                 -- Disabling the addon stops Latty immediately as well as the
                 -- legacy Minion/KDF automation handled by the "none" profile.

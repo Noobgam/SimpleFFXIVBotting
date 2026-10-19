@@ -11,6 +11,7 @@ end
 ---@field enabled boolean
 ---@field mode "Bootstrap"|"Ravana"|"Helper"
 ---@field skipCredits? boolean - destroy credit screens after 2.5 seconds; defaults to true
+---@field circuitBreakers? boolean - recover Latty/profile/navigation stalls; defaults to false
 ---@field useDutyFinder? boolean - use Duty Finder for unsupported duties, or all story duties when helpers are disabled
 ---@field doNotUseHelpers? boolean - never publish or join multi-box helper clear requests
 ---@field useBlueQuestFilter? boolean - use Blue Quests instead of Aether Current quests in the Latty MSQ scope
@@ -25,6 +26,7 @@ local defaultConfig = {
     enabled = false,
     mode = "Bootstrap",
     skipCredits = true,
+    circuitBreakers = false,
     useDutyFinder = false,
     doNotUseHelpers = false,
 }
@@ -48,6 +50,9 @@ function NoobgamConfigManager.ReadConfig()
     NoobgamConfigManager.Config = json.decode(NoobgamUtils.ReadFile(path))
     if NoobgamConfigManager.Config.skipCredits == nil then
         NoobgamConfigManager.Config.skipCredits = true
+    end
+    if NoobgamConfigManager.Config.circuitBreakers == nil then
+        NoobgamConfigManager.Config.circuitBreakers = false
     end
 
     return NoobgamConfigManager.Config

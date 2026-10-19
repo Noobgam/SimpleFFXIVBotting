@@ -103,6 +103,9 @@ local function onUpdate()
 
     -- Credits must still be handled while a handoff or queued task is waiting.
     updateCreditControls()
+    if NoobgamCircuitBreaker and NoobgamCircuitBreaker.Update() then
+        return
+    end
 
     if MGetGameState() == FFXIV.GAMESTATE.INGAME and MsqBootstrap.HoldLattyDungeonHandoff() then
         return
