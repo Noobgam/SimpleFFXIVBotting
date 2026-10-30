@@ -47,7 +47,7 @@ Stop the addon on all instances using this installation. Download and extract th
 
 **Settings → Enable circuit breakers** is **off by default**, including for existing configs. This per-account opt-in enables the recoveries in `circuit_breaker.lua`:
 
-* Restart unexpectedly stopped Latty after 3 seconds in Bootstrap; fatal-stop recovery is limited to once per minute. Normal initial starts/profile changes still work with the toggle off.
+* Restart unexpectedly stopped Latty after 3 seconds in Bootstrap; fatal-stop recovery is limited to once per minute. Normal initial starts/profile changes and resuming after helper/Duty Finder clears still work with the toggle off.
 * Set the Bootstrap profile to `none` after 40 seconds stationary (less than 2 yalms movement over the sampled 10-second window), close stuck interaction windows, and try Return before allowing normal progression to resume.
 * Cast Return on navigation path failures (at most once per hour), or after 30 seconds stuck in a queued navigation task. The navigation shim remains installed, but never casts Return with the toggle off.
 

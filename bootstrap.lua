@@ -516,6 +516,8 @@ local function ensureProfileEnabled(profile, job)
         startLattyQuesting()
         return
     elseif profile == "job" then
+        -- This is a planned pause, not an unexpected stop requiring recovery.
+        MsqBootstrap.LattyWasRunning = nil
         resetLattyRestartDebounce()
         if isLattyQuestingRunning() then
             stopLattyQuesting()
@@ -828,11 +830,20 @@ function MsqBootstrap.CommonMsqCycle(params)
         resetLattyRestartDebounce()
     end
 
+    -- Quest steps can advance before we leave the duty. Keep driving the helper
+    -- until it has released KDF and cleaned up the party, even without a match.
+    if MsqClearHelper.Role == "farmer" and (MsqClearHelper.CurrentDungeonId ~= nil
+        or MsqClearHelper.NeededDungeon ~= nil or MsqClearHelper.InDungeon
+        or MsqClearHelper.NeedToDisband) then
+        MsqClearHelper.Update()
+        return true
+    end
+
     if openJobChests() then
         return true
     end
 
-    local neededDungeon = MsqClearHelper.CurrentDungeonId or MsqClearHelper.DetectNeededDungeon()
+    local neededDungeon = MsqClearHelper.DetectNeededDungeon()
     if neededDungeon ~= nil then
         resetLattyRestartDebounce()
         local useDutyFinderWithoutHelpers = NoobgamConfigManager.Config.doNotUseHelpers == true

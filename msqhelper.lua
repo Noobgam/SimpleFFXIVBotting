@@ -564,7 +564,11 @@ function MsqClearHelper.Reset()
     local farmer = MsqClearHelper.CurrentFarmer
     MsqClearHelper.CurrentDungeonId = nil
     MsqClearHelper.CurrentFarmer = nil
+    MsqClearHelper.NeededDungeon = nil
+    MsqClearHelper.InDungeon = false
+    MsqClearHelper.FightStarted = nil
     MsqClearHelper.NeedToDisband = false
+    MsqClearHelper.DisbandScheduled = false
     MsqClearHelper.LastBroadcast = 0
     MsqClearHelper.HostState = nil
     MsqClearHelper.PfReadyAt = nil
@@ -734,6 +738,23 @@ end
 local function updateFarmer()
     gStuckRemesh = false
 
+    if MsqClearHelper.NeedToDisband then
+        if not MsqClearHelper.DisbandScheduled then
+            log("Scheduling leaveParty after helper clear")
+            MsqClearHelper.DisbandScheduled = true
+            NoobgamTaskManager.Schedule({
+                type = "leaveParty",
+                params = {},
+                onEnd = function()
+                    log("Helper clear cleanup complete; returning to questing")
+                    MsqClearHelper.Reset()
+                end,
+            })
+            wait(2000)
+        end
+        return true
+    end
+
     if IsControlOpen("ContentsFinderConfirm") then
         log("Confirming dungeon entry")
         UseControlAction("ContentsFinderConfirm", "Confirm")
@@ -756,6 +777,10 @@ local function updateFarmer()
         return false
     end
     if neededDungeon then
+        -- We own this stop. Resuming after the clear is a normal transition,
+        -- not opt-in circuit-breaker recovery from an unexpected Latty stop.
+        MsqBootstrap.LattyWasRunning = nil
+        NoobgamCircuitBreaker.ResetLattyRestartDelay()
         if LattyLib.QuestCore.running or LattyLib.QuestCore.stopping then
             log("Stopping Latty questing, need to clear dungeon")
             local ok, stopped, detail = pcall(LattyLib.StopQuesting)
@@ -858,6 +883,9 @@ local function leaveDuty()
     local info = Duty:GetActiveDutyInfo()
     local in_dungeon = table.valid(info)
     MsqClearHelper.NeedToDisband = true
+    if in_dungeon then
+        MsqClearHelper.InDungeon = true
+    end
 
     if KitanoiFuncs.AreKitanoiAddonsRunning("KDF") then
         log("Disabling kit cause leaving duty")
@@ -877,7 +905,7 @@ local function leaveDuty()
         if not IsControlOpen("SelectYesno") then
             log("Leaving via ContentsFinderMenu")
             UseControlAction("ContentsFinderMenu", "Leave")
-            MsqClearHelper.Reset()
+            -- Keep ownership until the overworld cleanup has actually run.
             wait(2000)
             return
         else
@@ -960,7 +988,7 @@ function MsqClearHelper.Update()
     end
 
     local exit = NoobgamUtils.PickClosestExit()
-    if exit ~= nil and exit.targetable then
+    if table.valid(Duty:GetActiveDutyInfo()) and exit ~= nil and exit.targetable then
         log("Exit is visible")
         return leaveDuty()
     end
