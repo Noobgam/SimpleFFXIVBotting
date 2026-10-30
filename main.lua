@@ -95,6 +95,9 @@ local function updateCreditControls()
 end
 
 local function onUpdate()
+    -- Retention also runs while disabled, logged out, or waiting on other tasks.
+    NoobgamLog.Update()
+
     -- Questing is now exposed through FFXIVLib on the live runtime.
     if Questing == nil and FFXIVLib ~= nil and FFXIVLib.Questing ~= nil then
         d("[NoobgamSideKick] Injecting Questing from FFXIVLib")

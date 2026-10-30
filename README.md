@@ -89,6 +89,14 @@ To function correctly, the following must be installed:
 
 ---
 
+## Logs
+
+Logs append to `SimpleFFXIVBotting/logs/<UUID>.YYYY-MM-DD.log`, using the local calendar date. Only the **newest three daily files per UUID** are retained, including today's file. Cleanup runs on startup, after a new day's first write, and every five minutes while the addon is loaded, even if automation is disabled. Days without logs do not count toward the three-file limit.
+
+Old undated/hourly logs are left untouched; there is no migration. Encrypted bug reports include the logs automatically.
+
+---
+
 ## 🐛 Reporting Bugs
 
 Report bugs through [GitHub Issues](https://github.com/Noobgam/SimpleFFXIVBotting/issues).

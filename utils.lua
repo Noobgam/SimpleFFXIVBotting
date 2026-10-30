@@ -113,6 +113,7 @@ function NoobgamUtils.shim_d(log_path)
         log("Moving the shim d to " .. log_path)
     end
     original_d = original
+    NoobgamLog.Start(log_path)
 
     local function new_d(message)
         if message == nil then
@@ -126,7 +127,8 @@ function NoobgamUtils.shim_d(log_path)
                 messageContent = tostring(message or "<nil>")
             end
 
-            local t = os.date("*t")
+            local now = os.time()
+            local t = os.date("*t", now)
             local timestamp = string.format(
                 "%04d-%02d-%02d %02d:%02d:%02d",
                 t.year, t.month, t.day,
@@ -134,7 +136,7 @@ function NoobgamUtils.shim_d(log_path)
             )
 
             local line = string.format("[%s] %s\n", timestamp, messageContent)
-            FileWrite(log_path, line, true)
+            FileWrite(NoobgamLog.Path(now), line, true)
         end)
         if not status then
             original_d('[ERROR] Something weird was attempted to be written. Shim ignored. ' .. err)

@@ -1,8 +1,16 @@
----@diagnostic disable: undefined-doc-param
---- Global functions definitions
+---@diagnostic disable: undefined-doc-param, missing-return
+---@diagnostic disable: lowercase-global
+--- Editor-only declarations: never load/execute this file in the game.
+--- Placeholder values are not runtime defaults. Optional addon/profile globals
+--- may be nil until their owner loads.
 
 --- @class MLNavigation
 --- @field HasPath fun(self: MLNavigation): boolean whether navigation currently has a path selected
+--- @field ClearInteractActionHandoff fun(self: MLNavigation)
+--- @field ClearNavigationHandoff fun(self: MLNavigation, kind?: string)
+--- @field ResetCurrentPath fun(self: MLNavigation)
+--- @field DisablePathing fun(self: MLNavigation): boolean
+--- @field EnablePathing fun(self: MLNavigation): boolean
 --- @field path Position[] this type is not true, in reality it's a lot further
 ml_navigation = {}
 
@@ -19,6 +27,7 @@ end
 --- @class FFXIVMinion
 --- @field DutyCurrentData table no idea what this is
 --- @field GUI table some nested table with windows
+--- @field AetherCurrentData table<integer, table<integer, boolean>> mapId -> current slot -> attuned. Populated from Player:GetAetherCurrentsList() by e_getCurrentInfo CNE (requires the AetherCurrent window to be open) and by TaskManager attuneCurrents.
 ffxivminion = {}
 
 -- --- @param botMode "Assist" | "Quest" | "Grind"
@@ -36,9 +45,9 @@ end
 --- @field InputTextFlags_CharsDecimal number
 --- @field InputTextFlags_CharsHexadecimal number
 --- @field InputTextFlags_CharsUppercase number
---- @field ColorEditFlags_NoAlpha number
---- @field ColorEditFlags_NoPicker number
---- @field ColorEditFlags_NoOptions number
+--- @field ColorEditMode_NoAlpha number
+--- @field ColorEditMode_NoOptions number
+--- @field ColorEditFlags_NoPicker nil
 --- @field SetCond_Always number
 --- @field SetCond_Once number
 --- @field SetCond_FirstUseEver number
@@ -137,14 +146,15 @@ function GUI:BeginTabBar(barName) end
 --- @param self GUI
 function GUI:EndTabBar() end
 
---- Set the width of a specific column in a multi-column layout
+--- Begin a tab item within an active GUI draw context.
 --- @param self GUI
---- @param someFlag true - I don't know what this flag does, but if it's not true it will not create a tab
---- @param imguiFlags integer The width to set for the column
+--- @param tabName string Tab label.
+--- @param someFlag boolean Open flag; existing callers pass true.
+--- @param imguiFlags integer Tab-item flags.
 --- @return boolean whether this tab is selected
 function GUI:BeginTabItem(tabName, someFlag, imguiFlags) end
 
---- Set the width of a specific column in a multi-column layout
+--- End the current tab item.
 --- @param self GUI
 function GUI:EndTabItem() end
 
@@ -199,13 +209,6 @@ function GUI:PopStyleColor(count) end
 --- @param count? integer Number of colors to pop (optional, defaults to 1)
 function GUI:PopStyleVar(count) end
 
----comment
----@param path string
----@param sizeX integer
----@param sizeY integer
-function GUI:Image(path, sizeX, sizeY)
-end
-
 --- Push a style color onto the style color stack to temporarily change GUI colors
 --- @param self GUI
 --- @param style_color integer The GUI color style to modify (e.g., GUI.Col_Text, GUI.Col_Button, etc.)
@@ -222,11 +225,6 @@ function GUI:PushStyleColor(style_color, r, g, b, a) end
 --- @param valueX number First value (for scalar vars: X, for 2D vars: width)
 --- @param valueY number|nil Optional second value (for 2D style vars, e.g. padding)
 function GUI:PushStyleVar(styleVar, valueX, valueY) end
-
---- Pop one or more style variables from the stack
---- @param self GUI
---- @param count integer|nil Number of variables to pop. Default = 1.
-function GUI:PopStyleVar(count) end
 
 --- Set the next window position before calling GUI:Begin
 --- @param self GUI
@@ -274,7 +272,7 @@ GUI.Col_WindowBg = nil
 
 --- Child window background color
 --- @type integer
-GUI.Col_ChildBg = nil
+GUI.Col_ChildWindowBg = nil
 
 --- Popup background color
 --- @type integer
@@ -370,15 +368,15 @@ GUI.Col_HeaderActive = nil
 
 --- Separator color
 --- @type integer
-GUI.Col_Separator = nil
+GUI.Col_Column = nil
 
 --- Separator color when hovered
 --- @type integer
-GUI.Col_SeparatorHovered = nil
+GUI.Col_ColumnHovered = nil
 
 --- Separator color when active
 --- @type integer
-GUI.Col_SeparatorActive = nil
+GUI.Col_ColumnActive = nil
 
 --- Resize grip color
 --- @type integer
@@ -392,24 +390,26 @@ GUI.Col_ResizeGripHovered = nil
 --- @type integer
 GUI.Col_ResizeGripActive = nil
 
---- Tab color
---- @type integer
+--- Modern ImGui tab colors below are not exposed by this Minion GUI binding.
+--- Kept as explicit nil declarations, not usable PushStyleColor constants.
+--- @deprecated
+--- @type nil
 GUI.Col_Tab = nil
 
---- Tab color when hovered
---- @type integer
+--- @deprecated
+--- @type nil
 GUI.Col_TabHovered = nil
 
---- Tab color when active
---- @type integer
+--- @deprecated
+--- @type nil
 GUI.Col_TabActive = nil
 
---- Tab color when unfocused
---- @type integer
+--- @deprecated
+--- @type nil
 GUI.Col_TabUnfocused = nil
 
---- Tab color when unfocused and active
---- @type integer
+--- @deprecated
+--- @type nil
 GUI.Col_TabUnfocusedActive = nil
 
 --- Plot lines color
@@ -444,18 +444,18 @@ GUI.Col_NavHighlight = nil
 --- @type integer
 GUI.Col_NavWindowingHighlight = nil
 
---- Navigation windowing dim background color
---- @type integer
+--- @deprecated
+--- @type nil
 GUI.Col_NavWindowingDimBg = nil
 
 --- Modal window dim background color
 --- @type integer
-GUI.Col_ModalWindowDimBg = nil
+GUI.Col_ModalWindowDarkening = nil
 
---- @param idk boolean
+--- Memoized casting check; wrapper source takes an optional fullcheck flag.
+--- @param fullcheck boolean|nil
 --- @return boolean
---- memoized isCasting function for the start of the tick
-function MIsCasting(idk)
+function MIsCasting(fullcheck)
 end
 
 --- Stop putting everything on the same line
@@ -554,14 +554,14 @@ function GUI:InputText(label, text, flags) end
 --- @return boolean pressed Whether the checkbox was pressed
 function GUI:Checkbox(label, checked) end
 
---- Create a checkbox
+--- Select an item from a list.
 --- @param self GUI
---- @param label string The label of the checkbox
---- @param current_listitem_index integer The current state of the checkbox
---- @param itemlist table
+--- @param label string
+--- @param current_listitem_index integer Selected 1-based index.
+--- @param itemlist string[]
 --- @param height_in_items integer
---- @return boolean checked The updated state of the checkbox
---- @return boolean pressed Whether the checkbox was pressed
+--- @return integer selectedIndex
+--- @return boolean changed
 function GUI:ListBox(label, current_listitem_index, itemlist, height_in_items) end
 
 
@@ -610,7 +610,8 @@ FFXIV.JOBS = {
     REAPER = 39,
     SAGE = 40,
     VIPER = 41,
-    PICTOMANCER = 42
+    PICTOMANCER = 42,
+    BEASTMASTER = 43
 }
 FFXIV.GAMESTATE = {
 	CHARACTERSCREEN = 1,
@@ -625,8 +626,9 @@ function GetLuaModsPath()
 	return ""
 end
 
+--- Returns true for a file, false for a missing path or a directory.
 ---@param path string
----@return boolean whether file exists
+---@return boolean
 function FileExists(path)
 	return true
 end
@@ -653,33 +655,57 @@ function RegisterEventHandler(event, handler, identifier)
     -- This is just a placeholder for the editor
 end
 
---- Second param is specific to my shim. Does nothing normally
---- @param message string|table
---- @param extraThings table|nil
-function d(message, extraThings)
+--- Console logger; active addons may wrap this function.
+--- @param message any
+function d(message)
 
 end
 
---- @param entity Entity|Player
+--- Single-buff helper: minimum stacks/duration; 0 ignores
+--- that filter. Accepts an entity proxy or entity ID.
+--- @param entity Entity|Player|number
 --- @param buff_id number
---- @return boolean the buff exists
-function HasBuff(entity, buff_id)
+--- @param stacks number|nil
+--- @param duration number|nil
+--- @param ownerid number|nil
+--- @return boolean
+function HasBuff(entity, buff_id, stacks, duration, ownerid)
+    return false
 end
 
---- @param entity Entity|Player
---- @param buff_id number
---- @return boolean the buff exists
-function HasBuffs(entity, buff_id)
+--- @return Entity | nil returns your chocobo
+function GetCompanionEntity()
 end
 
+--- Buff expression: comma = OR, plus = AND, e.g. "10+20,30".
+--- Nonzero stacks requires an exact match; duration is a minimum threshold.
 --- @param entity Entity|Player
---- @param buff_id string
---- @return boolean the buff is absent
-function MissingBuffs(entity, buff_id)
+--- @param buffs string|number
+--- @param duration number|nil
+--- @param ownerid number|nil
+--- @param stacks number|nil
+--- @return boolean
+function HasBuffs(entity, buffs, duration, ownerid, stacks)
+end
+
+--- Missing-buff expression: true if a comma-separated group has ALL its
+--- plus-separated buffs absent. This is not simply `not HasBuffs(...)`.
+--- @param entity Entity|Player
+--- @param buffs string|number
+--- @param duration number|nil
+--- @param ownerid number|nil
+--- @param stacks number|nil
+--- @return boolean
+function MissingBuffs(entity, buffs, duration, ownerid, stacks)
 end
 
 --- @class EorzeaTime
 --- @field servertime number
+--- @field year number
+--- @field moon number
+--- @field sun number
+--- @field bell number
+--- @field minute number
 
 --- Returns the current Eorzea time.
 --- @return EorzeaTime
@@ -693,7 +719,8 @@ function table.size(table)
     return 1
 end
 
---- @param table table
+--- Returns false for nil, false, and empty tables.
+--- @param table any
 --- @return boolean True if the table is valid, false otherwise
 function table.valid(table)
     -- This is just a placeholder for the editor
@@ -716,7 +743,7 @@ end
 --- @field type integer
 --- @field values table
 
---- @return table<number, DutyObjective>
+--- @return table<number, DutyObjective>|nil Nil when outside a duty.
 function Duty:GetActiveDutyObjectives()
 end
 
@@ -734,7 +761,7 @@ end
 ---@field dutystep number The current progression step
 
 --- Get the active duty info.
---- @return ActiveDutyInfo info A table containing the active duty info
+--- @return ActiveDutyInfo|nil info Nil when outside a duty.
 function Duty:GetActiveDutyInfo()
     -- This is just a placeholder for the editor
     return {
@@ -757,34 +784,42 @@ end
 --- @field completed boolean Whether duty was completed before
 
 --- Gets a list of all duties available to the player
---- @return table<number, DutyInfo> list of duties indexed by duty id (I think?)
+--- @return table<number, DutyInfo> Numeric lookup keys are NOT generally row.id.
 function Duty:GetCompleteDutyList() end
 
---- Represents the casting information for a player or entity.
+--- Casting data can be an empty table on NPCs/objects; guard its fields.
+--- ```lua
+--- local target = Player:GetTarget()
+--- local cast = target and target.castinginfo
+--- if cast and (cast.channelingid or 0) ~= 0 then
+---     local remaining = math.max(0, (cast.casttime or 0) - (cast.channeltime or 0))
+---     d(tostring(remaining))
+--- end
+--- ```
 --- @class CastingInfo
---- @field ptr number The memory pointer to the casting info data.
---- @field castingid number The ID of the action currently being cast.
---- @field casttime number The remaining cast time.
---- @field castingtargetcount number The number of targets being cast on.
---- @field castinginterruptible boolean Whether the casting action is interruptible.
---- @field castingtargets table<number, string> A table of target names or IDs being affected by the current cast.
---- @field lastcastid number The ID of the last action cast.
---- @field timesincecast number The time since the last action was cast.
---- @field channelingid number The ID of the action currently being channeled.
---- @field channeltargetid integer The ID of the target being channeled.
---- @field channeltime number The remaining channel time.
+--- @field ptr number|nil Can be 0; not a validity check.
+--- @field castingid number|nil Executing action ID; transient, including instant actions. 0 when idle.
+--- @field casttime number|nil Total cast duration in seconds while channeling.
+--- @field castingtargetcount number|nil Reported target count.
+--- @field castinginterruptible boolean|nil
+--- @field castingtargets table<number, number>|nil Numeric target IDs, NOT names/strings.
+--- @field lastcastid number|nil Reported last action ID.
+--- @field timesincecast number|nil Milliseconds since cast activity; resets during action transitions.
+--- @field channelingid number|nil Reported channel action ID.
+--- @field channelingtype number|nil Channel type code.
+--- @field channeltargetid integer|nil Reported channel target ID.
+--- @field channeltime number|nil Elapsed channel time in seconds; counts up toward casttime.
 
---- Represents a buff or debuff applied to a player or entity.
 --- @class Buff
 --- @field ptr number The memory pointer to the buff data.
 --- @field ptr2 number A secondary memory pointer to the buff data.
 --- @field id number The unique identifier for the buff.
---- @field duration number The duration of the buff in seconds.
+--- @field duration number Remaining seconds; 0 can represent an indefinite status.
 --- @field name string The name of the buff.
 --- @field ownerid number The ID of the entity that applied the buff.
 --- @field isbuff boolean Whether this is a buff (true) or a debuff (false).
 --- @field isdebuff boolean Whether this is a debuff (true) or a buff (false).
---- @field stacks number The number of stacks of the buff.
+--- @field stacks number Raw status parameter, not always a simple stack count.
 --- @field slot number The slot index of the buff.
 --- @field dispellable boolean Whether the buff is dispellable.
 
@@ -793,43 +828,47 @@ function Duty:GetCompleteDutyList() end
 --- @field canflyinzone boolean
 --- @field pitch number
 
---- Represents a player or character entity with various attributes.
+--- The GLOBAL Player proxy only, NOT arbitrary type=1 entries from EntityList.
+--- Even EntityList:Get(Player.id) lacks levels/localmapid/gauge/grandcompany,
+--- flying and GetSyncLevel. Use the global Player for these local-client fields.
 --- @class Player : Entity
 --- @field job number The job or class of the player (represented by an ID).
 --- @field pvpteam number The PvP team of the player.
 --- @field castinginfo CastingInfo The casting information for the player.
 --- @field grandcompany number The grand company affiliation of the player.
 --- @field grandcompanyrank number The rank within the grand company.
---- @field aggro boolean Whether the player has aggro (is targeted by an enemy).
+--- @field aggro boolean Player-proxy aggro flag; use EntityList("aggro") to find threatening entities.
 --- @field aggropercentage number The percentage of aggro the player has.
---- @field hasaggro boolean Whether the player currently has aggro.
+--- @field hasaggro boolean Player-proxy aggro flag; use EntityList("targetingme") for current attackers.
 --- @field mp BarData
 --- @field gp BarData
 --- @field levels table<integer, integer> jobid to level (does not include sync)
 --- @field mp.percent number The mana of the party member as a percentage.
 --- @field revivestate number The state of revival (e.g., alive, dead, reviving).
 --- @field role number The role of the player in a party (e.g., tank, healer, DPS).
---- @field attackable boolean Whether the player can be attacked.
---- @field aggressive boolean Whether the player is aggressive.
---- @field friendly boolean Whether the player is friendly.
---- @field incombat boolean Whether the player is currently in combat.
---- @field interactable boolean Whether the player can be interacted with.
---- @field targetable boolean Whether the player can be targeted.
 --- @field cangather boolean Whether the player can gather resources (specific to gathering jobs).
 --- @field spearfishstate number The state related to spearfishing (specific to fishing).
---- @field marker string The marker associated with the player (e.g., map marker).
+--- @field marker number Numeric marker value.
 --- @field gauge table<integer, number> gauge information
 --- @field localmapid integer current map id
 --- @field mapid integer current map id
 --- @field onlinestatus number The online status of the player (e.g., online, offline).
 --- @field currentworld integer The current world (server) the player is in.
 --- @field homeworld integer The home world (server) of the player.
---- @field lastcomboid integer
+--- @field guid string The player GUID; preserve as a string.
+--- @field lastcomboid integer Last action in the current combo.
+--- @field combotimeremain number Seconds remaining in the combo window.
 --- @field flying FlyingInfo
 --- @field ilvl number current ilvl of the chracter 
 --- @field mountid integer
 --- @field status integer
 Player = {}
+
+--- Does not identify the FATE the player is participating in.
+--- Use GetFateList() for FATE data and Entity.fateid for associated enemies.
+--- @deprecated
+--- @type integer
+Player.fateid = 0
 
 --- @type integer
 --- Max level difference to pick up side quests
@@ -844,11 +883,15 @@ Player.pos = {x = 0, y = 0, z = 0, h = 0}
 function Player:GetFishingState()
 end
 
+--- @return integer Synced level, or 0 when not level-synced.
+function Player:GetSyncLevel()
+end
+
 --- @param npcId integer entity.id of the target
 function Player:Interact(npcId)
 end
 
---- @return table[]
+--- @return table<number, Aetheryte>
 function Player:GetAetheryteList()
 end
 
@@ -858,7 +901,14 @@ function Player:Teleport(aetheryteId) end
 --- @return Entity|nil targeted entity
 function Player:GetTarget() end
 
---- @return Entity|nil targeted entity
+--- Attunement status of aether currents per map, read from game memory.
+--- Only reliable while the "AetherCurrent" window is (or was recently) open,
+--- see e_getCurrentInfo in ffxiv_common_cne.lua.
+--- @return table<integer, { mapid: integer, isattuned: boolean, status: table<integer, boolean> }> keyed by mapId
+function Player:GetAetherCurrentsList() end
+
+--- Clears the target.
+--- @return Entity|nil
 function Player:ClearTarget() end
 
 --- @param statId number entity
@@ -882,6 +932,9 @@ end
 function Player:ResetSpeed(arg)
 end
 
+function Player:Jump()
+end
+
 --- @return boolean
 function Player:IsMoving()
 end
@@ -893,8 +946,10 @@ end
 function Player:SetFacing(x, y, z)
 end
 
---- Cancels the MoveTo
-function Player:Stop()
+--- Cancels navigation, exact movement, and autofollow. Current Lua source
+--- accepts resetpath but does not use it; movement/path state is always reset.
+--- @param resetpath boolean|nil
+function Player:Stop(resetpath)
     -- This is just a placeholder for the editor
 end
 
@@ -926,7 +981,7 @@ end
 --- @field max number
 --- @field percent number 
 
---- Represents a party member with various attributes.
+--- Party-member records are distinct from EntityList player rows.
 --- @class PartyMember
 --- @field ptr number The memory pointer to the party member data.
 --- @field id number The unique identifier for the party member.
@@ -944,7 +999,7 @@ end
 --- @field level number The current level of the party member.
 --- @field name string name of the char
 
---- Represents a party member with various attributes.
+--- Cross-world party member.
 --- @class CrossWorldPartyMember
 --- @field id number The unique identifier for the party member.
 --- @field guid string The globally unique identifier for the party member.
@@ -959,53 +1014,146 @@ end
 --- @field world number The world ID of the party member.
 local CrossWorldPartyMember = {}
 
---- Represents an entity with various attributes.
+--- Native-backed table: properties must be read directly; pairs() may expose only __object.
+--- Type-specific fields can be zero/default even when present.
 --- @class Entity
+--- @field __object userdata
+--- @field attackable boolean
+--- @field aggressive boolean
+--- @field aggro boolean Entity aggro flag used by the "aggro" filter; distinct from its current target.
+--- @field incombat boolean
+--- @field interactable boolean
+--- @field onmesh boolean
+--- @field type number
+--- @field chartype number
+--- @field fateid number Associated FATE ID for FATE entities; Player.fateid is not a participation lookup.
+--- @field ownerid number
+--- @field distance2d number
+--- @field mp BarData
+--- @field gp BarData
 --- @field name string The name of the entity
---- @field ismounted boolean Whether the player is mounted.
---- @field level number The level of the entity or a player
+--- @field guid string Entity GUID; meaning depends on entity type.
+--- @field currentworld integer World ID for player characters; may be a default on other types.
+--- @field homeworld integer Home world ID for player characters; may be a default on other types.
+--- @field marker number Raw marker value.
+--- @field mountid integer Raw mount ID.
+--- @field ismounted boolean Whether the entity is mounted.
+--- @field level number Effective level, including level sync. Use Player.levels[Player.job] for base level.
 --- @field id number The unique identifier for the entity
 --- @field onlinestatus number|nil online status of entity if that's a player
 --- @field contentId number The content ID of the entity
+--- @field contentid number Alias of contentId.
 --- @field alive boolean Whether the player is alive.
---- @field buffs table<number, Buff> A table of buffs currently applied to the player, where the key is the buff ID.
+--- @field buffs table<number, Buff> Sparse slot-keyed buff map, NOT keyed by buff ID. Use pairs.
 --- @field job number The job/class of the entity.
---- @field pos table The position of the entity, with fields `x`, `y`, `z`
+--- @field pos PlayerPosition The position and heading of the entity.
 --- @field distance number The distance from the player to the entity
 --- @field targetid number The ID of the current target of the entity
 --- @field friendly boolean whether it's a friendly entity
 --- @field hp BarData The health information of the entity, with fields `current`, `max`, `percent`
---- @field castinginfo CastingInfo The casting information for the entity
---- @field action string The current action being performed by the entity
---- @field lastaction string The last action performed by the entity
---- @field hitradius number id
+--- @field castinginfo CastingInfo May be an empty table on NPCs/objects; guard its fields.
+--- @field action number The current action being performed by the entity
+--- @field lastaction number The last action performed by the entity
+--- @field hitradius number Hitbox radius (not an ID).
 --- @field targetable boolean 
+--- @field los boolean
 
 
----@meta
 
---- Represents the list of party members and provides entity filtering functionality.
+--- Searches loaded entities with comma-separated filters; results are keyed by entity.id.
+--- Pass an empty string for all entities: EntityList(""). EntityList() returns nil.
+--- No matches returns {}; use next(rows) or table.valid(rows), not just `if rows`.
+--- Get(missingId) returns nil. Re-fetch as entities despawn.
+--- Returned player-character rows are Entity proxies, distinct from the global Player API.
+---
+--- Filter syntax:
+--- * Combine distinct conditions with commas: "alive,attackable,targetable".
+--- * Flags include alive, dead, attackable, aggressive, friendly, targetable,
+---   incombat, notincombat, onmesh, los, targetingme, aggro, gatherable, myparty.
+--- * type=N and chartype=N select one type. Use separate queries for multiple types.
+--- * contentid=A;B includes either content ID; exclude_contentid=A;B excludes both.
+--- * exclude=A;B excludes entity IDs (not content IDs).
+--- * name=Text matches the exact, case-sensitive name.
+--- * ownerid=N, targeting=N and fateid=N match the corresponding IDs.
+--- * minlevel=N and maxlevel=N are inclusive and also require targetable entities.
+--- * mindistance/maxdistance use entity.distance; the ...distance2d variants use
+---   entity.distance2d. distanceto=N changes the distance origin to a loaded entity.
+--- * nearest picks the smallest entity.distance; lowesthealth picks the lowest hp.percent.
+---   Both return at most one entry in a table. Choose one selector per query.
+--- * targetingme matches targetid == Player.id. aggro matches the entity's aggro flag;
+---   these sets can differ. incombat also includes entities fighting other targets.
+--- Unknown filters are silently ignored. Property names are not automatically filters:
+--- "interactable" does not filter results; inspect entity.interactable in Lua instead.
+--- Semicolon lists apply to contentid/exclude_contentid/exclude, not type.
+--- Use each value-filter once: "type=1,type=2" uses the last value, not an OR.
+---
+--- Examples (read-only):
+--- ```lua
+--- -- Enumerate the loaded set. Use pairs; entity IDs are sparse keys.
+--- for id, entity in pairs(EntityList("")) do
+---     d(tostring(id) .. ": " .. entity.name)
+--- end
+---
+--- -- Nearby player characters; a horizontal-distance filter.
+--- local players = EntityList("type=1,targetable,maxdistance2d=30")
+---
+--- -- Closest eligible enemy. Always handle an empty result.
+--- local matches = EntityList("nearest,alive,attackable,targetable,onmesh,maxdistance=50")
+--- local id, enemy = next(matches)
+--- if enemy then
+---     local current = EntityList:Get(id) -- Re-fetch when using an ID later.
+---     if current then d(current.name) end
+--- end
+---
+--- -- Combat queries and the lowest health percentage among nearby enemies.
+--- local attackers = EntityList("alive,attackable,targetingme")
+--- local threats = EntityList("alive,attackable,aggro")
+--- local engaged = EntityList("alive,attackable,incombat")
+--- local _, weakest = next(EntityList("lowesthealth,alive,attackable,maxdistance=60"))
+---
+--- -- A distance band and a level range.
+--- local enemies = EntityList("alive,attackable,mindistance=10,maxdistance=30")
+--- local lowLevel = EntityList("type=2,alive,minlevel=5,maxlevel=10")
+---
+--- -- Match several content IDs, e.g. alternative exits/NPCs.
+--- local exits = EntityList("contentid=2000139;2006235,targetable")
+---
+--- -- Build exclusions from known content IDs or loaded entity IDs.
+--- local function exceptContent(a, b)
+---     return EntityList("alive,attackable,exclude_contentid=" .. a .. ";" .. b)
+--- end
+--- local function exceptEntities(a, b)
+---     return EntityList("targetable,exclude=" .. a .. ";" .. b)
+--- end
+---
+--- -- Exact name lookup (no wildcard or substring matching).
+--- local function byName(name)
+---     return EntityList("name=" .. name)
+--- end
+---
+--- -- Owned combat entities, such as a character's pet.
+--- local function ownedBy(ownerId)
+---     return EntityList("type=2,ownerid=" .. ownerId)
+--- end
+---
+--- -- Nearby entities around a known reference rather than around Player.
+--- local function nearEntity(entityId)
+---     if not EntityList:Get(entityId) then return {} end
+---     return EntityList("distanceto=" .. entityId .. ",maxdistance=15")
+--- end
+---
+--- -- Apply properties without a native filter in Lua.
+--- for id, entity in pairs(EntityList("targetable,onmesh")) do
+---     if entity.interactable then d(tostring(id) .. ": " .. entity.name) end
+--- end
+--- ```
 --- @class EntityList
 --- @field myparty table<number, PartyMember> The list of party members in the player's party.
---- @field crossworldparty table<number, CrossWorldPartyMember> The list of party members in the player's party.
---- @field Get fun(self: EntityList, id: number): Entity|nil returns an entity or nil by given id
-local EntityList = {}
+--- @field crossworldparty table<number, CrossWorldPartyMember> The cross-world party members.
+--- @field Get fun(self: EntityList, id: number): Entity|nil
+--- @overload fun(criteria: string): table<number, Entity>
+EntityList = {}
 
---- Retrieves a list of entities that match the specified criteria.
---- @param criteria string The criteria used to filter entities (e.g., a search string)
---- @return table<number, Entity> A list of entities matching the criteria
-function EntityList.filter(criteria) end
-
---- The list of party members in the player's party.
-EntityList.myparty = {}
-
---- @type fun(criteria: string): table<number, Entity>
-_G.EntityList = EntityList.filter
-
---- @type EntityList
-_G.EntityList = EntityList
-
---- Represents an action that can be performed by the player.
 --- @class Action
 --- @field ptr number Memory pointer to the action data.
 --- @field id number The unique identifier for the action.
@@ -1016,8 +1164,8 @@ _G.EntityList = EntityList
 --- @field casttime number The time it takes to cast the action.
 --- @field recasttime number The time it takes to recast the action.
 --- @field isoncd boolean Whether the action is on cooldown.
---- @field cd number The current cooldown remaining.
---- @field cdmax number The maximum cooldown time.
+--- @field cd number Elapsed recast seconds; counts up during cooldown, then resets.
+--- @field cdmax number Total recast duration in seconds. Remaining time is math.max(0, cdmax - cd).
 --- @field range number The maximum range of the action.
 --- @field radius number The radius of the action's effect.
 --- @field level number The required level to use the action.
@@ -1032,13 +1180,14 @@ _G.EntityList = EntityList
 --- @field aspect number (Optional) The aspect of the action.
 --- @field category number (Optional) The category of the action.
 --- @field primarycosttype number (Optional) The primary cost type of the action.
---- @field highlighted boolean (Optional) Whether the action is highlighted in the UI.
+--- @field highlighted number Action highlight flag: 0 off, 1 on.
 --- @field canfly boolean (Optional) Whether the action allows flying (specific to mounts).
 --- @field usable boolean Whether the action is currently usable.
 --- @field IsReady fun(self: Action, target?: number): boolean Checks if the action is ready to use.
 --- @field IsFacing fun(self: Action, target?: number): boolean Checks if the player is facing the target for this action.
---- @field CanCastResult fun(self: Action, target?: number): boolean Checks if the action can be cast on the target.
---- @field Cast fun(self: Action, target?: number): boolean Attempts to cast the action on the specified target.
+--- @field CanCastResult fun(self: Action, target?: number): integer Cast-check status code; 0 is success. Also consult IsReady; a successful check alone does not guarantee readiness.
+--- @field Cast fun(self: Action, target?: number): boolean Attempts to cast.
+--- @field IsInRange fun(self: Action, target?: number): boolean Checks if the action is in range of cast + LoS checks
 
 --- ActionList class that provides access to actions.
 --- @class ActionList
@@ -1074,15 +1223,21 @@ end
 function ActionList:StopCasting()
 end
 
---- Checks if a specific UI control/window is open in the game.
+--- Checks if a specific FFXIV addon UI control/window is open in the game.
+--- Control names identify game windows such as `SelectString`, `SelectYesno`,
+--- `Shop`, `ContentsFinder`, `RecipeNote`, and `Synthesis`. UI state changes
+--- asynchronously; an action issued this frame may open/replace a control later.
 --- @param controlName string The name of the UI control to check (e.g., "ContentsFinderMenu").
 --- @return boolean isOpen Returns true if the specified UI control is open, false otherwise.
 function IsControlOpen(controlName)
     return false
 end
 
---- Performs an action on a specified UI control/window.
---- This is typically used to press a button or perform an interaction within the scope of the control.
+--- Performs a named/semantic action on a specified UI control/window.
+--- Prefer this (or `Control:Action`) over raw `PushButton`, `DoAction`, and
+--- `UIEvent` calls. Action names and optional values are control-specific. Check
+--- the control is open first, issue one transition, then verify state later; do
+--- not busy-wait for the UI in the same frame.
 --- @param controlName string The name of the UI control to interact with (e.g., "ContentsFinderMenu").
 --- @param actionName string The action to perform on the control (e.g., "Leave").
 --- @param argValue any|nil optional argument to pass to the control
@@ -1097,8 +1252,12 @@ function Now()
     return 0
 end
 
+--- Returns Minion's semantic/named data view for a control. This is preferable
+--- to raw numeric AtkValue indexes when the control exposes named data. The
+--- control should be open and values must be nil-checked because they can change
+--- between frames.
 --- @param control string name of the control
---- @param data string|number|nil name of the data on this control, or nil to get all as table
+--- @param data string|number|nil name/index of the data, or nil to get the full semantic table
 --- @return unknown
 function GetControlData(control, data)
     return true
@@ -1124,6 +1283,12 @@ function GetTickCount()
 end
 
 
+--- A live FFXIV addon window handle. Do not return Control objects through the
+--- MCP bridge; extract a plain table of name/data/strings/rawData instead.
+--- `PushButton` and `DoAction` are low-level, control-specific operations whose
+--- numbers must be discovered for the exact window/build. Prefer `Action` or
+--- `UseControlAction` when a semantic action name is known.
+--- Return types can depend on the particular window.
 --- @class Control
 --- @field name string
 --- @field PushButton fun(self: Control, pushButtonA: number, pushButtonB: number)
@@ -1133,38 +1298,52 @@ end
 --- @field Close fun(self: Control) closes the control
 --- @field Open fun(self: Control) opens the control
 --- @field Destroy fun(self: Control) hard closes the control
---- @field IsReady fun(self: Control) whether the control is ready for use
---- @field IsOpen fun(self: Control) whether the control is ready for use
+--- @field IsReady fun(self: Control): boolean Whether the control is ready.
+--- @field IsOpen fun(self: Control): boolean Whether the control is open.
 --- @field GetData fun(self: Control): table<any, any>
 --- @field GetRawData fun(self: Control): table<number, RawData>
+--- @field GetActions fun(self: Control): table<number, string> Semantic action names used by UseControlAction.
 --- @field SetXY fun(self: Control, x: integer, y: integer)
 --- @field GetXY fun(self: Control): integer, integer
 
+--- Enumerates controls known to Minion, including closed controls. Filter with
+--- `control:IsOpen()` and return only cleaned plain data when using MCP:
+--- `{id=id,name=c.name,ready=c:IsReady(),data=c:GetData(),strings=c:GetStrings(),rawData=c:GetRawData()}`.
 --- @return table<number, Control> controls by id
 function GetControls()
     return {}
 end
 
+--- Reads one indexed string, or the whole nonempty string table if id is omitted.
+--- Index meanings are control-specific. Missing control/slot or empty data -> nil.
+--- @overload fun(name: string): table<number, string>|nil
 --- @param name string
 --- @param id number
---- @return string|nil controls by id
+--- @return string|nil
 function GetControlStrings(name, id)
     return ""
 end
 
 --- @param name string name of the control
---- @return Control
+--- @return Control|nil Missing controls return no value (nil).
 function GetControlByName(name)
     return {}
 end
 
+--- One raw FFXIV AtkValue exposed by a control. Common `type` strings include
+--- bool/int/uint/string; the exact set is runtime-defined. Numeric indexes and
+--- their meaning can change by control state, language, or game patch.
 --- @class RawData
 --- @field type string
 --- @field value any
 
+--- Read a single raw AtkValue slot. Prefer `GetControlData` when semantic data is
+--- available. Discover indexes with `Control:GetRawData()` rather than guessing.
+--- Omitting index returns the whole nonempty raw-data table. Missing data -> nil.
+--- @overload fun(name: string): table<number, RawData>|nil
 --- @param name string name of the control
 --- @param index integer index of the raw data in question
---- @return RawData
+--- @return RawData|nil
 function GetControlRawData(name, index)
     return {
 		["type"] = "uint",
@@ -1189,17 +1368,7 @@ end
 function PressKey(vcode)
 end
 
-ExmachinasFunc = {}
-
-
-
-
---- @param addon "BlueMagicLevel"
---- @param arg any
---- @param status any
-function ExmachinasFunc.SetAddon(addon,arg,status)
-end
-
+--- Native-backed userdata; table syntax here is editor-only.
 KitanoiFuncs = {}
 
 --- @param addon "kdf"
@@ -1211,42 +1380,55 @@ end
 function KitanoiFuncs.LoadDungeonTbl(dungeonTable)
 end
 
+-- See VaultSpamer/docs/INVENTORY_API.md in the workspace for container
+-- coverage, native vs Lua helpers, and quality rules.
+-- Proxies expose most properties through __index, not pairs(). Re-fetch before use.
+
+---@class InventoryMateria
+---@field itemid integer Materia item ID.
+---@field name string Localized materia name.
+---@field attribute integer Attribute ID.
+---@field value number Attribute value.
+
 --- @class BagItem
---- @field ptr number Memory pointer for the item
---- @field ptr2 number Secondary memory pointer
---- @field id number Item ID
---- @field ishq boolean Whether item is high quality
---- @field hqid number High quality item ID
---- @field isingearset boolean Whether item is in a gearset
---- @field slot number Slot number in bag
---- @field type number Parent bag ID
+--- @field ptr number Can be 0 even on valid items; not a validity check.
+--- @field ptr2 number Can be 0 even on valid items.
+--- @field id integer Base item ID, including event IDs in the 2000000 range.
+--- @field ishq 0|1 Numeric flag: 0 is truthy in Lua, so compare explicitly to 1.
+--- @field hqid integer NQ base ID / HQ base+1000000.
+--- @field flags integer Raw instance flags; NQ=0, HQ=1.
+--- @field isingearset integer Numeric gearset value.
+--- @field slot integer Zero-based physical slot; GetList key is slot+1.
+--- @field type integer Parent container ID.
+--- @field bag integer Parent container ID alias.
 --- @field count number Current stack size
 --- @field max number Maximum stack size
---- @field condition number Item condition
---- @field collectability number Item collectability
---- @field spiritbond number Spiritbond percentage
---- @field spiritbondvalue number Raw spiritbond value
---- @field level number Item level
---- @field requiredlevel number Required level to use
---- @field class number Class/job ID that can use item
---- @field category number Item category
+--- @field mbsellprice number Market listing price; -1 outside retainer listings.
+--- @field condition number Whole condition percentage.
+--- @field collectability number Collectability value.
+--- @field spiritbond number Whole spiritbond percentage.
+--- @field spiritbondvalue number Raw spiritbond: 10000=100%, 2647 -> spiritbond 26.
+--- @field level number Item.LevelItem (item level).
+--- @field requiredlevel number Item.LevelEquip.
+--- @field class integer Item.FilterGroup, NOT job ID.
+--- @field category integer Item.ClassJobCategory row ID, NOT ItemUICategory.
 --- @field uicategory number UI category
 --- @field searchcategory number Search category
---- @field canequip boolean Whether player can equip
---- @field equipslot number Equipment slot
---- @field price number Item price
---- @field materiaslotcount number Number of materia slots
---- @field materias table<number, table> Materia info
+--- @field canequip boolean Native eligibility; can be true for other-job main hands, not simply current-job compatibility.
+--- @field equipslot integer Item.EquipSlotCategory, NOT zero-based equipment slot.
+--- @field price number Item.PriceLow (NPC sell metadata), not current shop/market price.
+--- @field materiaslotcount integer Static guaranteed materia slots, not current meld count.
+--- @field materias table<integer, InventoryMateria>
 --- @field rarity number Item rarity
 --- @field isunique boolean Whether item is unique
 --- @field isuntradeable boolean Whether item cannot be traded
---- @field iscollectable boolean Whether item is collectable
---- @field desynthvalue number Desynthesis value
---- @field repairclassjob number Class/job that can repair
---- @field repairitem number Repair item ID
---- @field isbinding boolean Whether item is currently binding
---- @field name string Item name
---- @field GetStat fun(self: BagItem, statId: number, isHQ: boolean): number Get item stat value
+--- @field iscollectable boolean Metadata flag, not proof of an actual rated collectable instance.
+--- @field desynthvalue number Raw Item.Desynth field, NOT item level or player's desynthesis skill.
+--- @field repairclassjob integer Item.ClassJobRepair.
+--- @field repairitem integer ItemRepairResource row/grade, NOT item ID (8 -> dark matter 33916).
+--- @field isbinding boolean|nil
+--- @field name string Localized name; may initially be empty while metadata loads.
+--- @field GetStat fun(self: BagItem, statId: integer, includeHQBonus?: boolean): number False/omitted = base; true adds HQ bonus only on an actual HQ item.
 --- @field GetAction fun(self: BagItem): Action|nil Get associated action
 --- @field IsReady fun(self: BagItem, targetId?: number): boolean Check if item can be used
 --- @field Cast fun(self: BagItem, targetId?: number): boolean Use/cast the item
@@ -1263,28 +1445,150 @@ end
 --- @field Meld fun(self: BagItem): boolean Meld materia
 --- @field Transmute fun(self: BagItem): boolean Transmute item
 --- @field SelectFeed fun(self: BagItem): boolean Select as feed
---- @field Reward fun(self: BagItem): boolean Use as reward
+--- @field Reward? fun(self: BagItem): boolean
 --- @field Split fun(self: BagItem, amount: number): boolean Split stack
 --- @field Move fun(self: BagItem, bagId: number, slotId: number, amount?: number): boolean Move item
 --- @field LowerQuality fun(self: BagItem): boolean Lower item quality
+--- @field MBSell fun(self: BagItem, password: string, price: integer, qty: integer): boolean
+--- @field MBReturn fun(self: BagItem, inventory: 0|1): boolean returns to your inventory if 0 and retainer if 1
+
+-- Key/event-item metadata can be invalid for ordinary gear fields (see inventory docs).
 
 --- @class Bag
---- @field ptr number Memory pointer
---- @field size number Total slots
---- @field free number Free slots
---- @field used number Used slots
---- @field GetList fun(self: Bag): table<number, BagItem> Get items in bag
---- @field GetSortedItemList fun(self: Bag): table<number, BagItem> Get sorted items (the same way they're currently in the inventory)
---- @field RepairAll fun(self: Bag, useDarkMatter?: boolean): boolean Repair all items
---- @field SortInventory fun(self: Bag): boolean Sort inventory
+--- @field id integer Container ID.
+--- @field ptr number Can be 0 on valid bags.
+--- @field size integer Total physical slots; varies by container.
+--- @field free integer Free slots, not remaining item quantity.
+--- @field used integer Occupied slots; temporary rows may have count=0.
+--- @field Get fun(self: Bag, baseId: integer): BagItem|nil First base-ID match in this bag, either quality. No HQ offset or extra args.
+--- @field GetItem fun(self: Bag, slot: integer): BagItem|nil Zero-based physical slot; empty/out-of-range -> nil.
+--- @field GetList fun(self: Bag): table<integer, BagItem> Sparse slot+1 keyed map. Use pairs, not ipairs/#.
+--- @field GetSortedItemList fun(self: Bag): table<integer, BagItem> Sparse display-sorted list. Use item's type/slot for actions.
+--- @field RepairAll fun(self: Bag, useDarkMatter?: boolean): boolean True uses dark matter.
 
+---@class InventoryItemLocation
+---@field id integer Base ID.
+---@field hqid integer Matched stack's quality-aware ID.
+---@field bag integer Parent container ID.
+---@field slot integer Zero-based physical slot.
+---@field count integer Quantity in THIS stack, not aggregate count.
+---@field canequip boolean Native eligibility flag.
+
+---@class InventoryItemDetails
+---@field id integer Requested ID (HQ offset preserved if supplied).
+---@field name string May initially be empty.
+---@field ptr number Can be 0.
+---@field max number Static maximum stack size.
+---@field level integer Item.LevelItem.
+---@field requiredlevel integer Item.LevelEquip.
+---@field class integer Item.FilterGroup, not job ID.
+---@field category integer Item.ClassJobCategory.
+---@field uicategory integer Item.ItemUICategory.
+---@field searchcategory integer Item.ItemSearchCategory.
+---@field equipslot integer Item.EquipSlotCategory.
+---@field canequip boolean Native eligibility.
+---@field price number Item.PriceLow.
+---@field rarity integer Item.Rarity.
+---@field isunique boolean
+---@field isuntradeable boolean
+---@field iscollectable boolean Metadata flag only.
+---@field desynthvalue number Raw Item.Desynth.
+---@field repairclassjob integer Item.ClassJobRepair.
+---@field repairitem integer ItemRepairResource row ID.
+
+---@class InventorySpecialCurrency
+---@field itemid integer Currency item ID (note: not `id`).
+---@field name string May initially be empty.
+---@field count integer Current quantity.
+
+---@class InventoryAPI
 Inventory = {}
 
---- Gets a bag by ID
---- @param bagId integer The bag ID to retrieve
---- @return Bag The bag object
-function Inventory:Get(bagId)
-end
+---Return one bag or all available proxies. No Inventory:GetList() API exists.
+---A present empty proxy does not prove retainer/FC/storage contents are loaded.
+---@overload fun(self: InventoryAPI): table<integer, Bag>
+---@param bagId integer Container ID; advertised IDs can still return nil.
+---@return Bag|nil
+function Inventory:Get(bagId) end
+
+---Native catalog, not a loaded/nonempty-container list.
+---@return integer[]
+function Inventory:GetTypes() end
+
+---Native total stack quantity, NQ+HQ; includes main/equipped/armoury/currency/crystals/key items.
+---Special currencies excluded.
+---Numeric BASE ID only. Do not supply a second argument, even nil.
+---@param baseId integer
+---@return integer
+function Inventory:GetItemCount(baseId) end
+
+---Native HQ quantity by BASE ID, not base+1000000. Missing -> 0.
+---@param baseId integer
+---@return integer
+function Inventory:GetItemCountHQ(baseId) end
+
+---Explicit minimum=0 counts even noncollectable main-bag slots (NOT stack quantities).
+---@param baseId integer
+---@param minimum? number
+---@param maximum? number
+---@return integer
+function Inventory:GetItemCountCollectable(baseId, minimum, maximum) end
+
+---Native batch totals. Use {[baseId]=true}, NOT an array or string-keyed map.
+---Numeric values are also treated as IDs; false values do not exclude numeric keys.
+---@param idSet table<integer, boolean>
+---@return table<integer, integer> counts Includes requested missing IDs as 0.
+function Inventory:GetItemCounts(idSet) end
+
+---Native existence by base ID, either quality.
+---@param baseId integer
+---@return boolean
+function Inventory:HasItem(baseId) end
+
+---Native sparse set of FOUND base IDs, not an all/any boolean. Absent IDs omitted.
+---@param idSet table<integer, boolean> Use numeric keys and boolean values, not an array.
+---@return table<integer, true>
+function Inventory:HasItems(idSet) end
+
+---Native first-stack lookup. Result has no BagItem methods; re-fetch by bag/slot.
+---@param baseId integer Numeric base ID, matches either quality; extra args break the lookup.
+---@return InventoryItemLocation|nil
+function Inventory:FindItem(baseId) end
+
+---Native metadata lookup, not a slot/ownership query. Nil can mean pending metadata;
+---metadata for unowned items may load later. Retry on later frames, never spin.
+---No count/slot/condition/materias. DO NOT call GetStat on this metadata proxy:
+---it can cause native access violations that Lua pcall does not report.
+---Use actual bag items for GetStat.
+---@param itemId integer
+---@return InventoryItemDetails|nil
+function Inventory:GetItemDetails(itemId) end
+
+---Native ordinary + special currency lookup. Does NOT count crafting crystals.
+---@param itemId integer Currency item ID, not currency-bag slot.
+---@return integer
+function Inventory:GetCurrencyCountByID(itemId) end
+
+---@return table<integer, InventorySpecialCurrency> Keyed by item ID; names may load later.
+function Inventory:GetSpecialCurrencies() end
+
+---@return table<integer, number> Condition percentages keyed by ZERO-based equipped slot; empty slots omitted.
+function Inventory:GetEquippedConditions() end
+
+---Native game/chat item-search command, NOT a found predicate. Can return true for missing IDs.
+---Has side effects and asynchronous chat results; do not use in polling/hot-path code.
+---@param itemId integer
+---@return boolean
+function Inventory:SearchForItem(itemId) end
+
+---Native unlock query; (2,mountId) checks a mount unlock.
+---@param unlockType integer
+---@param id integer
+---@return boolean
+function Inventory:IsUnlocked(unlockType, id) end
+
+---Sorts inventory. This method belongs to Inventory, not individual bags.
+function Inventory:SortInventory() end
 
 ---@class ShopItem
 ---@field count number    -- The quantity of the item (if applicable)
@@ -1323,29 +1627,99 @@ end
 function Inventory:BuyShopItem(itemId, count)
 end
 
---- @param itemId integer
---- @return BagItem|nil
-function GetItem(itemId)
-end
+---Lua slot scan, exact hqid match (base ID = NQ only); custom containers honored.
+---Default: main + equipped + currency/crystals/key items + armoury, not remote storage.
+---@param hqid integer
+---@param inventories? integer[]
+---@return BagItem|nil item
+---@return Action|nil action
+function GetItem(hqid, inventories) end
 
----Lookup for an item in the inventory
----@param hqid number
----@param inventories table|nil
-function GetItem(hqid,inventories)
-end
+---@class InventoryItemWithAction
+---@field item BagItem
+---@field action? Action
+
+---Lua slot scan returning every matching stack in a dense array.
+---@param hqids integer[] Exact quality-aware IDs.
+---@param inventories? integer[]
+---@return InventoryItemWithAction[]
+function GetItems(hqids, inventories) end
+
+---Lua wrapper; slot is ONE-based, unlike bag:GetItem(). Defaults 1,2000.
+---@param slot? integer
+---@param inventoryId? integer
+---@return BagItem|nil
+function GetItemBySlot(slot, inventoryId) end
+
+---Lua wrapper around native counters. Defaults NQ only; HQ offset -> HQ counter.
+---An inventories table is IGNORED by the current implementation. Bool arg2/arg3 enables
+---NQ+HQ for base IDs; ItemCount(HQoffset,true) incorrectly forwards the offset and returns 0.
+---@param hqid integer|string
+---@param inventoriesArg? integer[]|boolean
+---@param includehqArg? boolean
+---@return integer
+function ItemCount(hqid, inventoriesArg, includehqArg) end
+
+---@class InventoryCountRow
+---@field id integer Requested quality-aware ID.
+---@field count integer Quantity, including zero for absent IDs.
+
+---Lua native-backed wrapper; input ARRAY, output ID-keyed rows. Container tables ignored.
+---Unlike ItemCount, HQ offset dispatch still happens when includehq=true.
+---@param hqids integer[]
+---@param inventoriesArg? integer[]|boolean
+---@param includehqArg? boolean
+---@return table<integer, InventoryCountRow>
+function ItemCounts(hqids, inventoriesArg, includehqArg) end
+
+---@class InventorySnapshotRow
+---@field name string
+---@field count integer NQ quantity.
+---@field HQcount integer HQ quantity.
+
+---Lua snapshot; default bags 0,1,2,3,1000,2004,2000 (NOT armoury/crystals).
+---@param inventories? integer[]
+---@return table<integer, InventorySnapshotRow> Keyed by base ID.
+function GetInventorySnapshot(inventories) end
+
+---Lua free-slot search; hqid only checked for nonzero, NOT stack merging/compatibility.
+---@param hqid integer
+---@param inventories? integer[]
+---@return integer|nil bagId
+---@return integer|nil slot ONE-based; subtract 1 before native Move.
+function GetFirstFreeSlot(hqid, inventories) end
+
+---@return integer|nil bagId
+---@return integer|nil slot ONE-based free slot in bags 0..3.
+function GetFirstFreeInventorySlot() end
+
+---@param bagId integer Armoury container ID, not equipment slot.
+---@return integer|nil bagId
+---@return integer|nil slot ONE-based free slot.
+function GetFirstFreeArmorySlot(bagId) end
+
+---Legacy name: returns used>0 BOOLEAN for a resolved bag, numeric 0 fallback.
+---@param equippedSlot integer Zero-based equipped slot.
+---@return boolean|0
+function ArmoryItemCount(equippedSlot) end
 
 json = {}
 
---- Encodes table to a json
+--- Encodes a JSON-compatible value (including scalars), not only tables.
 --- @param t any
 --- @param params table|nil
+--- @return string
 function json.encode(t, params)
 end
 
---- Decodes json string to a table
+--- Decodes a JSON value. Returns value,nextPosition on success and
+--- nil,errorPosition,errorMessage for invalid JSON. JSON null defaults to nil.
 --- @param s string
---- @return table
-function json.decode(s)
+--- @param position integer|nil Optional starting byte position (1-based).
+--- @return any value
+--- @return integer nextPosition
+--- @return string|nil errorMessage
+function json.decode(s, position)
 end
 
 function HttpRequest(params)
@@ -1360,7 +1734,7 @@ end
 
 --- @param mapId integer
 --- @param pos Position|nil position to choose better spot to tp to.
---- @return AetheryteInfo aetheryte to tp to
+--- @return AetheryteInfo|nil aetheryte to tp to, if a suitable route exists
 function GetAetheryteByMapID(mapId, pos)
 end
 
@@ -1369,29 +1743,54 @@ end
 function GetCurrentPID()
 end
 
+--- Writes a file; omitted/false append truncates, true appends (creating if absent).
+--- Does not create parent directories. Returns false for a missing parent or
+--- a directory destination; these failures do not throw a Lua error.
 ---@param path string
 ---@param message string
----@param append boolean|nil
+---@param append boolean|nil Defaults to false.
+---@return boolean success
 function FileWrite(path, message, append)
-
 end
 
+--- Deletes a file. Returns false for a missing path or a directory.
 ---@param path string
+---@return boolean success
 function FileDelete(path)
-
 end
 
+--- Lists immediate filenames (not full paths) in a 1-based array.
+--- Excludes directories and does not recurse. Empty/no matches returns {};
+--- a missing path or a file instead of a directory returns false.
+--- Filter is a case-sensitive, full-filename regex, NOT a Lua pattern or glob:
+--- [[(.*)log$]] matches alpha.log; [[alpha]] does not; [[alpha.*]] does.
+--- Omitted/nil/empty filter lists all files. Both slash styles work, with or
+--- without a trailing separator. No ordering guarantee is assumed.
+---@param path string
+---@param filter string|nil e.g. [[(.*)lua$]]
+---@return string[]|false
+function FolderList(path, filter)
+end
+
+--- Returns true for a directory, false for a missing path or a file.
 ---@param path string
 ---@return boolean
 function FolderExists(path)
     return false
 end
 
+--- Creates a directory and any missing parents; true if it already exists.
+--- Can also return true for an existing FILE path.
+--- Use FolderExists afterward when a directory is required.
 ---@param path string
+---@return boolean result
 function FolderCreate(path)
 end
 
+--- Recursively deletes a directory AND ITS CONTENTS, including nested files.
+--- Returns true on successful removal, false for a missing directory.
 ---@param path string
+---@return boolean success
 function FolderDelete(path)
 end
 
@@ -1399,141 +1798,19 @@ end
 function GilCount()
 end
 
---- Argus space:
-
---- @class DirectionalAOE
---- Structure for Directional AOEs that are usually originating from an entity.
---- @field x number X position of aoe
---- @field y number Y position of aoe
---- @field z number Z position of aoe
---- @field aoeType integer Animation/omen type of aoe
---- @field heading number Direction the aoe is facing
---- @field aoeLength integer Length of aoe
---- @field aoeWidth integer Width of aoe, mostly used for Line aoes. This value is 0 for cones and circles.
---- @field aoeName string Name of aoe
---- @field aoeID integer Cast/Spell ID of aoe
---- @field aoeCastType integer Cast type/shape of AOE. See castType for known castType values.
---- @field targetAttach integer|nil ID of entity that current aoe is attached to, if found. Value is nil otherwise.
---- @field aoeAnimationInfo aoeAnimationInfo Contains information about the animation that will play when the aoe completes and gets casted.
---- @field aoeEffectInfo aoeEffectInfo Contains information about the aoe's omen/telegraph.
---- @field isAreaTarget boolean If the spell is a free target ability or not, useful for identifying aoes that will attach to target or not.
---- @field startTime number startTime (same units as Now())
---- @field duration number cast duration in seconds
---- @field entityID integer|nil optional entity id for aoes that attach to targets
-
---- @class GroundAOE
---- Structure for Ground AOEs that are not usually attached to any entity.
---- @field x number X position of aoe
---- @field y number Y position of aoe
---- @field z number Z position of aoe
---- @field aoeType integer Animation/omen type of aoe
---- @field aoeLength integer Length/radius in yalms of aoe
---- @field aoeWidth integer Width in yalms of aoe (0 for circles and cones etc)
---- @field aoeName string Name of aoe
---- @field aoeID integer Cast/Spell ID of aoe
---- @field aoeCastType integer Cast type/shape of AOE. See castType for known castType values.
---- @field targetAttach integer|nil ID of entity that current aoe is attached to, if found. Value is nil otherwise.
---- @field aoeAnimationInfo aoeAnimationInfo Contains information about the animation that will play when the aoe completes and gets casted.
---- @field aoeEffectInfo aoeEffectInfo Contains information about the aoe's omen/telegraph.
---- @field isAreaTarget boolean If the spell is a free target ability or not, useful for identifying aoes that will attach to target or not.
---- @field startTime number startTime (same units as Now())
---- @field duration number cast duration in seconds
-
---- @class aoeAnimationInfo
---- Structure that contains information about an aoe's animation. Useful in case there is additional info that can be grabbed to determine cone width/donut inner radius.
---- @field aoeAnimationTypeStart integer
---- @field aoeAnimationTypeEnd integer
---- @field aoeAnimationTimelineHit integer
---- @field aoeCastVFX integer
-
---- @class aoeEffectInfo
---- Structure that contains information about an omen/telegraph. Useful for identifying cone width and donut inner radius for telegraphed aoes.
---- @field aoeEffectName string Name of omen
---- @field aoeEffectCastType integer If this value is non-zero, then the game override the original aoeCastType with this castType value internally. Argus already updates the original aoeCastType value correctly, so this field can be generally ignored.
---- @field aoeEffectRestrictYScale boolean If true, the aoe will be 10% of its original size. Argus already adjusts the original aoe size values correctly, so this field can be generally ignored.
---- @field aoeEffectLargeScale integer Some value that changes internal orientation for drawing the telegraph effects. Argus already handles this value internally, so it can be generally ignored.
-
---- @class castType
---- An integer to identify some aoe types. These are not guaranteed for every AOE. But generally, these are how AOEs are categorized in the game.
---- Fields:
---- [2, 5, 7] Circle AOE
---- [3, 13] Directional Cone/arc AOE
---- [4, 12] Directional Line AOE
---- [6] Meteor mechanic (more damage the closer you are to the center), usually unavoidable
---- [8] Line AOE that's targeted to either a position, or specific entity. Argus will adjust the length and heading automatically
---- [10] Donut AOE
---- [11] Cross AOE (new type to Shadowbringers, like last boss of Grand Cosmos)
-
---- @class onAOECreateFunc
---- This function is called when a directional or ground AOE is created.
---- @param aoe DirectionalAOE|GroundAOE A copy of the created AOE object. Note: This object will not receive position updates.
-
---- @class onEntityCastFunc
---- This function is called when the server sends a successful entity cast packet to the client.
---- @param entityID integer ID of the entity casting the spell
---- @param actionID integer ID of the spell being cast
---- @param castPosX number|nil X position of the cast; nil if the spell is not cast at a specific position
---- @param castPosY number|nil Y position of the cast; nil if the spell is not cast at a specific position
---- @param castPosZ number|nil Z position of the cast; nil if the spell is not cast at a specific position
---- @param heading number Heading of the casted ability; used for rectangles and cones
---- @param mainTargetID integer ID of the main target of the spell
---- @param targets table List of target IDs the ability is cast on
-
-
---- @class onEntityChannelFunc
---- This function is called when an entity starts channeling an ability.
---- @param entityID integer ID of the entity channeling the spell
---- @param channelID integer ID of the spell being channeled
---- @param targetID integer ID of the target that the spell is being channeled on
---- @param channelTimeMax number Duration for which the cast will be channeled
-
---- @class ArgusEntityCast
---- Represents the parameters of an entity casting a spell.
---- @field entityID integer ID of the entity casting the spell
---- @field actionID integer ID of the spell being cast
---- @field castPosX number|nil X position of the cast; nil if the spell is not cast at a specific position
---- @field castPosY number|nil Y position of the cast; nil if the spell is not cast at a specific position
---- @field castPosZ number|nil Z position of the cast; nil if the spell is not cast at a specific position
---- @field heading number Heading of the casted ability; used for rectangles and cones
---- @field mainTargetID integer ID of the main target of the spell
---- @field targets table List of target IDs the ability is cast on
-
-Argus = {}
-
---- Registers a function to be called when a directional or ground AOE is created.
---- This must be called in the "Module.Initialize" handler.
---- @param func fun(aoe: DirectionalAOE|GroundAOE)
-function Argus.registerOnAOECreateFunc(func)
-    -- Implementation to register the function
-end
-
---- Registers a function to be called when an entity casts an action successfully.
---- This must be called in the "Module.Initialize" handler.
---- @param func fun(entityID: integer, actionID: integer, castPosX: number|nil, castPosY: number|nil, castPosZ: number|nil, heading: number, mainTargetID: integer, targets: table)
-function Argus.registerOnEntityCast(func)
-    -- Implementation to register the function
-end
-
---- Registers a function to be called when an entity starts channeling an ability.
---- This must be called in the "Module.Initialize" handler.
---- @param func fun(entityID: integer, channelID: integer, targetID: integer, channelTimeMax: number)
-function Argus.registerOnEntityChannel(func)
-    -- Implementation to register the function
-end
-
---- @param func fun(entityID: integer, wasVisible: boolean, isVisible: boolean)
-function Argus.registerOnVisibilityChangeFunc(func)
-end
-
 
 --- @type boolean
 --- whether a profile is running (e.g. assist/quest)
 FFXIV_Common_BotRunning = false
 
+--- Live character quest state. Quest IDs here are the in-game IDs used by
+--- profiles, not the `Quest.csv` row key. Static actor/listener/location data comes from
+--- https://github.com/xivapi/ffxiv-datamining.
 --- @class QuestClass
 --- @field IsQuestCompleted fun(self: QuestClass, questId: number, something: boolean): boolean Checks if the quest is complete
 --- @field HasQuest fun(self: QuestClass, questId: number, leve: boolean|nil): boolean Checks whether the quest is active
---- @field GetQuestCurrentStep fun(self: QuestClass, questId: number, something: boolean|nil): integer Checks whether the quest is active
+--- @field GetQuestCurrentStep fun(self: QuestClass, questId: number, something: boolean|nil): integer Returns the live quest sequence; validate profile `complete.step` values against it
+--- @field GetQuestList fun(self: QuestClass): table Live quest list
 Quest = {}
 
 --- @param questId integer
@@ -1601,8 +1878,8 @@ end
 function Player:SetAutoFollowOn(enable)
 end
 
---- Global clock offset
---- @type number
+--- Optional legacy clock offset.
+--- @type number|nil
 GlobalOffset = 0
 
 Questing = {}
@@ -1628,15 +1905,9 @@ end
 function dircreate(path)
 end
 
-ml_task_hub = {}
-
--- some flags for tasks. I don't know what they do
-REACTIVE_GOAL = 2
-TP_IMMEDIATE = 0
-
-function ml_task_hub:Add(task, goal, prio)
-end
-
+--- Task constructors can reset navigation/unstuck state or change gSkipTalk
+--- before a task is queued.
+--- Fields can be nil until configured; some positions use 0/false sentinels.
 --- @class ml_pos
 --- @field x number
 --- @field y number
@@ -1654,21 +1925,27 @@ end
 --- @field preserveSubtasks boolean?
 --- @field overwatchContinues boolean?
 --- @field breakUpdate boolean?
---- @field pos ml_pos?
+--- @field pos ml_pos|0|false|nil
+ml_task = {}
+
+--- Attach a child task to this task. The task hub executes the child before resuming
+--- its parent. Used for `ffxiv_task_movetopos.Create()` and other task factories.
+--- @param task AnyTask
+function ml_task:AddSubTask(task) end
 
 --- @class ml_task_MOVETOMAP : ml_task
 --- @field name "MOVETOMAP"
 --- @field destMapID number
---- @field tryTP boolean
+--- @field tryTP boolean|nil Legacy field; not initialized by current MOVETOMAP constructor.
 --- @field useAethernetTickets boolean
 --- @field setHomepoint boolean
---- @field delayTimer number
---- @field delayTime number
---- @field pos ml_pos
+--- @field delayTimer number|nil Not initialized by current MOVETOMAP constructor.
+--- @field delayTime number|nil Not initialized by current MOVETOMAP constructor.
+--- @field pos ml_pos|nil
 
 --- @class ml_task_MOVETOPOS : ml_task
 --- @field name "MOVETOPOS"
---- @field pos ml_pos
+--- @field pos ml_pos|0 Must be configured before scheduling; constructor uses 0.
 --- @field range number
 --- @field doFacing boolean
 --- @field remainMounted boolean
@@ -1682,12 +1959,40 @@ end
 --- @field customSearchCompletes boolean
 --- @field startMap number
 --- @field noFly boolean
+--- @field range3d number? Vertical/3D completion range; used alongside `range` by some callers.
+--- @field useAethernet boolean? Allow local aethernet travel while routing.
+--- @field cubefilters number? Navigation cube-filter flags; commonly `1` to suppress flying.
+--- @field floorfilters number? Navigation floor-filter flags.
+--- @field nomount boolean? Prevent mounting for this movement task.
+
+--- Factory for Minion's mesh-navigation subtask. `Create()` does not queue movement,
+--- but DOES reset NavigationManager's path and unstuck state in current source.
+--- Configure the returned task, then attach it to the current task with
+--- `ml_task_hub:CurrentTask():AddSubTask(task)`.
+---
+--- Minimal pattern (from MoogleClickToTravel):
+--- ```lua
+--- local task = ffxiv_task_movetopos.Create()
+--- task.pos = { x = 30.0, y = 4.0, z = 53.2 }
+--- task.range = 1
+--- task.remainMounted = false
+--- ml_task_hub:CurrentTask():AddSubTask(task)
+--- ```
+---
+--- This requires a current parent task. The movement subtask runs asynchronously on
+--- subsequent task-hub updates; creating/attaching it does not wait for arrival.
+--- @class ffxiv_task_movetopos
+ffxiv_task_movetopos = {}
+
+--- Create an unstarted MOVETOPOS task. Set at least `pos`; normally also set `range`.
+--- @return ml_task_MOVETOPOS
+function ffxiv_task_movetopos.Create() end
 
 --- @class ml_task_MOVETOINTERACT : ml_task
 --- @field name "MOVETOINTERACT"
 --- @field contentid number
 --- @field interact number
---- @field pos ml_pos
+--- @field pos ml_pos|false
 --- @field range number?
 --- @field useTeleport boolean
 --- @field dismountDistance number
@@ -1706,9 +2011,9 @@ end
 --- @class ml_task_MOVETOFATE : ml_task
 --- @field name "MOVETOFATE"
 --- @field fateid number
---- @field pos ml_pos
+--- @field pos ml_pos|0
 --- @field range number
---- @field actualPos ml_pos
+--- @field actualPos ml_pos|0
 --- @field requiresPosRandomize boolean
 --- @field alwaysMount boolean
 --- @field dismountDistance number
@@ -1717,7 +2022,7 @@ end
 --- @field name "MOVEAETHERNET"
 --- @field contentid number
 --- @field interact number
---- @field pos ml_pos
+--- @field pos ml_pos|false
 --- @field useAethernet boolean
 --- @field unlockAethernet boolean
 --- @field isResidential boolean?
@@ -1754,7 +2059,7 @@ end
 
 --- @class ml_task_LT_FLEE : ml_task
 --- @field name "LT_FLEE"
---- @field pos ml_pos
+--- @field pos ml_pos|0
 --- @field range number
 --- @field useTeleport boolean
 --- @field alwaysMount boolean
@@ -1778,7 +2083,7 @@ end
 --- @class ml_task_AVOID : ml_task
 --- @field name "AVOID"
 --- @field targetid number
---- @field pos ml_pos
+--- @field pos ml_pos|0
 --- @field maxTime number
 --- @field attackTarget number
 
@@ -1786,7 +2091,7 @@ end
 --- @field name "NAV_INTERACT"
 --- @field contentid number
 --- @field interact number
---- @field pos ml_pos
+--- @field pos ml_pos|false
 --- @field conversationIndex number
 --- @field conversationstrings string|table
 --- @field destMapID number?
@@ -1855,10 +2160,10 @@ ml_task_hub = {}
 --- @param prio number
 function ml_task_hub:Add(task, goal, prio) end
 
---- @return AnyTask
+--- @return AnyTask|nil Nil when the task hub is idle.
 function ml_task_hub:CurrentTask() end
 
---- @return AnyTask
+--- @return AnyTask|nil Nil when the task hub is idle.
 function ml_task_hub:ThisTask() end
 
 --- KDF funcs thing, stores/loads data in C:\MINIONAPP\Bots\FFXIVMinion64\LuaMods\KitanoiFuncs\Settings\Data
@@ -1933,6 +2238,7 @@ gACRSelectedProfiles = {
 --- @type boolean
 gQuestGatherAetherCurrents = false
 
+--- Optional BlueMagicLevel addon.
 BlueMagicLeveling = {}
 
 --- @type table
@@ -1956,6 +2262,32 @@ function HasAllCurrents(mapId)
     return false
 end
 
+--- One field aether current orb (EObj) from ffxiv_aethercurrent_data(DT).
+--- @class AetherCurrentEntry
+--- @field id integer slot index in the zone's status array (as in ffxivminion.AetherCurrentData[mapId])
+--- @field aethid integer EObj contentid of the orb (e.g. 2013961), usable in EntityList "contentid=" queries
+--- @field x number
+--- @field y number
+--- @field z number
+--- @field requires? fun(): boolean quest/section gate; orb only exists when this returns true
+
+--- Legacy pre-Dawntrail data global. Current helpers use
+--- FFXIVLib.API.AetherCurrent.GetAetherCurrentsByTerritoryId instead.
+--- @type table<integer, AetherCurrentEntry[]>|nil keyed by mapId
+ffxiv_aethercurrent_data = {}
+
+--- Legacy Dawntrail data global.
+--- @type table<integer, AetherCurrentEntry[]>|nil keyed by mapId
+ffxiv_aethercurrent_dataDT = {}
+
+--- Cached attunement status for a map from ffxivminion.AetherCurrentData.
+--- Returns {} when the cache is cold (e.g. right after a reload).
+--- @param mapid integer
+--- @return table<integer, boolean> current slot -> attuned
+function GetAetherCurrentData(mapid)
+    return {}
+end
+
 --- whether to use tphack while questing. (careful)
 --- @type boolean
 gTeleportHack = false
@@ -1976,6 +2308,7 @@ gCurrQuestObjective = 3
 --- internal quest step thing
 gCurrQuestStep = 2
 
+--- Optional external addon.
 erduytashit = {}
 
 function erduytashit.Update()
@@ -1983,9 +2316,6 @@ end
 
 --- @type boolean
 gUseMount = true
-
-ExmachinasSetting = {}
-Settings = {}
 
 --- @type boolean
 gGrindDoHuntlog = false
@@ -1999,7 +2329,7 @@ gFleeHP = 13
 ---@class GameSetting
 ---@field ptr number Memory pointer address
 ---@field name string Setting name/identifier
----@field type string Setting data type
+---@field type integer Native setting type code.
 ---@field value any Current setting value
 ---@field SetValue fun(self: GameSetting, value: number) Sets the setting value
 
@@ -2008,15 +2338,19 @@ function GetGameSettings()
 	return {}
 end
 
---- @return string
+--- @return integer Numeric game build/version value.
 function GetGameVersion()
 end
 
+--- @deprecated
 AceLib = {}
 
+-- Profile-dependent options, absent until the relevant fishing profile loads.
 -- disable vendoring
+--- @type boolean|nil
 QuestOpts_Fishing_100_DT_Armor = true
 -- disable quests
+--- @type boolean|nil
 QuestOpts_Fishing_Quest_Disable = false
 
 --- @param i integer
@@ -2028,11 +2362,11 @@ end
 --- @type (fun(s: string|nil)|nil)
 original_d = d
 
---- @param integer
+--- @param vcode integer
 function KeyUp(vcode)
 end
 
---- @param integer
+--- @param vcode integer
 function KeyDown(vcode)
 end
 
@@ -2111,15 +2445,19 @@ end
 gRepair = true
 
 --- some global task that questing sets I think
---- @type string
+--- @type string|nil Can be nil while idle.
 taskName = "LT_GRIND"
 
 --- some global task that questing sets I think
---- @type string
+--- @type string|nil Can be nil while idle.
 gFFXIVMinionTask = "GRIND_COMBAT"
 
---- Fires a UI event to a registered agent via InputHandler (ProcessEvent)
---- Examples:
+--- Fires a low-level UI event to a registered FFXIV agent via InputHandler
+--- (ProcessEvent). This is the lowest-level control API: agent/event IDs and
+--- argument positions are specific to an exact window and game build. Prefer
+--- `UseControlAction` or `Control:Action`; do not guess UIEvent sequences.
+--- UI transitions are asynchronous, so verify the resulting control later.
+--- Examples captured for specific controls/builds:
 ---  UIEvent(130, 3, {{3, 21}, {5, 1}, {0, 0}}) - enables password
 ---  UIEvent(130, 3, {{3, 16},  {3, 3}, {0, 0}}) - sets the password in PF to 0003
 ---  UIEvent(130, 3, {{3, 32},  {2, 1}, {0, 0}}) - remove role restrictions
@@ -2135,7 +2473,9 @@ gFFXIVMinionTask = "GRIND_COMBAT"
 function UIEvent(agentIndex, eventId, args)
 end
 
---- @param arg number|nil
+--- Milliseconds elapsed since a Now()-compatible timestamp. Nil raises an error.
+--- @param arg number
+--- @return number
 function TimeSince(arg)
 end
 
@@ -2151,6 +2491,7 @@ MEntityList = EntityList
 KitanoiSettings.knownmarkers = KitanoiSettings.knownmarkers
 
 KitanoiNavigation = {}
+KitanoiNavigation.NavAPI = {}
 
 --- @param x number
 --- @param y number
@@ -2175,14 +2516,16 @@ end
 --- @field ptr number Internal pointer reference.
 local Aetheryte = {}
 
---- Retrieves the full list of aetherytes available to the player.
---- Note: Index 0 (first element) may be null/nil.
---- @return table<number, Aetheryte|nil> A list of aetheryte entries, where index 0 is nil.
-function GetAetheryteList() end
+--- Compatibility wrapper over FFXIVLib.API.Map.GetAetherytes.
+--- force is retained but unused; true/false maps to attuned/unattuned filters.
+--- @param force boolean|nil Legacy argument, currently unused.
+--- @param attunementFlag 0|1|2|boolean|nil 0/all (default), 1/true attuned, 2/false unattuned.
+--- @return table<number, Aetheryte> Keyed by aetheryte ID, not a dense array.
+function GetAetheryteList(force, attunementFlag) end
 
 
 --- @param id integer
---- @return Position
+--- @return Position|nil Nil when no location resolves.
 function GetAetheryteLocation(id)
 end
 
@@ -2202,5 +2545,82 @@ KitanoiFuncs.BypassVisibleNPCCheck = true
 function CanAccessMap(mapId)
 end
 
---- @type (fun(): boolean)|nil
-IsBetaClient = function () return true end
+--- @param mapId integer
+--- @return string
+function GetMapName(mapId)
+end
+
+--- Proxy class mapped to settings
+--- @type table
+Settings = {}
+
+--- @class Fate
+--- @field ptr number Can be 0; not a validity check.
+--- @field id integer FATE ID, used by EntityList("fateid=" .. id).
+--- @field name string FATE name.
+--- @field description string FATE description.
+--- @field type integer FATE category code.
+--- @field status integer Status code: 2 active, 5 finished, 7 awaiting activation.
+--- @field duration number Remaining seconds; a finished row can retain a positive value.
+--- @field completion number Completion percentage (0-100).
+--- @field level integer Recommended FATE level.
+--- @field maxlevel integer Level-sync ceiling.
+--- @field radius number Fate area radius
+--- @field x number World X coordinate
+--- @field y number World Y coordinate
+--- @field z number World Z coordinate
+--- @field postype number Position type
+
+--- Lists FATEs in the current zone, including ones outside the loaded entity range.
+--- Returns an array; its indices are not FATE IDs and can shift between calls.
+--- Coordinates are top-level x/y/z fields. Use f.id when retaining an identity.
+---
+--- ```lua
+--- -- Index by FATE ID for this snapshot, and find loaded enemies for active FATEs.
+--- local byId = {}
+--- for _, f in ipairs(GetFateList()) do
+---     byId[f.id] = f
+---     if f.status == 2 and f.completion < 100 then
+---         local enemies = EntityList("alive,attackable,fateid=" .. f.id)
+---         for id, enemy in pairs(enemies) do d(tostring(id) .. ": " .. enemy.name) end
+---     end
+--- end
+--- ```
+--- @return Fate[]
+function GetFateList() end
+
+gUseAutoFollowPath = false
+
+-- Optional native bridge declarations live in the workspace's
+-- VaultSpamer/.vscode/noobgam_offload.lua, NOT alongside this file.
+-- Prose and examples: VaultSpamer/docs/NATIVE_LUA_BRIDGE.md.
+-- Do not assume the native bridge is installed for public addon users.
+
+
+--- @param line string
+--- @return string filtered string
+function CleanConvoLine(line)
+    -- sample impl, remove common special chars.
+    local clean = string.gsub(line,"[()-/\x02\x16\x01\x03]","")
+    return clean
+end
+
+--- @param posa Position
+--- @param posb Position
+--- @return number
+function math.distance3d(posa, posb)
+    return 0.0
+end
+
+--- @return boolean
+function MIsLoading()
+    return false
+end
+
+KDF = {
+}
+
+--- @return string name of current dungeon profile or "None"
+function KDF.Name()
+    return "Seat of Sacrifice"
+end

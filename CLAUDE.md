@@ -18,7 +18,7 @@ Most non-trivial behavior is composing those two with quest-state machines, not 
 `module.def` declares the file list and is the source of truth for load order:
 
 ```
-main, gui, ravanafarm, navigationtask, bootstrap, private, utils, config, msqhelper, kdfProfiles, noobgamTaskManager
+auto_shims, main, gui, ravanafarm, navigationtask, bootstrap, private, log_rotation, utils, config, msqhelper, kdfProfiles, noobgamTaskManager, circuit_breaker
 ```
 
 Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads are idempotent. `main.lua` registers three event handlers: `Module.Initalize` → `preinit` (config + log shim), `Gameloop.Update` → `onUpdate` (per-tick driver), `Gameloop.Draw` → `GUI_Manager.Draw`.
@@ -47,7 +47,7 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 - Per-account config: `<minion-lua-mods>/SimpleFFXIVBotting/configs/<MinionAppUUID>.json` — `NoobgamConfigManager.ReadConfig()` / `SaveConfig()`.
 - Shared multi-box state: `<minion-lua-mods>/SimpleFFXIVBotting/shared/{msq_clear_requests,msq_pf_ready}.json`.
-- Logs: `<minion-lua-mods>/SimpleFFXIVBotting/logs/<MinionAppUUIDHex>.log` — `utils.lua` shims `_G.d` so every `d(...)` call also appends here. Use `d("[ModuleName] message")` for new logs.
+- Logs: `<minion-lua-mods>/SimpleFFXIVBotting/logs/<MinionAppUUIDHex>.YYYY-MM-DD.log` — `utils.lua` shims `_G.d` and appends to the local calendar day's file. `log_rotation.lua` retains the newest three daily files per UUID (not a rolling age window), pruning all UUIDs on startup, after a new day's first write, and every five minutes while loaded, even with automation disabled. Undated/hourly logs are untouched; no migration. Bug reports copy the entire logs directory. Use `d("[ModuleName] message")` for new logs.
 
 ## Unskippable content (deliberately excluded)
 
