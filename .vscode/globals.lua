@@ -67,15 +67,15 @@ function GUI:Combo(label, current_item, items, popup_max_height_in_items) end
 
 --- @param self GUI
 --- @param label string
---- @return boolean wither the header is open
+--- @return boolean open Whether the header is expanded.
 function GUI:CollapsingHeader(label) end
 
 
 --- @param self GUI
 --- @param label string
---- @param reason boolean
---- @return boolean wither the header is open
-function GUI:RadioButton(label, reason) end
+--- @param active boolean Whether the radio button is selected.
+--- @return boolean pressed Whether the button was pressed.
+function GUI:RadioButton(label, active) end
 
 
 --- Creates a slider for two float values.
@@ -633,11 +633,15 @@ function FileExists(path)
 	return true
 end
 
+--- Serializes a Lua value to a file, replacing any existing contents.
+--- Parent directories must exist; returns false when the file cannot be written.
 ---@param path string
 ---@param var any lua object to store
+---@return boolean success
 function FileSave(path, var)
 end
 
+--- Loads a value saved with FileSave. Missing files return nil.
 ---@param path string
 ---@return any return value of the file saved with FileSave
 function FileLoad(path)
@@ -648,9 +652,12 @@ end
 function PressYesNo(confirm)
 end
 
+--- Registers a callback. Reusing an identifier adds another callback rather than
+--- replacing the old one. Passing nil as the handler does not remove callbacks.
+--- For temporary callbacks, use a closure guard to disable them after completion.
 --- @param event string Event name to listen for
 --- @param handler function The function to call when the event is triggered
---- @param identifier string A unique identifier for this event registration
+--- @param identifier string Label for this event registration
 function RegisterEventHandler(event, handler, identifier)
     -- This is just a placeholder for the editor
 end
@@ -908,7 +915,7 @@ function Player:GetTarget() end
 function Player:GetAetherCurrentsList() end
 
 --- Clears the target.
---- @return Entity|nil
+--- @return boolean success
 function Player:ClearTarget() end
 
 --- @param statId number entity
@@ -953,7 +960,8 @@ function Player:Stop(resetpath)
     -- This is just a placeholder for the editor
 end
 
---- @param targetId number target id 
+--- @param targetId number target id
+--- @return boolean success
 function Player:SetTarget(targetId)
     -- This is just a placeholder for the editor
 end
@@ -1295,8 +1303,8 @@ end
 --- @field DoAction fun(self: Control, actionNumber: number)
 --- @field Action fun(self: Control, actionName: string, args: any)
 --- @field GetStrings fun(self: Control): table<number, string> gets string values and their associated ids
---- @field Close fun(self: Control) closes the control
---- @field Open fun(self: Control) opens the control
+--- @field Close fun(self: Control): boolean Closes the control; false can accompany a successful close. Verify with IsOpen later.
+--- @field Open fun(self: Control): boolean Requests opening the control. Verify with IsOpen on a subsequent update.
 --- @field Destroy fun(self: Control) hard closes the control
 --- @field IsReady fun(self: Control): boolean Whether the control is ready.
 --- @field IsOpen fun(self: Control): boolean Whether the control is open.
