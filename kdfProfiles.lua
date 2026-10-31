@@ -1370,6 +1370,7 @@ NoobgamKdfProfiles.DungeonProfiles = {
             33941,
             -- void star. It's not good to ignore it but it's not worse than what default avoidance does
             33957,
+            34483, -- Eventide Fall line stacks: the custom 4/4 split owns movement.
         },
         forcemeleerange = {12365},
         hasbuff = {},
@@ -2377,6 +2378,79 @@ function NoobgamKdfProfiles.UseMits(mits)
     end
 end
 
+-- Explicit survival window; currently used only by the Interphos profile.
+-- Self-targeting discourages DPS, but does not itself ask the ACR to heal.
+function NoobgamKdfProfiles.FocusOnSurvival()
+    if not Player.alive or NoobgamKdfProfiles.TryingToWipe then return end
+    Player:SetTarget(Player.id)
+
+    -- Never interrupt a spell. PLD's instant mitigation is allowed while moving;
+    -- the healer routine and Clemency must not stop required movement.
+    if ActionList:IsCasting() then return end
+    if Player.role == 4 then
+        if Player:IsMoving() then return end
+        -- This routine can attempt a heal and still return nil. Do not fall
+        -- through to another action based on its return value.
+        KitanoiFuncs.HealDoomMulti()
+        return
+    end
+    if Player.job ~= 19 then return end
+
+    -- One attempt per update, even when Cast returns nil/false: that is not
+    -- proof it did nothing. CanCastResult checks sync, resources, range and locks.
+    local function tryAction(actionId, targetId)
+        local action = ActionList:Get(1, actionId)
+        if action and action:CanCastResult(targetId) == 0 then
+            action:Cast(targetId)
+            return true
+        end
+        return false
+    end
+
+    -- Party shielding first. Avoid refreshing an already-visible Veil shield.
+    if not HasBuff(Player.id, 727) and tryAction(3540, Player.id) then return end
+
+    local targets, seen = {}, {}
+    local function addTarget(entity)
+        if not entity or not entity.alive or not entity.hp then return end
+        local hp, id = entity.hp.percent, entity.id
+        if hp == nil or id == nil or seen[id] then return end
+        seen[id] = true
+        local role = KitanoiFuncs.ReturnRole(entity.job)
+        targets[#targets + 1] = {
+            id = id, hp = hp,
+            priority = role == "heal" and 1 or role == "tank" and 2 or 3,
+        }
+    end
+    addTarget(Player)
+    for _, member in pairs(KitanoiFuncs.entityList("myparty") or {}) do
+        addTarget(member)
+    end
+    table.sort(targets, function(a, b)
+        if a.priority ~= b.priority then return a.priority < b.priority end
+        if a.hp ~= b.hp then return a.hp < b.hp end
+        return a.id < b.id
+    end)
+
+    -- Spend Oath on healers before tanks/DPS, including at full HP: mitigation
+    -- is proactive. Skip existing Intervention/Holy Sheltron instead of stacking.
+    for _, target in ipairs(targets) do
+        if target.id ~= Player.id then
+            if not HasBuff(target.id, 1174) and not HasBuff(target.id, 2674)
+                and tryAction(7382, target.id) then return end -- Intervention
+        elseif not HasBuff(target.id, 2674) and not HasBuff(target.id, 1856) then
+            if tryAction(25746, target.id) or tryAction(3542, target.id) then return end
+        end
+    end
+
+    if Player:IsMoving() then return end
+    for _, target in ipairs(targets) do
+        if target.hp < 100 and tryAction(3541, target.id) then return end -- Clemency
+    end
+    -- Cover transfers damage and Passage requires positioning/channeling;
+    -- neither belongs in a blind automatic survival fallback.
+end
+
 function NoobgamKdfProfiles.Rubicante()
     if NoobgamKdfProfiles.TryingToWipe then
         return
@@ -2436,10 +2510,115 @@ local function useIfCan(id, targetId)
     end
 end
 
+-- Pure planner: use real party members (not ReturnSortedParty, which can add
+-- pets/NPCs). IDs are shared across clients; local party-list order is not.
+-- Keep dead members in their slots so a death/raise never swaps stack groups.
+function NoobgamKdfProfiles.PlanGolbezEventide(party)
+    local members, seen, sge, whm, healers = {}, {}, nil, nil, 0
+    for _, member in pairs(party) do
+        local id, job = member.id, member.job
+        if type(id) ~= "number" or id <= 0 or type(job) ~= "number" or job <= 0 then
+            return nil, "party member ID/job not loaded"
+        end
+        if not seen[id] then
+            seen[id] = true
+            members[#members + 1] = { id = id, job = job }
+            if job == 40 then sge = id end
+            if job == 24 then whm = id end
+            if job == 24 or job == 28 or job == 33 or job == 40 then healers = healers + 1 end
+        end
+    end
+    if #members ~= 8 or not sge or not whm or healers ~= 2 then
+        return nil, "requires eight members with exactly one SGE and one WHM as healers"
+    end
+    local others = {}
+    for _, member in ipairs(members) do
+        if member.id ~= sge and member.id ~= whm then others[#others + 1] = member end
+    end
+    local tanks = { [19] = true, [21] = true, [32] = true, [37] = true }
+    table.sort(others, function(a, b)
+        local ar, br = tanks[a.job] and 1 or 2, tanks[b.job] and 1 or 2
+        if ar ~= br then return ar < br end
+        return a.id < b.id
+    end)
+    local plan = { groups = { {sge}, {whm} }, byId = { [sge] = 1, [whm] = 2 } }
+    for i, member in ipairs(others) do
+        local group = (i - 1) % 2 + 1
+        plan.groups[group][#plan.groups[group] + 1] = member.id
+        plan.byId[member.id] = group
+    end
+    return plan
+end
+
+function NoobgamKdfProfiles.GolbezEventideFall()
+    if Player.localmapid ~= 1140 or not Player.incombat then
+        NoobgamKdfProfiles.GolbezEventide = nil
+        return false
+    end
+    local now = GetTickCount()
+    local state = NoobgamKdfProfiles.GolbezEventide
+    if state and state.pull ~= KitanoiSettings.InCombatTimer then state = nil end
+    -- Captured normal-mode timing: 33922 channel (6.7s), then two 34483 hits
+    -- at about +8.7s and +11.6s. Hold until +14s, not the old +10s deadline.
+    local started
+    for _, cast in pairs((KitanoiSettings.RecentlyCast or {})[33922] or {}) do
+        if cast.type == "channel" and type(cast.added) == "number"
+            and cast.added <= now and now - cast.added < 14000
+            and (not KitanoiSettings.InCombatTimer or cast.added >= KitanoiSettings.InCombatTimer)
+            and (not started or cast.added > started) then
+            started = cast.added
+        end
+    end
+    local scanning = KitanoiFuncs.ScanForCaster2(33922) == true
+    if started and (not state or started > state.started) then
+        state = { started = started, expires = started + 14000, pull = KitanoiSettings.InCombatTimer }
+    elseif scanning and (not state or (not state.scanning and now >= state.expires)) then
+        -- Fallback for a runtime without exposed cast records: latch only a
+        -- fresh detection, never extend the same cast on every pulse.
+        state = { started = now, expires = now + 14000, pull = KitanoiSettings.InCombatTimer }
+    end
+    if state then state.scanning = scanning end
+    NoobgamKdfProfiles.GolbezEventide = state
+    if not state or now >= state.expires then return false end
+    if not state.plan then
+        local party = { { id = Player.id, job = Player.job } }
+        for _, member in pairs(EntityList.myparty or {}) do
+            party[#party + 1] = { id = member.id, job = member.job }
+        end
+        local reason
+        state.plan, reason = NoobgamKdfProfiles.PlanGolbezEventide(party)
+        if not state.plan then
+            if not state.warned or now - state.warned >= 5000 then
+                log("[WARNING] Eventide Fall cannot assign safe groups: " .. reason)
+                state.warned = now
+            end
+            return true
+        end
+        log("Eventide Fall groups: SGE west / WHM east " .. json.encode(state.plan.groups))
+    end
+    local group = state.plan.byId[Player.id]
+    if not group then return true end
+    -- Keep the existing party mitigation requests, but do not rely on tank
+    -- invulnerability to survive overlapping stacks.
+    for _, id in ipairs({3626, 3540, 24298, 24310, 24311, 7433, 16536}) do
+        useIfCan(id, Player.id)
+    end
+    -- Opposite rays from Golbez at (100,100); never cross to the second healer.
+    local x = group == 1 and 90 or 110
+    KitanoiSettings.DisableKDFAvoidance = false
+    KitanoiNavigation.NavAPI.MoveTo(x, 0, 100)
+    KitanoiSettings.avoidingtime = Now() + 500
+    return true
+end
+
 function NoobgamKdfProfiles.Golbez()
     if NoobgamKdfProfiles.TryingToWipe then
+        NoobgamKdfProfiles.GolbezEventide = nil
         return
     end
+
+    -- Resolving the stack takes priority over stopping to hardcast a raise.
+    if NoobgamKdfProfiles.GolbezEventideFall() then return end
 
     if NoobgamKdfProfiles.StopMovingIfRaising() then
         return
@@ -2466,36 +2645,6 @@ function NoobgamKdfProfiles.Golbez()
                 id = id + 1
             end
         end
-        return
-    end
-    if (KitanoiFuncs.ScanForCaster2(33922) or (NoobgamKdfProfiles.eventide or 0) > GetTickCount()) then
-        if NoobgamKdfProfiles.eventide == nil or NoobgamKdfProfiles.eventide < GetTickCount() - 40000 then
-            NoobgamKdfProfiles.eventide = GetTickCount() + 10000
-            log("Eventide started")
-        end
-        -- use all mits available
-        -- WAR + PLD
-        useIfCan(3626, Player.id)
-        useIfCan(3540, Player.id)
-        -- SGE
-        useIfCan(24298, Player.id)
-        useIfCan(24310, Player.id)
-        useIfCan(24311, Player.id)
-        --WHM
-        useIfCan(7433, Player.id)
-        useIfCan(16536, Player.id)
-
-        if (Player.role == 1) then
-            if HasBuff(Player, 2091) then
-                log("Need to invuln eventide")
-                useIfCan(30)
-                useIfCan(43)
-            end
-        end
-        local mypoint = NoobgamKdfProfiles.ClockPositions(100, 0, 100, 11)
-        d("eventide spreads: " .. json.encode(mypoint))
-        KitanoiNavigation.NavAPI.MoveTo(mypoint.x, 0, mypoint.z)
-        KitanoiSettings.avoidingtime = Now()
         return
     end
     local burningShade = KitanoiFuncs.ScanForCaster2(33939)
@@ -2642,7 +2791,7 @@ function NoobgamKdfProfiles.Interphos()
                     KitanoiNavigation.NavAPI.MoveTo(pt.x, 0, pt.z)
                     KitanoiSettings.avoidingtime = Now() + 100
                 elseif innerState.markerUp > GetTickCount() - 14000 then
-                    Player:SetTarget(Player.id)
+                    NoobgamKdfProfiles.FocusOnSurvival()
                 end
             end
         elseif name == "Coronation" then
@@ -2931,6 +3080,7 @@ function NoobgamKdfProfiles.Interphos()
     end
 
     if Mech.IsActive("DivideAndConquer") then
+        handleMechanic("DivideAndConquer")
         if Mech.IsActive("Coronation") then
             NoobgamKdfProfiles.UseMits()
             NoobgamKdfProfiles.UseMits({
@@ -2940,8 +3090,7 @@ function NoobgamKdfProfiles.Interphos()
                 24300,
 
             })
-            -- to make sure we can cast mits
-            Player:SetTarget(Player.id)
+            NoobgamKdfProfiles.FocusOnSurvival()
         end
     end
 
@@ -3703,8 +3852,11 @@ end
 --- Records base HP on first instance entry and re-estimates Echo stacks after a wipe.
 --- Runs from the update flow regardless of whether the echo stacker (FarmEcho) is in use.
 local function UpdateEchoStacks()
-    local mapid = (Player and Player.localmapid) or 0
-    if mapid == 0 or MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+    if MGetGameState() ~= FFXIV.GAMESTATE.INGAME then
+        return
+    end
+    local mapid = Player.localmapid
+    if mapid == 0 then
         -- Not inside an instance: forget the instance-specific baseline.
         KitanoiSettings.StoreVar.EchoBaseMapId = nil
         KitanoiSettings.StoreVar.EchoBaseHp = nil
