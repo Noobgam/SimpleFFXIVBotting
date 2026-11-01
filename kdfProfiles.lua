@@ -2460,7 +2460,7 @@ function NoobgamKdfProfiles.Rubicante()
     end
     local infernoId = 123718371
     if KitanoiFuncs.ScanForCaster2(31943) then
-        if KitanoiSettings.CurrentAOEs[infernoId] == nil then
+        if KitanoiFuncs.CurrentAOEs[infernoId] == nil then
             KitanoiFuncs.CurrentAOEs[infernoId] = {
                 type = "circle",
                 entity = infernoId,
@@ -3900,5 +3900,11 @@ local function update()
 end
 
 RegisterEventHandler([[Gameloop.Update]], update, [[NoobgamKdfProfiles.Update]])
+
+if NoobgamExtraKdfProfiles ~= nil then
+    for id, profile in pairs(NoobgamExtraKdfProfiles) do
+        NoobgamKdfProfiles.DungeonProfiles[id] = profile
+    end
+end
 
 return NoobgamKdfProfiles

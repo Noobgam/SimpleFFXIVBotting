@@ -11,5 +11,8 @@
         "${workspaceFolder}/.vscode/globals.lua"
     ],
     "Lua.workspace.preloadFileSize": 10000,
-    "Lua.telemetry.enable": false
+    "Lua.telemetry.enable": false,
+    "diagnostics.globals": [
+        "NoobgamExtraKdfProfiles"
+    ]
 }
