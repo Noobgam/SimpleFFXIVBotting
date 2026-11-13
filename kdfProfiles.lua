@@ -317,7 +317,7 @@ NoobgamKdfProfiles.DungeonProfiles = {
     },
     [679] = {
         name = "The Royal Menagerie",
-        mesh = "The Royal Menagerie",
+        mesh = "The Royal Airship Landing",
         dutyid = 679,
         level = 70,
         expansion = 4,
