@@ -4,13 +4,15 @@
         "${workspaceFolder}",
         "${workspaceFolder}/**/*",
         "${workspaceFolder}/.vscode/globals.lua",
-        "${workspaceFolder}/.vscode/kitanoi_public.lua"
+        "${workspaceFolder}/.vscode/kitanoi_public.lua",
+        "${workspaceFolder}/.vscode/class_quests.lua"
     ],
     "Lua.workspace.userThirdParty": [
         "${workspaceFolder}",
         "${workspaceFolder}/**/*",
         "${workspaceFolder}/.vscode/globals.lua",
-        "${workspaceFolder}/.vscode/kitanoi_public.lua"
+        "${workspaceFolder}/.vscode/kitanoi_public.lua",
+        "${workspaceFolder}/.vscode/class_quests.lua"
     ],
     "Lua.workspace.preloadFileSize": 10000,
     "Lua.telemetry.enable": false,

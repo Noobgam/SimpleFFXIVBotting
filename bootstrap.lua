@@ -11,9 +11,28 @@ local function log(msg)
     d("[MsqBootstrap] " .. msg)
 end
 
--- Configuration
+-- Shared loader for addon initialization and bootstrap.
+---@return BundledClassQuestAPI
+local function classProfile()
+    if NoobgamClassQuests == nil then
+        local path = GetLuaModsPath() .. "SimpleFFXIVBotting/questing/class_quests.lua"
+        local chunk, err = loadfile(path)
+        if chunk == nil then error("Cannot load bundled class quests: " .. tostring(err)) end
+        chunk()
+    end
+    ---@cast NoobgamClassQuests BundledClassQuestAPI
+    return NoobgamClassQuests
+end
+
+---@return boolean|nil registered
+---@return string|nil error
+function MsqBootstrap.RegisterClassProfile()
+    return classProfile().EnsureRegistered()
+end
+
+-- Configuration (milestones also feed the GUI).
 local CONFIG = {
-    jobProfile = "Class Quests Pack",
+    jobProfile = "Noobgam Class Quests (Current Job)",
     jobMapping = {
         [FFXIV.JOBS.GLADIATOR] = FFXIV.JOBS.PALADIN,
         [FFXIV.JOBS.MARAUDER] = FFXIV.JOBS.WARRIOR,
@@ -21,6 +40,9 @@ local CONFIG = {
         [FFXIV.JOBS.ROGUE] = FFXIV.JOBS.NINJA,
         [FFXIV.JOBS.PUGILIST] = FFXIV.JOBS.MONK,
         [FFXIV.JOBS.CONJURER] = FFXIV.JOBS.WHITEMAGE,
+        [FFXIV.JOBS.LANCER] = FFXIV.JOBS.DRAGOON,
+        [FFXIV.JOBS.THAUMATURGE] = FFXIV.JOBS.BLACKMAGE,
+        [FFXIV.JOBS.ARCANIST] = FFXIV.JOBS.SUMMONER,
     },
     -- quest completion IDs for job quests at each level threshold
     jobQuestCompletion = {
@@ -427,7 +449,7 @@ local function stopLattyQuesting()
 end
 
 --- Select a Minion Questing profile. The native Latty MSQ flow does not use this;
---- this helper remains for the existing Sebb job/role quest functionality.
+--- this helper selects the bundled current-job profile.
 --- @param targetProfile string
 local function setQuestingProfile(targetProfile)
     if gBotMode ~= "questMode" then
@@ -524,39 +546,18 @@ local function ensureProfileEnabled(profile, job)
             wait(1000)
             return
         end
+        local registered, err = classProfile().EnsureRegistered()
+        if not registered then
+            log("[WARNING] " .. tostring(err))
+            wait(1000)
+            return
+        end
         if not setQuestingProfile(CONFIG.jobProfile) then
-            log("job profile could not be set. Assuming it's missing, will try to pick some other")
-            local allProfiles = Questing.profilesDisplay
-            for _, prof in pairs(allProfiles) do
-                if prof:find(" Class Quests", 1, true) ~= nil then
-                    CONFIG.jobProfile = prof
-                    log("Will use [" .. CONFIG.jobProfile .. "] for sebbs jobs")
-                    return
-                end
-            end
+            log("[ERROR] Bundled class profile is unavailable")
+            wait(1000)
             return
         end
         NoobgamPrivateAPI.SetKDFToNone()
-
-        local sebbsPack = {
-            [FFXIV.JOBS.GLADIATOR] = "Paladin",
-            [FFXIV.JOBS.ARCHER] = "Bard",
-            [FFXIV.JOBS.WARRIOR] = "Warrior",
-            [FFXIV.JOBS.PALADIN] = "Paladin",
-            [FFXIV.JOBS.SAGE] = "Sage",
-            [FFXIV.JOBS.NINJA] = "Ninja",
-            [FFXIV.JOBS.BARD] = "Bard",
-            [FFXIV.JOBS.WHITEMAGE] = "Whitemage",
-        }
-        local sebbsVar = sebbsPack[job] or "None"
-
-        QuestOpts_Class90_Job1 = sebbsVar
-        QuestOpts_ClassDT_Job1 = sebbsVar
-        QuestOpts_GlobalClass_Job1 = sebbsVar
-        QuestOpts_RoleQuests = true
-
-        QuestOpts_Q_BuyGreens = true
-        QuestOpts_Greens_new = false
 
         if not FFXIV_Common_BotRunning then
             log("Enabling bot for job quests")
@@ -569,163 +570,32 @@ local function ensureProfileEnabled(profile, job)
     end
 end
 
---- @param job integer
---- @param level 15|30|50|60|70|80
---- @return boolean
-local function doneWithJobQuests(job, level)
-    local mapping = CONFIG.jobQuestCompletion[level]
-    if mapping == nil then
-        return true
-    end
-
-    -- check soul crystal at level 30+
-    if level >= 30 then
-        local baseJobs = {
-            FFXIV.JOBS.THAUMATURGE,
-            FFXIV.JOBS.GLADIATOR,
-            FFXIV.JOBS.ARCHER,
-            FFXIV.JOBS.CONJURER,
-            FFXIV.JOBS.MARAUDER,
-        }
-        for _, baseJob in ipairs(baseJobs) do
-            if Player.job == baseJob then
-                local soul = Inventory:Get(1000):GetList()[14]
-                if soul == nil then
-                    return false
-                end
-                break
-            end
-        end
-    end
-
-    local questId = mapping[job]
-    if questId == nil then
-        return true
-    end
-    if QuestCompleted(3649) and not QuestCompleted(3650) then
-        -- role quests are unlocked sometime before and we can't do next quest without finishing them
-        local roleQuest = CONFIG.roleQuestCompletion[80][CONFIG.jobToRole[job]]
-        if roleQuest then
-            return QuestCompleted(questId) and QuestCompleted(roleQuest)
-        end
-    end
-    return QuestCompleted(questId)
-end
-
--- https://discord.com/channels/119613514863214592/119613514863214592/1552693119039045653
--- this will seemingly never get fixed. I'm not fixing the profile in-flight in public addon, but I can reset the internal flag sebbs has a bug with
-local function sebbsHacks()
-    if gCurrQuestID == 3247 and Player.localmapid == 816 then
-        gSebbsNeedsBlock = nil
-    end
-end
-
---- @param job integer
---- @param targetLevel integer|nil
---- @return boolean whether we're doing job quests
-local function doingSomeJobQuests(job, targetLevel)
-    targetLevel = targetLevel or 100
-    sebbsHacks()
-
-    if Player.levels[Player.job] >= 15 then
-        if not doneWithJobQuests(job, 15) then
-            ensureProfileEnabled("job", job)
-            return true
-        end
-    end
-
-    if targetLevel < 30 then
-        return false
-    end
-
-    if Player.levels[Player.job] >= 30 and not doneWithJobQuests(job, 30) then
-        ensureProfileEnabled("job", job)
-        return true
-    end
-
-    if targetLevel < 50 then
-        return false
-    end
-
-    if Player.levels[Player.job] >= 50 and not doneWithJobQuests(job, 50) then
-        ensureProfileEnabled("job", job)
-        return true
-    end
-
-    if targetLevel < 60 then
-        return false
-    end
-
-    -- Quest 1619 is "Heavensward" completion check
-    if Player.levels[Player.job] >= 60 and QuestCompleted(1619) and not doneWithJobQuests(job, 60) then
-        ensureProfileEnabled("job", job)
-        return true
-    end
-
-    if targetLevel < 70 then
-        return false
-    end
-
-    if Player.levels[Player.job] >= 70
-        -- huh?
-        and (QuestCompleted(2553))
-        and not doneWithJobQuests(job, 70)
-    then
-        ensureProfileEnabled("job", job)
-        return true
-    end
-
-    return false
-end
-
 --- @param job integer|nil
 --- @param jobLevelCap integer|nil
---- @return boolean whether we're doing job stuff
+--- @return boolean whether class/role quests own this pulse
 local function doJobStuff(job, jobLevelCap)
     local myJob = CONFIG.jobMapping[Player.job] or Player.job
-
-    local haveChocobo = QuestCompleted(1162)
-    local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
-    local canDoPorta = QuestCompleted(4522)
-
-    -- Always do level 15 job quests first.
-    if Player.levels[Player.job] >= 17 then
-        if not doneWithJobQuests(myJob, 15) then
-            ensureProfileEnabled("job", myJob)
-            return true
-        end
-    end
-
-    -- If job is nil, fallback to our current job
-    job = job or myJob
-
-    if myJob ~= job then
-        log("[ERROR] adjusting job on the fly is not implemented yet.")
+    if job ~= nil and job ~= myJob and job ~= Player.job then
+        log("[ERROR] Current-job questing does not switch to another job")
         wait(5000)
-        ensureProfileEnabled("msq")
         return true
     end
-
-    -- Quest 715 is "First Contact" - sanity check for job quests
-    local timeToJob = not deadlockedByAirship and haveChocobo and QuestCompleted(715)
-
-    if timeToJob then
-        if doingSomeJobQuests(job, 50) then
-            return true
-        end
+    local profile = classProfile()
+    -- Reset the captured tank-duty latch when re-entering its solo instance.
+    if gCurrQuestID == 3247 and Player.localmapid == 816 then
+        profile.NeedsBlock = false
     end
-
-    if not canDoPorta then
-        ensureProfileEnabled("msq")
+    local available, questOrError = profile.HasWork(jobLevelCap)
+    if available == nil then
+        log("[WARNING] Class quest availability unknown: " .. tostring(questOrError))
+        ensureProfileEnabled("none")
+        wait(1000)
         return true
     end
-
-    if timeToJob then
-        if doingSomeJobQuests(job, jobLevelCap) then
-            return true
-        end
+    if available then
+        ensureProfileEnabled("job", myJob)
+        return true
     end
-
     return false
 end
 
@@ -811,7 +681,7 @@ local function openJobChests()
 end
 
 --- @class MsqCycleParams
---- @field job integer|nil FFXIV.JOBS job to level. If nil will not do any job quests.
+--- @field job integer|nil FFXIV.JOBS job to level; defaults to the current job.
 --- @field jobLevelCap integer|nil
 
 --- @param params MsqCycleParams|nil
