@@ -8,7 +8,7 @@ A Lua addon for the **FFXIVMinion** bot framework (the "Module" system, see `mod
 
 The addon (display name **NoobgamSidekick**) drives end-to-end character progression by orchestrating two upstream addons it does not own:
 - **LattyLib native quest runtime** — drives MSQ plus Aether Current quests independently of Minion's Quest bot mode.
-- **Questing** (FFXIVMinion built-in) — still drives the existing job/role quest profile flow.
+- **Questing** (FFXIVMinion/FFXIVLib) — executes the bundled current-job class/role quest profile.
 - **KDF (Kitanoi Dungeon Framework)** — clears dungeons; profiles for it live in `kdfProfiles.lua`.
 
 Most non-trivial behavior is composing those two with quest-state machines, not implementing combat or navigation from scratch.
@@ -27,7 +27,7 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 ## The three modes
 
-- **Bootstrap** (`bootstrap.lua`) — drives 1–100 leveling. `CommonMsqCycle` runs every tick: open job-quest gear coffers from inventory → decide MSQ vs job/role profile from `Player.levels` and `QuestCompleted(...)` → if a story-required dungeon is detected, hand off to `MsqClearHelper` as farmer.
+- **Bootstrap** (`bootstrap.lua`) — drives 1–100 leveling. `CommonMsqCycle` handles gear coffers and required-dungeon handoffs, then uses the original thresholded job milestones (30/50/60/70 plus MSQ gates) to interleave class quests and MSQ. It does not use `NoobgamClassQuests.HasWork()` to schedule every available quest. The profile's pin chooses the milestone branch for an equipped base class. `main.lua` calls `MsqBootstrap.RegisterClassProfile()` during addon initialization and retries publication once per second before automation/state/task guards. The shared loader uses `loadfile` for `questing/class_quests.lua`, so the profile is not added to `module.def`. It appears in the normal Questing dropdown even while automation is disabled. Local generators, templates, the capture manifest (`scripts/class_quests.manifest.json`), and decryption tools live in the entirely gitignored `scripts/` directory.
 - **Helper** (`msqhelper.lua`) — multi-boxing. The `Bootstrap` farmer registers a "clear request" by writing to a shared JSON file; a separate game instance running in `Helper` mode reads it, invites the farmer, and enters as undersized party. Two shared files: `msq_clear_requests.json` (farmer→host) and `msq_pf_ready.json` (host→farmer for PF-based handoff).
 - **Ravana** (`ravanafarm.lua`) — single-encounter farm loop for Ravana Extreme. Independent state machine, not used by the others.
 
@@ -35,11 +35,11 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 **Per-module wait state.** Each subsystem (`MsqBootstrap`, `MsqClearHelper`, `RavanaFarm`, `NoobgamTaskManager`) keeps its own `WaitUntil` / `WaitCondition` / `BreakOutDelayMillis` and defines a local `wait(millis, breakOutCondition, breakOutDelayMillis)`. The update tick is **non-blocking** — long operations are encoded as "set wait window, return early, resume on next tick". Don't use `os.execute` sleeps or busy loops; emit waits.
 
-**Quest-id-driven state machines.** Logic in `bootstrap.lua` and `msqhelper.lua` is gated on hard-coded XIV quest IDs from xivapi datamining (`QuestCompleted(id)`, `HasQuest(id)`, `Quest:GetQuestCurrentStep(id)`). When fixing progression bugs, the right answer is usually adding/correcting a quest ID, not rewriting control flow. Soul-crystal detection uses `Inventory:Get(1000):GetList()[14]`.
+**Quest-id-driven state machines.** Logic in `bootstrap.lua` and `msqhelper.lua` is gated on hard-coded XIV quest IDs from xivapi datamining (`QuestCompleted(id)`, `HasQuest(id)`, `Quest:GetQuestCurrentStep(id)`). When fixing progression bugs, the right answer is usually adding/correcting a quest ID, not rewriting control flow. The bundled class profile retains current-class soul-crystal equip tasks. Its single file groups authored data in `jobSpecificQuests` and `roleQuests`; one final pass builds `P.Quests` and injects job/pin/level guards. Redundant job predicates implied by each quest's allowed jobs are removed from prerequisites and top-level step conditions; narrower, compound and completion predicates are retained.
 
 **`NoobgamTaskManager` is the queue, `NavigationTask` is the primitive.** Higher-level flows push tasks via `Schedule` / `PushSchedule` / `PushMultiple`; the Update loop dequeues one at a time and runs it through a fixed dispatch (`genericGoTo`, `createPF`, `joinPF`, `leaveParty`, `disbandParty`). `NavigationTask` wraps `ml_task_hub` / `ffxiv_task_movetomap` / `ffxiv_task_movetopos` and is what `genericGoTo` ultimately calls.
 
-**Profile control surface.** `bootstrap.lua` starts/stops MSQ through `LattyLib.StartQuesting` / `StopQuesting` and pins Latty to MSQ + Aether Current quests. The existing job/role flow still mutates Questing globals through `utils.lua`'s `SwitchMode` / `SetQuestingProfile`. KDF is controlled through `NoobgamPrivateAPI.SetKDFTo*`.
+**Profile control surface.** `bootstrap.lua` starts/stops MSQ through `LattyLib.StartQuesting` / `StopQuesting` and pins Latty to MSQ + Aether Current quests. Class/role quests use `Noobgam Class Quests (Current Job)`, registered via `FFXIVLib.Questing.AddProfile`. The bundled data has no SebbsLib dependency or addon expansion gates; game prerequisites and current-job/level checks remain. Profile options → Classes → Pin job is saved in `Settings.Questing.NoobgamClassQuestPinnedJob`. It selects the quest branch and soul crystal for the equipped job/base class (especially Arcanist → Scholar/Summoner), without switching from an unrelated job. KDF is controlled through `NoobgamPrivateAPI.SetKDFTo*`.
 
 **Private KDF helpers.** `private.lua` exports `NoobgamPrivateAPI` with `SetKDFToMsqIntegration` and `SetKDFToNone`. It is regular source code and can be edited directly.
 
@@ -55,4 +55,4 @@ Every top-level Lua file uses the `if X == nil then X = {} end` idiom so reloads
 
 ## Distribution requirements (from README)
 
-End users must have **LattyLib** with the native quest runtime and **Sebb's Class Quests Pack** installed. Only the job profile is selected through Minion Questing; a fallback search for `" Class Quests"` remains if its exact name is missing.
+End users need **LattyLib** for MSQ and **FFXIVLib/Minion Quest mode** to execute the bundled class/role profile. **SebbsLib and Sebb's Class Quests Pack are not required.** No fallback to a separately installed class pack is used. See `USAGE.md` for coverage and validation limits. Local regeneration metadata lives in the ignored `scripts/` directory.

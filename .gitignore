@@ -7,3 +7,6 @@ logs
 /bugreport_*/
 /bugreport_*.zip
 /.tmp/
+
+# Local development, capture, generation and decryption tools.
+/scripts/
