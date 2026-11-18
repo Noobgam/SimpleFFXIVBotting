@@ -10,8 +10,8 @@ class quests, gear upgrades and story duties.
 - Ravana Extreme farming.
 
 ## Requirements
-- FFXIVMinion
-- LattyLib
+- TensorCore
+- LattyLib and respective questpacks
 - FFXIVLib
 - KitanoiFuncs and Kitanoi Dungeon Framework
 

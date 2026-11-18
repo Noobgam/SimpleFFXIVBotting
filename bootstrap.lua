@@ -570,30 +570,105 @@ local function ensureProfileEnabled(profile, job)
     end
 end
 
+--- @param job integer
+--- @param level 15|30|50|60|70|80
+--- @return boolean
+local function doneWithJobQuests(job, level)
+    local mapping = CONFIG.jobQuestCompletion[level]
+    if mapping == nil then
+        return true
+    end
+
+    -- A base class still needs its earned soul crystal equipped at promotion.
+    if level >= 30 and CONFIG.jobMapping[Player.job] ~= nil then
+        local bag = Inventory:Get(1000)
+        local equipped = bag and bag:GetList()
+        if equipped == nil or equipped[14] == nil then
+            return false
+        end
+    end
+
+    local questId = mapping[job]
+    if questId == nil then
+        return true
+    end
+    if QuestCompleted(3649) and not QuestCompleted(3650) then
+        local roleQuest = CONFIG.roleQuestCompletion[80][CONFIG.jobToRole[job]]
+        if roleQuest then
+            return QuestCompleted(questId) and QuestCompleted(roleQuest)
+        end
+    end
+    return QuestCompleted(questId)
+end
+
+--- @param job integer
+--- @param targetLevel integer|nil
+--- @return boolean whether a job milestone is pending
+local function doingSomeJobQuests(job, targetLevel)
+    targetLevel = targetLevel or 100
+    if gCurrQuestID == 3247 and Player.localmapid == 816 then
+        classProfile().NeedsBlock = false
+    end
+
+    if Player.levels[Player.job] >= 15 and not doneWithJobQuests(job, 15) then
+        ensureProfileEnabled("job", job)
+        return true
+    end
+    if targetLevel < 30 then return false end
+    if Player.levels[Player.job] >= 30 and not doneWithJobQuests(job, 30) then
+        ensureProfileEnabled("job", job)
+        return true
+    end
+    if targetLevel < 50 then return false end
+    if Player.levels[Player.job] >= 50 and not doneWithJobQuests(job, 50) then
+        ensureProfileEnabled("job", job)
+        return true
+    end
+    if targetLevel < 60 then return false end
+    if Player.levels[Player.job] >= 60 and QuestCompleted(1619) and not doneWithJobQuests(job, 60) then
+        ensureProfileEnabled("job", job)
+        return true
+    end
+    if targetLevel < 70 then return false end
+    if Player.levels[Player.job] >= 70 and QuestCompleted(2553) and not doneWithJobQuests(job, 70) then
+        ensureProfileEnabled("job", job)
+        return true
+    end
+    return false
+end
+
 --- @param job integer|nil
 --- @param jobLevelCap integer|nil
---- @return boolean whether class/role quests own this pulse
+--- @return boolean whether a milestone or its MSQ prerequisites own this pulse
 local function doJobStuff(job, jobLevelCap)
-    local myJob = CONFIG.jobMapping[Player.job] or Player.job
-    if job ~= nil and job ~= myJob and job ~= Player.job then
-        log("[ERROR] Current-job questing does not switch to another job")
-        wait(5000)
-        return true
-    end
-    local profile = classProfile()
-    -- Reset the captured tank-duty latch when re-entering its solo instance.
-    if gCurrQuestID == 3247 and Player.localmapid == 816 then
-        profile.NeedsBlock = false
-    end
-    local available, questOrError = profile.HasWork(jobLevelCap)
-    if available == nil then
-        log("[WARNING] Class quest availability unknown: " .. tostring(questOrError))
-        ensureProfileEnabled("none")
-        wait(1000)
-        return true
-    end
-    if available then
+    local myJob = classProfile().GetPinnedJob() or CONFIG.jobMapping[Player.job] or Player.job
+    local haveChocobo = QuestCompleted(1162)
+    local deadlockedByAirship = HasQuest(952) or (QuestCompleted(952) and not QuestCompleted(953))
+    local canDoPorta = QuestCompleted(4522)
+
+    -- Preserve the original early class-quest milestone check.
+    if Player.levels[Player.job] >= 17 and not doneWithJobQuests(myJob, 15) then
         ensureProfileEnabled("job", myJob)
+        return true
+    end
+
+    job = job or myJob
+    if myJob ~= job then
+        log("[ERROR] adjusting job on the fly is not implemented yet.")
+        wait(5000)
+        ensureProfileEnabled("msq")
+        return true
+    end
+
+    local timeToJob = not deadlockedByAirship and haveChocobo and QuestCompleted(715)
+    if timeToJob and doingSomeJobQuests(job, 50) then
+        return true
+    end
+    if not canDoPorta then
+        ensureProfileEnabled("msq")
+        return true
+    end
+    if timeToJob and doingSomeJobQuests(job, jobLevelCap) then
         return true
     end
     return false

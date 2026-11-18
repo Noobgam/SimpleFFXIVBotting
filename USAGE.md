@@ -13,8 +13,12 @@ configuring the mode and duty routing.
 
 Bootstrap coordinates MSQ, current-job quests, gear and story duties. Free class
 quests are included for the job levelled, with class/role quest data through
-level 100. It follows your equipped job automatically and returns to MSQ when no
-eligible class quest remains. Game quest prerequisites and levels still apply.
+level 100. Bootstrap interleaves MSQ with the original level-30/50/60/70 job-quest
+milestones and their MSQ prerequisites, then returns to MSQ when the selected
+milestone is complete. Merely having a low-level class quest available does not
+start the class profile. The Scholar/Summoner pin chooses which job's milestones
+are checked. Running the class profile directly still processes eligible quests
+for the equipped job.
 
 ### Duty Finder — one client
 
@@ -53,7 +57,23 @@ Registration leaves the selected profile and bot state unchanged.
 
 To run only class quests, keep NoobgamSidekick automation disabled, choose Minion
 Quest mode, select that profile and start Minion. It follows the equipped job;
-no priority-job selection or SebbsLib installation is required.
+SebbsLib is not required.
+
+### Pin a class-quest branch
+
+With Minion stopped, select **Noobgam Class Quests (Current Job)** and open its
+profile options → **Classes → Pin job**. The default is **Current job**.
+
+For Arcanist, choose **Scholar** or **Summoner** before starting. Shared Arcanist
+quests remain eligible; the selected branch controls the level-30 job quest and
+which earned soul crystal gets equipped. With **Current job**, both Arcanist
+promotion quests remain eligible and the default crystal is Summoner.
+
+The setting is saved with Minion's character-specific Questing options and also
+applies when Bootstrap selects class quests. A pin applies while that job or its
+base class is equipped. Equipping an unrelated job simply follows that current
+job; the pin never forces a switch back. Change the pin while stopped so an
+already-running quest step can finish its normal cleanup before restarting.
 
 BLU coverage is limited to the first continuing quest present in the capture.
 Beastmaster is not included. The bundle has passed registration and syntax

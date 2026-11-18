@@ -4,8 +4,8 @@ You can ask an LLM to install NoobgamSidekick using this file.
 
 ## Requirements
 
-- FFXIVMinion attached to your game client.
-- LattyLib with its native quest runtime for MSQ.
+- TensorCore.
+- LattyLib and respective questpacks, with its native quest runtime for MSQ.
 - FFXIVLib and Minion Quest mode for the bundled class/role quests.
 - KitanoiFuncs and Kitanoi Dungeon Framework for dungeon automation.
 
