@@ -94,7 +94,25 @@ local function updateCreditControls()
     end
 end
 
+local classProfileCheckAt = 0
+local classProfileError
+local function registerClassProfile()
+    local now = GetTickCount()
+    if now < classProfileCheckAt then return end
+    classProfileCheckAt = now + 1000
+    local ok, registered, err = pcall(MsqBootstrap.RegisterClassProfile)
+    if not ok then err = tostring(registered) end
+    if ok and registered then
+        classProfileError = nil
+    elseif err ~= classProfileError then
+        classProfileError = err
+        d("[NoobgamSidekick] Class profile registration pending: " .. tostring(err))
+    end
+end
+
 local function onUpdate()
+    -- Profile publication is independent of automation, character state and task waits.
+    registerClassProfile()
     -- Retention also runs while disabled, logged out, or waiting on other tasks.
     NoobgamLog.Update()
 
@@ -149,6 +167,7 @@ local function onDraw()
 end
 
 local function preinit()
+    registerClassProfile()
     ml_gui.ui_mgr:AddMember({
         id = "FFXIVMINION##MENU_NOOBGAMSIDEKICK",
         name = "NoobgamSidekick",
